@@ -1,0 +1,28 @@
+<!--
+  Toda la tarjeta es un enlace a la ficha del juego (/videojuegos/:id),
+  como pide la guía de diseño. Usamos <a> y no un <div> con click,
+  por accesibilidad: se puede usar con teclado y los lectores de pantalla
+  lo reconocen como enlace.
+-->
+<a class="tarjeta" [routerLink]="['/videojuegos', videojuego.idVideojuego]">
+
+  <!-- Portada de relleno: color plano con las iniciales abajo a la izquierda -->
+  <div class="portada" [style.background]="colorPortada">
+    <span class="iniciales">{{ iniciales }}</span>
+  </div>
+
+  <div class="cuerpo">
+    <h3 class="titulo">{{ videojuego.titulo }}</h3>
+
+    <p class="subtitulo">{{ subtitulo }}</p>
+
+    <!-- Reutilizamos el badge del Paso 8 -->
+    <app-estado-badge [estado]="videojuego.estadoConservacion"></app-estado-badge>
+
+    <!-- @if: la línea de meta solo aparece si el padre mandó algún texto -->
+    @if (meta) {
+      <p class="meta">{{ meta }}</p>
+    }
+  </div>
+
+</a>

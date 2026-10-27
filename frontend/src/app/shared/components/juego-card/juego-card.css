@@ -1,0 +1,76 @@
+/*
+ * :host es el elemento <app-juego-card> en sí.
+ * Le damos el ancho fijo de 208 px de la guía de diseño y le decimos
+ * que no se encoja dentro del carrusel (flex: 0 0 208px).
+ */
+:host {
+  display: block;
+  flex: 0 0 208px;
+}
+
+/* La tarjeta completa es un enlace */
+.tarjeta {
+  display: block;
+  overflow: hidden;
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: 12px;
+  text-decoration: none;
+  color: var(--text);
+}
+
+.tarjeta:hover {
+  border-color: var(--border-hover);
+}
+
+/* Al navegar con teclado (Tab) se ve un contorno de acento */
+.tarjeta:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Portada de relleno: 128 px de alto, iniciales abajo a la izquierda */
+.portada {
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-start;
+  height: 128px;
+  padding: 12px;
+}
+
+.iniciales {
+  font-family: var(--font-title);
+  font-size: 30px;
+  font-weight: 700;
+  color: var(--text-strong);
+}
+
+/* Cuerpo: padding 14 y separación de 8 entre elementos */
+.cuerpo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+}
+
+.titulo {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--text-strong);
+}
+
+.subtitulo {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.meta {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-muted);
+}

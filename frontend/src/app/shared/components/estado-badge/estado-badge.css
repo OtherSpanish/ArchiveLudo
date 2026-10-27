@@ -1,0 +1,39 @@
+/* Contenedor: punto y texto en la misma línea, centrados verticalmente */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Punto de 10 px según la guía de diseño */
+.punto {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  /* Evita que el punto se aplaste si el texto es largo */
+  flex-shrink: 0;
+}
+
+/* Texto del estado: 13 px, peso 600 */
+.texto {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+/* Colores del semáforo: las variables están definidas en styles.css */
+.punto.ok {
+  background: var(--state-ok);
+}
+
+.punto.warn {
+  background: var(--state-warn);
+}
+
+.punto.bad {
+  background: var(--state-bad);
+}
+
+.punto.neutral {
+  background: var(--state-neutral);
+}
