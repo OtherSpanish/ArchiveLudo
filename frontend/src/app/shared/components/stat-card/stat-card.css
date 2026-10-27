@@ -1,0 +1,64 @@
+/*
+ * :host es el elemento <app-stat-card> en sí.
+ * "flex: 1 1 220px" significa: crece para repartirse el ancho, puede
+ * encogerse, y su ancho base es 220 px. Si no caben en una línea, se apilan.
+ */
+:host {
+  display: block;
+  flex: 1 1 220px;
+}
+
+/* Tarjeta: fondo, borde, radio 12 y padding 18/20 según la guía */
+.tarjeta {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: 12px;
+  padding: 18px 20px;
+}
+
+/* Etiqueta: 14 px, color apagado */
+.etiqueta {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+/* Punto y número en la misma línea */
+.dato {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Punto de 10 px */
+.punto {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.punto.info {
+  background: var(--state-info);
+}
+
+.punto.ok {
+  background: var(--state-ok);
+}
+
+.punto.warn {
+  background: var(--state-warn);
+}
+
+.punto.bad {
+  background: var(--state-bad);
+}
+
+/* Número grande: Space Grotesk 36 px, peso 700 */
+.numero {
+  font-family: var(--font-title);
+  font-size: 36px;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--text-strong);
+}
