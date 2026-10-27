@@ -1,0 +1,85 @@
+/*
+ * Fila de contadores: las 4 tarjetas en una línea, con 16 px entre ellas.
+ * "flex-wrap: wrap" hace que, si no caben (por ejemplo en móvil), bajen
+ * a la línea siguiente en vez de aplastarse. Cada tarjeta ya trae su
+ * propio "flex: 1 1 220px" desde stat-card.css.
+ * El margin-bottom de 40 px es la separación con lo que viene debajo.
+ */
+.contadores {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 40px;
+}
+
+/* Cada fila (En riesgo, Perdidos, Restaurados) separada 40 px de la siguiente */
+.fila {
+  margin-bottom: 40px;
+}
+
+/* Encabezado: punto, título y enlace "Ver todos" a la derecha */
+.encabezado {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin-bottom: 16px;
+}
+
+/* Punto de color de 10 px junto al título */
+.punto {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.punto.ok {
+  background: var(--state-ok);
+}
+
+.punto.warn {
+  background: var(--state-warn);
+}
+
+.punto.bad {
+  background: var(--state-bad);
+}
+
+/* Título de fila: Space Grotesk 24 px, peso 700 */
+.titulo-fila {
+  margin: 0;
+  font-family: var(--font-title);
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-strong);
+}
+
+/* "Ver todos (N)": se empuja al extremo derecho con margin-left: auto */
+.ver-todos {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  margin-left: auto;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.ver-todos:hover {
+  text-decoration: underline;
+}
+
+/*
+ * Carrusel horizontal: las tarjetas van en una sola línea (flex) y
+ * si no caben, la fila se desplaza con scroll horizontal (overflow-x: auto).
+ * No se apilan, como pide la guía de diseño.
+ * El padding-bottom deja espacio para que la barra de scroll no tape las tarjetas.
+ */
+.carrusel {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  padding-bottom: 12px;
+}
