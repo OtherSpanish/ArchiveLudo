@@ -1,0 +1,17 @@
+<!--
+  Punto de color + texto del estado.
+  La guía de diseño exige que el estado NUNCA vaya solo con color,
+  para que se entienda también si alguien no distingue bien los colores.
+-->
+<span class="badge">
+
+  <!--
+    El punto es solo decoración, por eso aria-hidden="true":
+    los lectores de pantalla lo ignoran y leen únicamente el texto.
+    [ngClass]="color" agrega la clase 'ok', 'warn', 'bad' o 'neutral'
+    según el estado, y el CSS decide el color de cada una.
+  -->
+  <span class="punto" [ngClass]="color" aria-hidden="true"></span>
+
+  <span class="texto">{{ texto }}</span>
+</span>

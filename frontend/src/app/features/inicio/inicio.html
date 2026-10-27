@@ -1,0 +1,51 @@
+<!--
+  Fila de contadores. El @for crea un <app-stat-card> por cada
+  elemento del arreglo "contadores" de inicio.ts.
+-->
+<section class="contadores" aria-label="Resumen del catálogo">
+  @for (contador of contadores; track contador.etiqueta) {
+    <app-stat-card
+      [etiqueta]="contador.etiqueta"
+      [valor]="contador.valor"
+      [color]="contador.color">
+    </app-stat-card>
+  }
+</section>
+
+<!--
+  El @for externo recorre las filas (En riesgo, Perdidos, Restaurados).
+  El @for interno recorre los juegos de cada fila y crea una tarjeta por juego.
+  "track" le dice a Angular cómo identificar cada elemento de la lista.
+-->
+@for (fila of filas; track fila.titulo) {
+
+  <section class="fila">
+
+    <div class="encabezado">
+      <!-- Punto de color; [ngClass] agrega la clase 'ok', 'warn' o 'bad' -->
+      <span class="punto" [ngClass]="fila.color" aria-hidden="true"></span>
+
+      <h2 class="titulo-fila">{{ fila.titulo }}</h2>
+
+      <!-- Lleva al catálogo filtrado, por ejemplo /catalogo?estado=en_riesgo -->
+      <a class="ver-todos"
+         routerLink="/catalogo"
+         [queryParams]="{ estado: fila.estado }">
+        Ver todos ({{ fila.total }})
+      </a>
+    </div>
+
+    <!-- Carrusel horizontal. "let i = $index" es la posición de la tarjeta (0, 1, 2...) -->
+    <div class="carrusel">
+      @for (item of fila.juegos; track item.videojuego.idVideojuego; let i = $index) {
+        <app-juego-card
+          [videojuego]="item.videojuego"
+          [indice]="i"
+          [meta]="item.meta">
+        </app-juego-card>
+      }
+    </div>
+
+  </section>
+
+}

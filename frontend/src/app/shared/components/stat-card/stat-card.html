@@ -1,0 +1,15 @@
+<!--
+  Etiqueta arriba; debajo, el punto de color y el número grande.
+  El punto es decoración (aria-hidden), por eso el significado
+  no depende solo del color: la etiqueta dice de qué es el número.
+-->
+<div class="tarjeta">
+
+  <p class="etiqueta">{{ etiqueta }}</p>
+
+  <div class="dato">
+    <span class="punto" [ngClass]="color" aria-hidden="true"></span>
+    <span class="numero">{{ valor }}</span>
+  </div>
+
+</div>
