@@ -153,6 +153,84 @@
   color: var(--text-muted);
 }
 
+/* ---------- Pestaña Copias ---------- */
+
+/*
+ * Dos columnas con flex-wrap: copias a la izquierda (base 640 px, el doble
+ * de peso) e instituciones a la derecha (base 340 px), con 32 px entre ellas.
+ * Si no caben lado a lado (por ejemplo en móvil), se apilan solas.
+ */
+.dos-columnas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 32px;
+}
+
+.columna-copias {
+  flex: 2 1 640px;
+}
+
+.columna-instituciones {
+  flex: 1 1 340px;
+}
+
+/* Título de sección a la izquierda y botón a la derecha */
+.encabezado-seccion {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+/* Título de sección (H2): Space Grotesk 24 px, peso 700 */
+.titulo-seccion {
+  margin: 0;
+  font-family: var(--font-title);
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-strong);
+}
+
+/* Botón principal: fondo de acento, alto mínimo 44, radio 10 */
+.boton-registrar {
+  min-height: 44px;
+  padding: 0 22px;
+  background: var(--accent);
+  color: var(--on-accent);
+  border: 1px solid var(--accent);
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.boton-registrar:hover {
+  opacity: 0.9;
+}
+
+.boton-registrar:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Lista de tarjetas (copias o instituciones), una debajo de otra */
+.lista {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/*
+ * Zona del historial de custodia: va a todo el ancho, debajo de las dos
+ * columnas, con 28 px de separación (la separación entre secciones de la
+ * ficha, según la guía). Todavía no se usa; lo ponemos en un paso siguiente.
+ */
+.zona-historial {
+  margin-top: 28px;
+}
+
 /* ---------- Juego no encontrado ---------- */
 .no-encontrado {
   color: var(--text-soft);

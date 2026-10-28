@@ -17,10 +17,9 @@ import { Videojuego } from '../../models/videojuego.model';
   selector: 'app-juego-card',
   templateUrl: './juego-card.html',
   styleUrl: './juego-card.css',
-  standalone: false
+  standalone: false,
 })
 export class JuegoCard {
-
   /* El "!" le dice a TypeScript: "el padre siempre me va a pasar este valor". */
   @Input() videojuego!: Videojuego;
 
@@ -29,26 +28,23 @@ export class JuegoCard {
   @Input() meta: string = '';
 
   /*
-   * Colores planos de relleno para las portadas, mientras no haya imágenes
-   * reales. Salen de la sección "Portadas de relleno" de la guía de diseño.
+   * Cuántos colores de relleno hay definidos en styles.css
+   * (--portada-1 hasta --portada-6).
    */
-  private coloresPortada: string[] = [
-    '#2B3A55',
-    '#3A2B55',
-    '#1F4A52',
-    '#4A3A24',
-    '#2B4A3A',
-    '#4A2B3F'
-  ];
+  private totalColoresPortada: number = 6;
 
   /*
-   * Elige el color según la posición de la tarjeta.
+   * Devuelve el color de la portada según la posición de la tarjeta.
+   * Los colores NO están aquí: viven en styles.css como variables.
+   * Este código solo elige el número y devuelve el nombre de la variable,
+   * por ejemplo 'var(--portada-3)'.
+   *
    * El "%" (módulo) hace que, al llegar al sexto color, vuelva a empezar:
-   * índice 0 -> color 0, índice 6 -> color 0, índice 7 -> color 1...
+   * índice 0 -> portada-1, índice 6 -> portada-1, índice 7 -> portada-2...
    */
   get colorPortada(): string {
-    const posicion = this.indice % this.coloresPortada.length;
-    return this.coloresPortada[posicion];
+    const numero = (this.indice % this.totalColoresPortada) + 1;
+    return 'var(--portada-' + numero + ')';
   }
 
   /*

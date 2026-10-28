@@ -1,7 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, ParamMap } from '@angular/router';
 import { Videojuego } from '../../../shared/models/videojuego.model';
-import { DatosFicha } from '../../../shared/models/api.model';
+import { Custodia, Institucion } from '../../../shared/models/custodia.model';
+import { CopiaConCustodia, DatosFicha } from '../../../shared/models/api.model';
 
 // ===== BACK: descomentar estas 2 líneas al conectar =====
 // import { ChangeDetectorRef } from '@angular/core';
@@ -14,8 +15,18 @@ import { DatosFicha } from '../../../shared/models/api.model';
 type Pestana = 'copias' | 'proyectos' | 'legal' | 'eventos';
 
 /*
+ * Una institución junto con cuántas copias de ESTE videojuego custodia.
+ * Es un tipo solo del front: no viene del back, lo armamos a partir de
+ * las custodias vigentes de las copias (ver agruparInstituciones).
+ */
+interface InstitucionConCopias {
+  institucion: Institucion;
+  numeroCopias: number;
+}
+
+/*
  * Pantalla de la ficha de un videojuego (/videojuegos/:id).
- * En este paso: cabecera y pestañas (el contenido de cada pestaña viene después).
+ * Incluye: cabecera, pestañas, pestaña Copias e historial de custodia.
  */
 @Component({
   selector: 'app-ficha-videojuego',
@@ -37,17 +48,190 @@ export class FichaVideojuego implements OnInit {
 
   numeroProyectos: number = 0;
 
+  /* Copias del juego, cada una con su custodia vigente (pestaña Copias, columna izquierda). */
+  copias: CopiaConCustodia[] = [];
+
+  /* Instituciones que custodian copias de este juego (columna derecha). */
+  instituciones: InstitucionConCopias[] = [];
+
+  /*
+   * Copia cuyo historial de custodia se muestra abajo. Por ahora siempre es
+   * la primera de la lista. Vale 0 mientras el juego no tenga copias.
+   */
+  idCopiaHistorial: number = 0;
+
+  /* Periodos de custodia de esa copia, para la línea de tiempo. */
+  custodiasHistorial: Custodia[] = [];
+
   /* Pestaña que se está viendo. Empieza en "Copias", como en el boceto. */
   pestanaActiva: Pestana = 'copias';
 
   // ==================================================================
   // ===== HARDCODE: borrar este bloque al conectar el back =====
-  // (incluye datosPrueba, el constructor y la función cargarJuego)
+  // (incluye instituciones, copias y custodias de prueba, datosPrueba,
+  //  el constructor y las funciones cargarJuego y cargarHistorial)
   // ==================================================================
 
+  /* Instituciones de prueba. Se definen primero porque las copias y custodias las usan. */
+  private museo: Institucion = {
+    idInstitucion: 1,
+    nombre: 'Museo de Cultura Invernadero',
+    tipo: 'Museo',
+    pais: 'Colombia',
+    contacto: 'archivo@museoinvernadero.example',
+  };
+
+  private universidad: Institucion = {
+    idInstitucion: 2,
+    nombre: 'Universidad del Altiplano',
+    tipo: 'Universidad',
+    pais: 'Colombia',
+    contacto: 'preservacion@altiplano.example',
+  };
+
   /*
-   * DATOS DE PRUEBA. Los ids coinciden con los de las tarjetas de Inicio,
-   * así los enlaces funcionan.
+   * Copias de prueba. La llave es el id del videojuego:
+   * 1 = Torre de Ámbar Online (1 copia), 8 = Furia Quark (3 copias).
+   * Coinciden con numeroCopias de datosPrueba.
+   */
+  private copiasPrueba: Record<number, CopiaConCustodia[]> = {
+    1: [
+      {
+        copia: {
+          idCopia: 4,
+          idVideojuego: 1,
+          tipoCopia: 'digital',
+          estadoIntegridad: 'deteriorada',
+          fechaRegistro: '2022-05-30',
+          formatoArchivo: 'ISO (imagen de disco)',
+          tamanio: '640 MB',
+          hashVerificacion: 'sha256:c7d1e9a0b8346f52',
+        },
+        custodiaActual: {
+          idCustodia: 4,
+          idCopia: 4,
+          institucion: this.universidad,
+          fechaInicio: '2022-05-30',
+          condicionAlmacenamiento: 'Servidor de archivo con respaldo semanal',
+        },
+      },
+    ],
+    8: [
+      {
+        copia: {
+          idCopia: 1,
+          idVideojuego: 8,
+          tipoCopia: 'fisica',
+          estadoIntegridad: 'deteriorada',
+          fechaRegistro: '2019-03-12',
+          tipoSoporte: 'Placa de circuito arcade',
+          numeroSerie: 'QX-94-0127',
+          ubicacionFisica: 'Vitrina 3, sala de archivo',
+        },
+        custodiaActual: {
+          idCustodia: 1,
+          idCopia: 1,
+          institucion: this.museo,
+          fechaInicio: '2019-08-05',
+          condicionAlmacenamiento: 'Vitrina con humedad y temperatura controladas',
+        },
+      },
+      {
+        copia: {
+          idCopia: 2,
+          idVideojuego: 8,
+          tipoCopia: 'digital',
+          estadoIntegridad: 'buena',
+          fechaRegistro: '2020-08-06',
+          formatoArchivo: 'ZIP (imagen de respaldo)',
+          tamanio: '2 MB',
+          hashVerificacion: 'sha256:9f2c4a7e1b03d58c',
+        },
+        custodiaActual: {
+          idCustodia: 2,
+          idCopia: 2,
+          institucion: this.universidad,
+          fechaInicio: '2020-08-06',
+          condicionAlmacenamiento: 'Servidor de archivo con respaldo diario',
+        },
+      },
+      {
+        copia: {
+          idCopia: 3,
+          idVideojuego: 8,
+          tipoCopia: 'digital',
+          estadoIntegridad: 'buena',
+          fechaRegistro: '2021-02-15',
+          formatoArchivo: 'ZIP (ROM comprimida)',
+          tamanio: '3 MB',
+          hashVerificacion: 'sha256:41ab90de77c3f215',
+        },
+        custodiaActual: {
+          idCustodia: 3,
+          idCopia: 3,
+          institucion: this.museo,
+          fechaInicio: '2021-02-15',
+          condicionAlmacenamiento: 'Disco de archivo con copia en la nube',
+        },
+      },
+    ],
+  };
+
+  /*
+   * Historial de custodia de prueba. La llave es el id de la COPIA.
+   * La copia 1 tiene dos periodos (Universidad y luego Museo), como el boceto.
+   * Las demás tienen uno solo, y es el vigente (no tiene fechaFin).
+   */
+  private custodiasPrueba: Record<number, Custodia[]> = {
+    1: [
+      {
+        idCustodia: 5,
+        idCopia: 1,
+        institucion: this.universidad,
+        fechaInicio: '2019-03-12',
+        fechaFin: '2019-08-04',
+        condicionAlmacenamiento: 'Armario metálico sin control de humedad',
+      },
+      {
+        idCustodia: 1,
+        idCopia: 1,
+        institucion: this.museo,
+        fechaInicio: '2019-08-05',
+        condicionAlmacenamiento: 'Vitrina con humedad y temperatura controladas',
+      },
+    ],
+    2: [
+      {
+        idCustodia: 2,
+        idCopia: 2,
+        institucion: this.universidad,
+        fechaInicio: '2020-08-06',
+        condicionAlmacenamiento: 'Servidor de archivo con respaldo diario',
+      },
+    ],
+    3: [
+      {
+        idCustodia: 3,
+        idCopia: 3,
+        institucion: this.museo,
+        fechaInicio: '2021-02-15',
+        condicionAlmacenamiento: 'Disco de archivo con copia en la nube',
+      },
+    ],
+    4: [
+      {
+        idCustodia: 4,
+        idCopia: 4,
+        institucion: this.universidad,
+        fechaInicio: '2022-05-30',
+        condicionAlmacenamiento: 'Servidor de archivo con respaldo semanal',
+      },
+    ],
+  };
+
+  /*
+   * DATOS DE PRUEBA de la cabecera. Los ids coinciden con los de las
+   * tarjetas de Inicio, así los enlaces funcionan.
    */
   private datosPrueba: DatosFicha[] = [
     {
@@ -100,7 +284,7 @@ export class FichaVideojuego implements OnInit {
 
   /*
    * Recorre los datos de prueba con un for normal.
-   * Si encuentra un juego con ese id, guarda el juego y sus datos extra.
+   * Si encuentra un juego con ese id, guarda el juego, sus datos extra y sus copias.
    */
   private cargarJuego(id: number): void {
     this.limpiarJuego();
@@ -111,8 +295,16 @@ export class FichaVideojuego implements OnInit {
         this.estatusLegal = datos.estatusLegal;
         this.numeroCopias = datos.numeroCopias;
         this.numeroProyectos = datos.numeroProyectos;
+
+        const copiasDelJuego = this.copiasPrueba[id] || [];
+        this.recibirCopias(copiasDelJuego);
       }
     }
+  }
+
+  /* Busca el historial de la copia en los datos de prueba. */
+  private cargarHistorial(idCopia: number): void {
+    this.custodiasHistorial = this.custodiasPrueba[idCopia] || [];
   }
 
   // ==================================================================
@@ -132,21 +324,49 @@ export class FichaVideojuego implements OnInit {
   //   private cambios: ChangeDetectorRef
   // ) { }
   //
-  // // Pide la cabecera: GET /api/videojuegos/{id}
+  // // Pide dos cosas: la cabecera y las copias.
+  // // El historial se pide después, cuando llegan las copias (ver cargarHistorial).
   // private cargarJuego(id: number): void {
   //   this.limpiarJuego();
   //
+  //   // GET /api/videojuegos/{id}
   //   this.api.obtenerFicha(id).subscribe({
-  //     next: (datos) => this.recibirFicha(datos),
+  //     next: (datos) => this.alRecibirFicha(datos),
+  //     error: (error) => this.mostrarError(error)
+  //   });
+  //
+  //   // GET /api/videojuegos/{id}/copias
+  //   this.api.obtenerCopias(id).subscribe({
+  //     next: (copias) => this.alRecibirCopias(copias),
   //     error: (error) => this.mostrarError(error)
   //   });
   // }
   //
-  // private recibirFicha(datos: DatosFicha): void {
+  // private alRecibirFicha(datos: DatosFicha): void {
   //   this.videojuego = datos.videojuego;
   //   this.estatusLegal = datos.estatusLegal;
   //   this.numeroCopias = datos.numeroCopias;
   //   this.numeroProyectos = datos.numeroProyectos;
+  //
+  //   this.cambios.markForCheck();
+  // }
+  //
+  // private alRecibirCopias(copias: CopiaConCustodia[]): void {
+  //   this.recibirCopias(copias);
+  //
+  //   this.cambios.markForCheck();
+  // }
+  //
+  // // Pide el historial de custodia de una copia: GET /api/copias/{id}/custodias
+  // private cargarHistorial(idCopia: number): void {
+  //   this.api.obtenerCustodias(idCopia).subscribe({
+  //     next: (custodias) => this.alRecibirCustodias(custodias),
+  //     error: (error) => this.mostrarError(error)
+  //   });
+  // }
+  //
+  // private alRecibirCustodias(custodias: Custodia[]): void {
+  //   this.custodiasHistorial = custodias;
   //
   //   this.cambios.markForCheck();
   // }
@@ -189,6 +409,61 @@ export class FichaVideojuego implements OnInit {
     this.estatusLegal = '';
     this.numeroCopias = 0;
     this.numeroProyectos = 0;
+    this.copias = [];
+    this.instituciones = [];
+    this.idCopiaHistorial = 0;
+    this.custodiasHistorial = [];
+  }
+
+  /*
+   * Guarda las copias, arma la lista de instituciones y pide el historial
+   * de la primera copia. La usan tanto el hardcode como el bloque del back,
+   * por eso está fuera de los dos.
+   */
+  private recibirCopias(copias: CopiaConCustodia[]): void {
+    this.copias = copias;
+    this.instituciones = this.agruparInstituciones(copias);
+
+    if (copias.length > 0) {
+      this.idCopiaHistorial = copias[0].copia.idCopia;
+      this.cargarHistorial(this.idCopiaHistorial);
+    }
+  }
+
+  /*
+   * Arma la lista de instituciones custodias a partir de las custodias vigentes.
+   * Recorre las copias, y por cada una:
+   *   - si no tiene custodia vigente, la salta
+   *   - si su institución ya está en la lista, suma 1 a su contador
+   *   - si no está, la agrega con contador 1
+   * Ejemplo: copias del Museo, la Universidad y el Museo ->
+   *   [ Museo (2 copias), Universidad (1 copia) ]
+   */
+  private agruparInstituciones(copias: CopiaConCustodia[]): InstitucionConCopias[] {
+    const lista: InstitucionConCopias[] = [];
+
+    for (const item of copias) {
+      if (!item.custodiaActual) {
+        continue;
+      }
+
+      const institucion = item.custodiaActual.institucion;
+      let existente: InstitucionConCopias | undefined = undefined;
+
+      for (const entrada of lista) {
+        if (entrada.institucion.idInstitucion === institucion.idInstitucion) {
+          existente = entrada;
+        }
+      }
+
+      if (existente) {
+        existente.numeroCopias++;
+      } else {
+        lista.push({ institucion: institucion, numeroCopias: 1 });
+      }
+    }
+
+    return lista;
   }
 
   /* Cambia la pestaña activa cuando el usuario hace clic en una. */
@@ -197,28 +472,24 @@ export class FichaVideojuego implements OnInit {
   }
 
   /*
-   * Colores planos de relleno para la portada (sección "Portadas de relleno"
-   * de la guía de diseño). Es la misma lista que usa juego-card.
+   * Cuántos colores de relleno hay definidos en styles.css
+   * (--portada-1 hasta --portada-6).
    */
-  private coloresPortada: string[] = [
-    '#2B3A55',
-    '#3A2B55',
-    '#1F4A52',
-    '#4A3A24',
-    '#2B4A3A',
-    '#4A2B3F',
-  ];
+  private totalColoresPortada: number = 6;
 
   /*
    * Color de la portada según el id del juego, así cada juego conserva
-   * siempre el mismo color. El "%" hace que vuelva a empezar después del sexto.
+   * siempre el mismo color. Los colores NO están aquí: viven en styles.css
+   * como variables. Este código solo elige el número y devuelve el nombre
+   * de la variable, por ejemplo 'var(--portada-3)'.
+   * El "%" hace que vuelva a empezar después del sexto color.
    */
   get colorPortada(): string {
     if (!this.videojuego) {
-      return this.coloresPortada[0];
+      return 'var(--portada-1)';
     }
-    const posicion = this.videojuego.idVideojuego % this.coloresPortada.length;
-    return this.coloresPortada[posicion];
+    const numero = (this.videojuego.idVideojuego % this.totalColoresPortada) + 1;
+    return 'var(--portada-' + numero + ')';
   }
 
   /* Iniciales del título: "Furia Quark" -> "FQ" */

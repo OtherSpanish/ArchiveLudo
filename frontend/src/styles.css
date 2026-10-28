@@ -32,6 +32,18 @@
   --state-neutral: #7C8799;
   --state-bad-label: #F0897A;
 
+  /*
+   * Portadas de relleno: colores planos que se usan mientras no haya
+   * imágenes reales. Los componentes eligen uno por número (1 a 6)
+   * con var(--portada-N).
+   */
+  --portada-1: #2B3A55;
+  --portada-2: #3A2B55;
+  --portada-3: #1F4A52;
+  --portada-4: #4A3A24;
+  --portada-5: #2B4A3A;
+  --portada-6: #4A2B3F;
+
   /* Tipografía */
   --font-title: 'Space Grotesk', system-ui, sans-serif;
   --font-body: 'IBM Plex Sans', system-ui, sans-serif;

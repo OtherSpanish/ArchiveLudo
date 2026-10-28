@@ -103,12 +103,77 @@
 
   <!--
     Contenido de cada pestaña. Solo se dibuja la que está activa.
-    Por ahora son textos provisionales; los reemplazamos paso a paso.
+    Las pestañas Proyectos, Estatus legal y Eventos siguen con texto provisional.
   -->
   <section class="contenido-pestana" role="tabpanel">
 
     @if (pestanaActiva === 'copias') {
-      <p class="provisional">Aquí irán las copias registradas y las instituciones custodias.</p>
+
+      <div class="dos-columnas">
+
+        <!-- COLUMNA IZQUIERDA: copias registradas -->
+        <section class="columna-copias" aria-label="Copias registradas">
+
+          <div class="encabezado-seccion">
+            <h2 class="titulo-seccion">Copias registradas</h2>
+
+            <!-- Todavía no hace nada: el formulario para registrar copias viene después -->
+            <button type="button" class="boton-registrar">Registrar copia</button>
+          </div>
+
+          <div class="lista">
+            <!--
+              Una tarjeta por copia. @empty se muestra solo si la lista viene vacía.
+              "item.copia" es la copia y "item.custodiaActual" su custodia vigente.
+            -->
+            @for (item of copias; track item.copia.idCopia) {
+              <app-copia-card
+                [copia]="item.copia"
+                [custodiaActual]="item.custodiaActual">
+              </app-copia-card>
+            } @empty {
+              <p class="provisional">Este videojuego no tiene copias registradas.</p>
+            }
+          </div>
+
+        </section>
+
+        <!-- COLUMNA DERECHA: instituciones custodias -->
+        <aside class="columna-instituciones" aria-label="Instituciones custodias">
+
+          <div class="encabezado-seccion">
+            <h2 class="titulo-seccion">Instituciones custodias</h2>
+          </div>
+
+          <div class="lista">
+            @for (item of instituciones; track item.institucion.idInstitucion) {
+              <app-institucion-card
+                [institucion]="item.institucion"
+                [numeroCopias]="item.numeroCopias">
+              </app-institucion-card>
+            } @empty {
+              <p class="provisional">Ninguna institución custodia copias de este juego.</p>
+            }
+          </div>
+
+        </aside>
+
+      </div>
+
+      <!--
+        Historial de custodia: a todo el ancho, debajo de las dos columnas.
+        Solo se dibuja si el juego tiene al menos una copia (idCopiaHistorial
+        vale 0 cuando no hay copias).
+      -->
+      @if (idCopiaHistorial > 0) {
+        <div class="zona-historial">
+          <app-timeline-custodia
+            [idCopia]="idCopiaHistorial"
+            [custodias]="custodiasHistorial">
+          </app-timeline-custodia>
+        </div>
+      }
+
     }
 
     @if (pestanaActiva === 'proyectos') {

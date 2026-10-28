@@ -1,0 +1,67 @@
+<!-- Título y cantidad de resultados -->
+<header class="encabezado">
+  <h1 class="titulo">Catálogo</h1>
+
+  <!--
+    aria-live="polite": cuando el número cambia, los lectores de pantalla
+    lo anuncian sin interrumpir lo que estaban leyendo.
+  -->
+  <p class="resumen" aria-live="polite">{{ textoResumen }}</p>
+</header>
+
+<!--
+  Filtros por estado. Son enlaces (<a>) y no botones, porque cambian la URL
+  (?estado=...). Así se pueden compartir y el botón "Atrás" del navegador
+  funciona. Si hay una búsqueda activa, se conserva al cambiar de filtro.
+  Un valor null en queryParams hace que Angular quite ese parámetro de la URL.
+-->
+<nav class="filtros" aria-label="Filtrar por estado de conservación">
+  @for (filtro of filtros; track filtro.etiqueta) {
+    <a class="filtro"
+       routerLink="/catalogo"
+       [queryParams]="{ estado: filtro.valor || null, q: texto || null }"
+       [class.activo]="filtro.valor === estadoSeleccionado"
+       [attr.aria-current]="filtro.valor === estadoSeleccionado ? 'true' : null">
+      {{ filtro.etiqueta }}
+    </a>
+  }
+</nav>
+
+<!-- Aviso de búsqueda activa, con enlace para quitarla (conserva el filtro de estado) -->
+@if (texto) {
+  <p class="busqueda">
+    Resultados para «{{ texto }}»
+    <a class="quitar-busqueda"
+       routerLink="/catalogo"
+       [queryParams]="{ estado: estadoSeleccionado || null }">
+      Quitar búsqueda
+    </a>
+  </p>
+}
+
+<!-- Cuadrícula de tarjetas. "let i = $index" es la posición, que rota el color de la portada. -->
+<section class="resultados" aria-label="Videojuegos">
+  @for (item of juegos; track item.videojuego.idVideojuego; let i = $index) {
+    <app-juego-card
+      [videojuego]="item.videojuego"
+      [indice]="i"
+      [meta]="item.meta">
+    </app-juego-card>
+  }
+</section>
+
+<!-- Mensajes cuando no hay tarjetas que mostrar -->
+@if (cargando && juegos.length === 0) {
+  <p class="mensaje">Cargando…</p>
+}
+
+@if (!cargando && juegos.length === 0) {
+  <p class="mensaje">No encontramos videojuegos con esos filtros.</p>
+}
+
+<!-- "Ver más": solo aparece si faltan juegos por mostrar y no hay una carga en curso -->
+@if (!cargando && juegos.length < total) {
+  <div class="zona-mas">
+    <button type="button" class="boton-mas" (click)="verMas()">Ver más</button>
+  </div>
+}

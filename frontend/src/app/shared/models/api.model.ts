@@ -1,6 +1,6 @@
 import { Videojuego } from './videojuego.model';
-import { Copia } from './copia.model';
-import { Custodia } from './custodia.model';
+import { Copia, EstadoIntegridad, TipoCopia } from './copia.model';
+import { Custodia, Institucion } from './custodia.model';
 
 /*
  * CONTRATO CON EL BACK.
@@ -39,6 +39,7 @@ export interface JuegoConMeta {
  * GET /api/videojuegos?estado=en_riesgo&limite=10
  * Una fila del Inicio: cuántos juegos hay en total en esa categoría
  * (el número de "Ver todos (61)") y solo los primeros, para el carrusel.
+ * El Catálogo usa la misma forma, con los parámetros extra q y pagina.
  */
 export interface JuegosPorEstado {
   total: number;
@@ -75,3 +76,33 @@ export interface CopiaConCustodia {
  * No necesita un tipo propio: devuelve una lista de Custodia
  * (historial completo, con fechaInicio y fechaFin).
  */
+
+/*
+ * Una copia que una institución custodia ahora mismo, junto con el
+ * videojuego al que pertenece. Se usa en la ficha de institución.
+ *  - fechaInicio y condicionAlmacenamiento: los de la custodia vigente
+ *    de esa copia en esa institución.
+ */
+export interface CopiaCustodiada {
+  idCopia: number;
+  tipoCopia: TipoCopia;
+  estadoIntegridad: EstadoIntegridad;
+  videojuego: Videojuego;
+  fechaInicio: string;
+  condicionAlmacenamiento?: string;
+}
+
+/*
+ * GET /api/instituciones/{id}
+ * Ficha de una institución.
+ *  - telefonos y correos: las listas completas, de las tablas
+ *    INST_TELEFONO e INST_CORREO. Pueden venir vacías.
+ *  - copias: las copias con custodia vigente en esta institución
+ *    (custodias sin fechaFin), de cualquier videojuego.
+ */
+export interface DatosInstitucion {
+  institucion: Institucion;
+  telefonos: string[];
+  correos: string[];
+  copias: CopiaCustodiada[];
+}
