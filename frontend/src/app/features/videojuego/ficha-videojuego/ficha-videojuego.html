@@ -1,0 +1,135 @@
+<!--
+  @if (videojuego): solo dibuja la ficha si el juego existe.
+  Si el id de la URL no coincide con ningún juego, el @else muestra
+  un mensaje en vez de una pantalla rota.
+-->
+@if (videojuego) {
+
+  <!--
+    Migas de pan: Inicio / Catálogo / título del juego.
+    El último elemento es la página actual, por eso es un <span>
+    con aria-current="page" y no un enlace.
+    Las barras "/" son decoración, así que llevan aria-hidden.
+  -->
+  <nav class="migas" aria-label="Migas de pan">
+    <a routerLink="/">Inicio</a>
+    <span class="separador" aria-hidden="true">/</span>
+    <a routerLink="/catalogo">Catálogo</a>
+    <span class="separador" aria-hidden="true">/</span>
+    <span aria-current="page">{{ videojuego.titulo }}</span>
+  </nav>
+
+  <!-- Cabecera: portada cuadrada a la izquierda, datos a la derecha -->
+  <header class="cabecera">
+
+    <!-- Portada de relleno de 112 px, con las iniciales del título -->
+    <div class="portada" [style.background]="colorPortada">
+      <span class="iniciales">{{ iniciales }}</span>
+    </div>
+
+    <div class="datos">
+
+      <h1 class="titulo">{{ videojuego.titulo }}</h1>
+
+      <!-- "Arcade · 1994 · Estudio: Quark Interactive (desaparecido)" -->
+      <p class="linea-datos">
+        {{ plataformaYAnio }}
+        @if (textoEstudio) {
+          · {{ textoEstudio }}
+        }
+      </p>
+
+      <!-- Fila con la píldora de estado y el estatus legal vigente -->
+      <div class="fila-estado">
+
+        <span class="pildora">
+          <app-estado-badge [estado]="videojuego.estadoConservacion"></app-estado-badge>
+        </span>
+
+        <span class="estatus-legal">Estatus legal: {{ estatusLegal }}</span>
+
+      </div>
+
+    </div>
+
+  </header>
+
+  <!--
+    Pestañas. Son <button> porque ejecutan una acción en la misma pantalla
+    (no llevan a otra URL). role="tablist", role="tab" y aria-selected
+    le dicen a los lectores de pantalla que esto es un grupo de pestañas
+    y cuál está seleccionada.
+    [class.activa] agrega la clase "activa" solo a la pestaña elegida.
+  -->
+  <div class="pestanas" role="tablist" aria-label="Secciones de la ficha">
+
+    <button type="button"
+            class="pestana"
+            role="tab"
+            [class.activa]="pestanaActiva === 'copias'"
+            [attr.aria-selected]="pestanaActiva === 'copias'"
+            (click)="seleccionarPestana('copias')">
+      Copias ({{ numeroCopias }})
+    </button>
+
+    <button type="button"
+            class="pestana"
+            role="tab"
+            [class.activa]="pestanaActiva === 'proyectos'"
+            [attr.aria-selected]="pestanaActiva === 'proyectos'"
+            (click)="seleccionarPestana('proyectos')">
+      Proyectos ({{ numeroProyectos }})
+    </button>
+
+    <button type="button"
+            class="pestana"
+            role="tab"
+            [class.activa]="pestanaActiva === 'legal'"
+            [attr.aria-selected]="pestanaActiva === 'legal'"
+            (click)="seleccionarPestana('legal')">
+      Estatus legal
+    </button>
+
+    <button type="button"
+            class="pestana"
+            role="tab"
+            [class.activa]="pestanaActiva === 'eventos'"
+            [attr.aria-selected]="pestanaActiva === 'eventos'"
+            (click)="seleccionarPestana('eventos')">
+      Eventos de riesgo
+    </button>
+
+  </div>
+
+  <!--
+    Contenido de cada pestaña. Solo se dibuja la que está activa.
+    Por ahora son textos provisionales; los reemplazamos paso a paso.
+  -->
+  <section class="contenido-pestana" role="tabpanel">
+
+    @if (pestanaActiva === 'copias') {
+      <p class="provisional">Aquí irán las copias registradas y las instituciones custodias.</p>
+    }
+
+    @if (pestanaActiva === 'proyectos') {
+      <p class="provisional">Aquí irán los proyectos de restauración.</p>
+    }
+
+    @if (pestanaActiva === 'legal') {
+      <p class="provisional">Aquí irá el historial de estatus legal.</p>
+    }
+
+    @if (pestanaActiva === 'eventos') {
+      <p class="provisional">Aquí irá la bitácora de eventos de riesgo.</p>
+    }
+
+  </section>
+
+} @else {
+
+  <p class="no-encontrado">
+    No encontramos ese videojuego.
+    <a routerLink="/">Volver al inicio</a>
+  </p>
+
+}
