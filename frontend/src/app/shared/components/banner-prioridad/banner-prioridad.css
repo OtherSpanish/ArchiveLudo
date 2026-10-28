@@ -1,0 +1,153 @@
+/*
+ * :host es el elemento <app-banner-prioridad> en sí.
+ * Le damos 40 px de separación con lo que viene debajo (las filas de juegos).
+ */
+:host {
+  display: block;
+  margin-bottom: 40px;
+}
+
+/*
+ * Banner: fondo de tarjeta, borde, radio 16 y padding 32 según la guía.
+ * Dos columnas con flex-wrap: en pantalla ancha van lado a lado,
+ * y en móvil la derecha baja debajo de la izquierda.
+ */
+.banner {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 32px;
+  padding: 32px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: 16px;
+}
+
+/* Columna izquierda: flex-basis 520 px */
+.izquierda {
+  flex: 1 1 520px;
+}
+
+/* Columna derecha: flex-basis 340 px, chips uno debajo del otro */
+.derecha {
+  flex: 1 1 340px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 12px;
+}
+
+/* Rótulo: mayúsculas, 13 px, peso 600, espaciado 0.08em */
+.rotulo {
+  margin: 0 0 12px 0;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--state-bad-label);
+}
+
+/* Título del juego: Space Grotesk 44 px, interlineado 1.1 */
+.titulo {
+  margin: 0 0 8px 0;
+  font-family: var(--font-title);
+  font-size: 44px;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--text-strong);
+}
+
+.subtitulo {
+  margin: 0 0 16px 0;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+/* Párrafo: máximo 560 px de ancho para que se lea cómodo */
+.descripcion {
+  max-width: 560px;
+  margin: 0 0 24px 0;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--text-soft);
+}
+
+/* Contenedor de los dos botones */
+.botones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+/* Medidas comunes de los dos botones: alto mínimo 44, radio 10 */
+.boton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 22px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+/* Botón principal: fondo de acento */
+.boton.primario {
+  background: var(--accent);
+  color: var(--on-accent);
+  border: 1px solid var(--accent);
+}
+
+.boton.primario:hover {
+  opacity: 0.9;
+}
+
+/* Botón secundario: transparente con borde */
+.boton.secundario {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border-strong);
+}
+
+.boton.secundario:hover {
+  border-color: var(--border-hover);
+}
+
+/* Contorno visible al navegar con teclado (Tab) */
+.boton:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Chip de criterio: fondo elevado, borde, radio 12, padding 14/16 */
+.chip {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--bg-raised);
+  border: 1px solid var(--border-raised);
+  border-radius: 12px;
+}
+
+/* Ícono de alerta de 22 px en rojo */
+.icono-alerta {
+  flex-shrink: 0;
+  color: var(--state-bad);
+}
+
+.texto-chip {
+  font-size: 15px;
+  color: var(--text);
+}
+
+/* Móvil: menos padding y título más pequeño */
+@media (max-width: 600px) {
+  .banner {
+    padding: 20px;
+  }
+
+  .titulo {
+    font-size: 32px;
+  }
+}

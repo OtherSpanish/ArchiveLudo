@@ -13,6 +13,18 @@
 </section>
 
 <!--
+  Banner de prioridad: el juego que más urgentemente necesita intervención.
+  El @if evita dibujarlo mientras el juego todavía no ha llegado del back.
+-->
+@if (juegoPrioritario) {
+  <app-banner-prioridad
+    [videojuego]="juegoPrioritario"
+    [descripcion]="descripcionPrioritario"
+    [criterios]="criteriosPrioritario">
+  </app-banner-prioridad>
+}
+
+<!--
   El @for externo recorre las filas (En riesgo, Perdidos, Restaurados).
   El @for interno recorre los juegos de cada fila y crea una tarjeta por juego.
   "track" le dice a Angular cómo identificar cada elemento de la lista.
