@@ -1,0 +1,69 @@
+:host {
+  display: block;
+}
+
+/* Misma base que la tarjeta de copia: fondo, borde, radio 14 y padding 20 */
+.tarjeta {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 20px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: 14px;
+}
+
+/* Ícono y nombre en la misma línea */
+.encabezado {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Ícono de edificio de 26 px en color de acento */
+.icono-edificio {
+  flex-shrink: 0;
+  color: var(--accent);
+}
+
+/* Nombre de la institución: IBM Plex Sans 17 px, peso 600 */
+.nombre {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text-strong);
+}
+
+.tipo-pais {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.detalle {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-soft);
+}
+
+/* Enlace con alto mínimo de 44 px (regla táctil de la guía) */
+.enlace {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  min-height: 44px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.enlace:hover {
+  text-decoration: underline;
+}
+
+.enlace:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
