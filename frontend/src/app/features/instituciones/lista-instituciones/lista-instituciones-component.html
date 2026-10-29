@@ -1,0 +1,50 @@
+<!--
+  Migas de pan: Inicio / Instituciones.
+  El último elemento es la página actual, por eso es un <span>
+  con aria-current="page" y no un enlace.
+-->
+<nav class="migas" aria-label="Migas de pan">
+  <a routerLink="/">Inicio</a>
+  <span class="separador" aria-hidden="true">/</span>
+  <span aria-current="page">Instituciones</span>
+</nav>
+
+<!-- Encabezado: título de la pantalla y cuántas instituciones hay -->
+<header class="encabezado">
+  <h1 class="titulo">Instituciones</h1>
+
+  <!-- Mientras carga no se muestra el conteo, para no decir "0 instituciones" -->
+  @if (!cargando) {
+    <p class="total">{{ textoTotal }}</p>
+  }
+</header>
+
+<!--
+  Tres casos posibles:
+   1. cargando: se espera la respuesta
+   2. hay instituciones: una tarjeta por cada una
+   3. la lista llegó vacía: se muestra un mensaje
+-->
+@if (cargando) {
+
+  <p class="mensaje">Cargando instituciones…</p>
+
+} @else {
+
+  <!--
+    Cuadrícula de tarjetas. track item.institucion.idInstitucion le dice a
+    Angular cómo identificar cada elemento. @empty se muestra solo si
+    la lista viene vacía.
+  -->
+  <div class="cuadricula">
+    @for (item of instituciones; track item.institucion.idInstitucion) {
+      <app-institucion-card
+        [institucion]="item.institucion"
+        [numeroCopias]="item.numeroCopias">
+      </app-institucion-card>
+    } @empty {
+      <p class="mensaje">Todavía no hay instituciones registradas.</p>
+    }
+  </div>
+
+}

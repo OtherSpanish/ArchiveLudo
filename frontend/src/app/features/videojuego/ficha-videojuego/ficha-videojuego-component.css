@@ -1,0 +1,361 @@
+/* El componente completo ocupa todo el ancho disponible */
+:host {
+  display: block;
+}
+
+/* ---------- Migas de pan ---------- */
+.migas {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  margin-bottom: 28px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.migas a {
+  color: var(--text-muted);
+  text-decoration: none;
+}
+
+.migas a:hover {
+  color: var(--text-strong);
+  text-decoration: underline;
+}
+
+/* La página actual se ve más clara que los enlaces */
+.migas [aria-current='page'] {
+  color: var(--text);
+}
+
+/* ---------- Cabecera ---------- */
+.cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 24px;
+  margin-bottom: 28px;
+}
+
+/* Portada cuadrada de 112 px, radio 14 */
+.portada {
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-start;
+  width: 112px;
+  height: 112px;
+  padding: 12px;
+  border-radius: 14px;
+  flex-shrink: 0;
+}
+
+/* Iniciales: Space Grotesk 700, 30 px, blancas */
+.iniciales {
+  font-family: var(--font-title);
+  font-size: 30px;
+  font-weight: 700;
+  color: var(--text-strong);
+}
+
+.datos {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Título de la ficha (H1): Space Grotesk 40 px, interlineado 1.1 */
+.titulo {
+  margin: 0;
+  font-family: var(--font-title);
+  font-size: 40px;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--text-strong);
+}
+
+.linea-datos {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+/* Fila con la píldora de estado y el estatus legal */
+.fila-estado {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+}
+
+/* Píldora de estado: borde fuerte, radio 999, padding 4/12 */
+.pildora {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+}
+
+.estatus-legal {
+  font-size: 14px;
+  color: var(--text-soft);
+}
+
+/* ---------- Pestañas ---------- */
+.pestanas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 24px;
+  margin-bottom: 28px;
+  border-bottom: 1px solid var(--border-header);
+}
+
+/*
+ * Cada pestaña es un botón sin aspecto de botón: sin fondo ni borde,
+ * con alto mínimo de 44 px (regla táctil de la guía).
+ * El borde inferior transparente reserva el espacio de la línea de acento,
+ * para que al activar una pestaña no se mueva nada.
+ * El margin-bottom de -1px hace que la línea de acento tape la línea gris.
+ */
+.pestana {
+  min-height: 44px;
+  margin-bottom: -1px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-soft);
+  cursor: pointer;
+}
+
+.pestana:hover {
+  color: var(--text-strong);
+}
+
+/* Pestaña activa: texto blanco, peso 600 y línea de 2 px de acento */
+.pestana.activa {
+  font-weight: 600;
+  color: var(--text-strong);
+  border-bottom-color: var(--accent);
+}
+
+.pestana:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ---------- Contenido de las pestañas ---------- */
+.provisional {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+/* ---------- Pestaña Copias ---------- */
+
+/*
+ * Dos columnas con flex-wrap: copias a la izquierda (base 640 px, el doble
+ * de peso) e instituciones a la derecha (base 340 px), con 32 px entre ellas.
+ * Si no caben lado a lado (por ejemplo en móvil), se apilan solas.
+ */
+.dos-columnas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 32px;
+}
+
+.columna-copias {
+  flex: 2 1 640px;
+}
+
+.columna-instituciones {
+  flex: 1 1 340px;
+}
+
+/* Título de sección a la izquierda y botón a la derecha */
+.encabezado-seccion {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+/* Título de sección (H2): Space Grotesk 24 px, peso 700 */
+.titulo-seccion {
+  margin: 0;
+  font-family: var(--font-title);
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-strong);
+}
+
+/*
+ * Botón principal: fondo de acento, alto mínimo 44, radio 10.
+ * Es un enlace (<a>) con aspecto de botón: inline-flex centra el texto
+ * en vertical y text-decoration quita el subrayado de los enlaces.
+ */
+.boton-registrar {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 22px;
+  background: var(--accent);
+  color: var(--on-accent);
+  border: 1px solid var(--accent);
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.boton-registrar:hover {
+  opacity: 0.9;
+}
+
+.boton-registrar:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Lista de tarjetas (copias o instituciones), una debajo de otra */
+.lista {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/*
+ * Zona del historial de custodia: va a todo el ancho, debajo de las dos
+ * columnas, con 28 px de separación (la separación entre secciones de la
+ * ficha, según la guía).
+ */
+.zona-historial {
+  margin-top: 28px;
+}
+
+/* ---------- Pestaña Proyectos ---------- */
+
+/*
+ * Cuadrícula de tarjetas de proyecto: cada una mide al menos 340 px y las
+ * que quepan se reparten el ancho. En pantalla angosta queda una sola
+ * columna. Sin media queries.
+ */
+.cuadricula-proyectos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 16px;
+}
+
+/* ---------- Líneas de tiempo (pestañas Estatus legal y Eventos de riesgo) ---------- */
+
+/* La lista no tiene viñetas y se limita el ancho para que se lea cómodo */
+.linea-tiempo {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-width: 760px;
+}
+
+/*
+ * Cada registro tiene una línea vertical a la izquierda (su borde) y un
+ * punto sobre esa línea (el ::before). El último no necesita espacio abajo.
+ * El punto va a -7px para quedar centrado sobre la línea de 2 px.
+ */
+.registro {
+  position: relative;
+  margin-left: 6px;
+  padding: 0 0 28px 28px;
+  border-left: 2px solid var(--border-raised);
+}
+
+.registro:last-child {
+  padding-bottom: 0;
+}
+
+.registro::before {
+  content: '';
+  position: absolute;
+  top: 4px;
+  left: -7px;
+  width: 12px;
+  height: 12px;
+  background: var(--border-strong);
+  border: 2px solid var(--bg-page);
+  border-radius: 50%;
+}
+
+/* El estatus vigente tiene el punto de acento */
+.registro.vigente::before {
+  background: var(--accent);
+}
+
+/* Los eventos de riesgo tienen el punto de advertencia */
+.registro.evento::before {
+  background: var(--state-warn);
+}
+
+.fecha {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+/* Nombre del estatus o tipo de evento, junto a la etiqueta "Vigente" */
+.fila-titulo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+}
+
+.nombre-registro {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text-strong);
+}
+
+/* Etiqueta "Vigente": borde y texto verdes, radio 999 */
+.etiqueta-vigente {
+  padding: 2px 10px;
+  border: 1px solid var(--state-ok);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--state-ok);
+}
+
+.descripcion {
+  margin: 8px 0 0;
+  font-size: 14px;
+  color: var(--text-soft);
+}
+
+.fuente {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+/* Mensaje cuando la lista viene vacía */
+.vacio {
+  list-style: none;
+  color: var(--text-muted);
+}
+
+/* ---------- Juego no encontrado ---------- */
+.no-encontrado {
+  color: var(--text-soft);
+}
+
+/* ---------- Móvil ---------- */
+@media (max-width: 600px) {
+  .titulo {
+    font-size: 30px;
+  }
+}

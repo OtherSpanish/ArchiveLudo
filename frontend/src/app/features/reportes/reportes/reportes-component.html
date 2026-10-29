@@ -1,0 +1,116 @@
+<!-- Encabezado -->
+<header class="encabezado">
+  <h1 class="titulo">Reportes de trazabilidad</h1>
+  <p class="descripcion">
+    Consulta el historial de un videojuego: su estatus legal, sus eventos de
+    riesgo, sus proyectos, sus copias, sus custodias y los expertos que
+    participaron. Puedes acotar el reporte a un rango de fechas.
+  </p>
+</header>
+
+<!--
+  Formulario del reporte. (ngSubmit) se ejecuta al pulsar el botón o al dar
+  Enter. "novalidate" apaga los avisos del navegador para usar los propios.
+-->
+<form class="formulario" [formGroup]="formulario" (ngSubmit)="generar()" novalidate>
+
+  <div class="campo">
+    <label class="etiqueta" for="campo-videojuego">Videojuego</label>
+    <select id="campo-videojuego" class="control" formControlName="videojuego">
+      <option value="">Elige un videojuego…</option>
+      @for (juego of juegos; track juego.idVideojuego) {
+        <option [value]="juego.idVideojuego">{{ juego.titulo }} ({{ juego.anioLanzamiento }})</option>
+      }
+    </select>
+    @if (enviado && formulario.get('videojuego')?.invalid) {
+      <p class="error" role="alert">Elige un videojuego.</p>
+    }
+  </div>
+
+  <div class="campo">
+    <label class="etiqueta" for="campo-tipo">Reporte</label>
+    <select id="campo-tipo" class="control" formControlName="tipo">
+      @for (opcion of opciones; track opcion.valor) {
+        <option [value]="opcion.valor">{{ opcion.etiqueta }}</option>
+      }
+    </select>
+    <p class="ayuda">{{ descripcionTipo }}</p>
+  </div>
+
+  <div class="fila-fechas">
+
+    <div class="campo">
+      <label class="etiqueta" for="campo-desde">Desde (opcional)</label>
+      <input id="campo-desde" class="control" type="date" formControlName="desde">
+    </div>
+
+    <div class="campo">
+      <label class="etiqueta" for="campo-hasta">Hasta (opcional)</label>
+      <input id="campo-hasta" class="control" type="date" formControlName="hasta">
+    </div>
+
+  </div>
+
+  @if (rangoInvalido) {
+    <p class="error" role="alert">La fecha "Desde" no puede ser posterior a la fecha "Hasta".</p>
+  }
+
+  <div class="acciones">
+    <button type="submit" class="boton-principal" [disabled]="cargando">
+      {{ cargando ? 'Generando…' : 'Generar reporte' }}
+    </button>
+    <button type="button" class="boton-secundario" (click)="limpiarFechas()">Limpiar fechas</button>
+  </div>
+
+</form>
+
+<!-- Mensaje de error del back -->
+@if (hayError) {
+  <p class="mensaje" role="alert">No pudimos generar el reporte. Intenta de nuevo más tarde.</p>
+}
+
+<!-- Reporte generado -->
+@if (reporte; as tabla) {
+
+  <section class="resultado" aria-label="Resultado del reporte">
+
+    <h2 class="titulo-resultado">
+      {{ etiquetaDelReporte }}
+      <span class="juego-resultado">· {{ juegoDelReporte }}</span>
+    </h2>
+
+    @if (tabla.filas.length === 0) {
+
+      <p class="mensaje">No hay registros para ese juego y ese rango de fechas.</p>
+
+    } @else {
+
+      <p class="conteo">{{ tabla.filas.length }} {{ tabla.filas.length === 1 ? 'registro' : 'registros' }}</p>
+
+      <!-- El contenedor permite desplazar la tabla de lado en pantallas angostas -->
+      <div class="contenedor-tabla">
+        <table class="tabla">
+          <thead>
+          <tr>
+            @for (columna of tabla.columnas; track $index) {
+              <th scope="col">{{ columna }}</th>
+            }
+          </tr>
+          </thead>
+          <tbody>
+            @for (fila of tabla.filas; track $index) {
+              <tr>
+                @for (celda of fila; track $index) {
+                  <td>{{ formatearCelda(celda) }}</td>
+                }
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+    }
+
+  </section>
+
+}

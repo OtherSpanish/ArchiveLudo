@@ -1,0 +1,47 @@
+<!-- Encabezado: título, cuántos juegos hay y por qué importa esta pantalla -->
+<header class="encabezado">
+  <h1 class="titulo">Juegos en riesgo</h1>
+
+  <p class="descripcion">
+    Videojuegos con pocas copias, sin custodia vigente o con amenazas activas.
+    Son los que conviene atender primero.
+  </p>
+
+  @if (!cargando && !hayError) {
+    <p class="conteo">
+      <span class="punto" aria-hidden="true"></span>
+      {{ total }} {{ total === 1 ? 'juego en riesgo' : 'juegos en riesgo' }}
+    </p>
+  }
+</header>
+
+<!-- Cuadrícula de tarjetas. "let i = $index" rota el color de la portada. -->
+<section class="resultados" aria-label="Videojuegos en riesgo">
+  @for (item of juegos; track item.videojuego.idVideojuego; let i = $index) {
+    <app-juego-card
+      [videojuego]="item.videojuego"
+      [indice]="i"
+      [meta]="item.meta">
+    </app-juego-card>
+  }
+</section>
+
+<!-- Mensajes cuando no hay tarjetas que mostrar -->
+@if (cargando && juegos.length === 0) {
+  <p class="mensaje">Cargando…</p>
+}
+
+@if (hayError) {
+  <p class="mensaje">No pudimos cargar los videojuegos. Intenta de nuevo más tarde.</p>
+}
+
+@if (!cargando && !hayError && juegos.length === 0) {
+  <p class="mensaje">No hay videojuegos en riesgo por ahora.</p>
+}
+
+<!-- "Ver más": solo aparece si faltan juegos por mostrar y no hay una carga en curso -->
+@if (!cargando && juegos.length < total) {
+  <div class="zona-mas">
+    <button type="button" class="boton-mas" (click)="verMas()">Ver más</button>
+  </div>
+}

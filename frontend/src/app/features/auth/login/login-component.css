@@ -1,0 +1,206 @@
+/* El componente completo ocupa todo el ancho disponible */
+:host {
+  display: block;
+}
+
+/*
+ * La página centra la tarjeta en horizontal y le deja aire arriba.
+ * min-height hace que, en pantallas altas, la tarjeta quede más o menos
+ * a la altura de los ojos y no pegada al borde de arriba.
+ */
+.pagina {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 70vh;
+  padding: 48px 0;
+}
+
+/* Misma base que las otras tarjetas: fondo, borde, radio 14 */
+.tarjeta {
+  width: 100%;
+  max-width: 420px;
+  padding: 32px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: 14px;
+}
+
+/* ---------- Encabezado ---------- */
+.encabezado {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 28px;
+}
+
+/* Nombre de la marca en color de acento */
+.marca {
+  margin: 0;
+  font-family: var(--font-title);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+/* Título (H1): Space Grotesk 30 px, interlineado 1.1 */
+.titulo {
+  margin: 0;
+  font-family: var(--font-title);
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--text-strong);
+}
+
+.subtitulo {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+/* ---------- Formulario (mismos estilos que Registrar copia) ---------- */
+.formulario {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Cada campo: etiqueta arriba, campo en medio, error abajo */
+.grupo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.etiqueta {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-soft);
+}
+
+/*
+ * Campos de texto: fondo de entrada, borde, radio 10 y alto mínimo de
+ * 44 px (regla táctil). color-scheme: dark hace que los controles
+ * del navegador salgan claros sobre el fondo oscuro.
+ */
+.campo {
+  min-height: 44px;
+  padding: 0 14px;
+  background: var(--bg-input);
+  color: var(--text);
+  border: 1px solid var(--border-raised);
+  border-radius: 10px;
+  font-family: var(--font-body);
+  font-size: 15px;
+  color-scheme: dark;
+}
+
+.campo:hover {
+  border-color: var(--border-hover);
+}
+
+.campo:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Campo con error: borde rojo (además del texto del error, nunca solo color) */
+.campo.invalido {
+  border-color: var(--state-bad);
+}
+
+.error {
+  margin: 0;
+  font-size: 13px;
+  color: var(--state-bad-label);
+}
+
+/* Error general: credenciales incorrectas */
+.error-general {
+  margin: 0;
+  padding: 12px 14px;
+  background: var(--bg-raised);
+  color: var(--state-bad-label);
+  border: 1px solid var(--state-bad);
+  border-radius: 10px;
+  font-size: 14px;
+}
+
+/* Botón principal a todo el ancho: fondo de acento, alto mínimo 44, radio 10 */
+.boton-principal {
+  min-height: 44px;
+  padding: 0 22px;
+  background: var(--accent);
+  color: var(--on-accent);
+  border: 1px solid var(--accent);
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.boton-principal:hover {
+  opacity: 0.9;
+}
+
+.boton-principal:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.boton-principal:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ---------- Ayuda: cuentas de prueba (solo hardcode) ---------- */
+.ayuda {
+  margin-top: 24px;
+  padding: 16px;
+  background: var(--bg-raised);
+  border: 1px solid var(--border-raised);
+  border-radius: 10px;
+}
+
+.ayuda-titulo {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.ayuda-lista {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 14px;
+}
+
+.ayuda-lista li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.ayuda-usuario {
+  color: var(--text);
+}
+
+.ayuda-rol {
+  color: var(--text-muted);
+}
+
+/* ---------- Móvil ---------- */
+@media (max-width: 600px) {
+  .pagina {
+    padding: 24px 0;
+  }
+
+  .tarjeta {
+    padding: 20px;
+  }
+}

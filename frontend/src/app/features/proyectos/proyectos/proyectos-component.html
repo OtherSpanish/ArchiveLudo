@@ -1,0 +1,55 @@
+<!-- Encabezado -->
+<header class="encabezado">
+  <h1 class="titulo">Proyectos de restauración</h1>
+  <p class="descripcion">
+    Todos los esfuerzos de restauración registrados, con los expertos que
+    trabajan en cada uno.
+  </p>
+</header>
+
+<!--
+  Filtros por estado. Son botones porque cambian lo que se ve en esta misma
+  pantalla (no llevan a otra URL). aria-pressed le dice a los lectores de
+  pantalla cuál está elegido. Cada botón muestra cuántos proyectos tiene.
+-->
+<div class="filtros" role="group" aria-label="Filtrar por estado">
+  @for (filtro of filtros; track filtro.valor) {
+    <button type="button"
+            class="filtro"
+            [class.activo]="filtroActivo === filtro.valor"
+            [attr.aria-pressed]="filtroActivo === filtro.valor"
+            (click)="seleccionarFiltro(filtro.valor)">
+      {{ filtro.etiqueta }} ({{ contar(filtro.valor) }})
+    </button>
+  }
+</div>
+
+<!-- Cuadrícula: una columna por proyecto. Arriba el juego, debajo la tarjeta del proyecto. -->
+<section class="resultados" aria-label="Proyectos">
+  @for (item of proyectosVisibles; track item.detalle.proyecto.idProyecto) {
+    <article class="item">
+
+      <!-- Enlace a la ficha del videojuego al que pertenece el proyecto -->
+      <a class="juego" [routerLink]="['/videojuegos', item.videojuego.idVideojuego]">
+        {{ item.videojuego.titulo }}
+        <span class="plataforma">{{ item.videojuego.plataformaOriginal }} · {{ item.videojuego.anioLanzamiento }}</span>
+      </a>
+
+      <app-proyecto-card [detalle]="item.detalle"></app-proyecto-card>
+
+    </article>
+  }
+</section>
+
+<!-- Mensajes cuando no hay tarjetas que mostrar -->
+@if (cargando) {
+  <p class="mensaje">Cargando…</p>
+}
+
+@if (hayError) {
+  <p class="mensaje">No pudimos cargar los proyectos. Intenta de nuevo más tarde.</p>
+}
+
+@if (!cargando && !hayError && proyectosVisibles.length === 0) {
+  <p class="mensaje">No hay proyectos con ese filtro.</p>
+}

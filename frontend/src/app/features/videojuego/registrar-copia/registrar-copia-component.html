@@ -1,0 +1,216 @@
+<!--
+  Tres casos posibles:
+   1. cargando: se espera el videojuego (en el hardcode dura un instante)
+   2. videojuego existe: se dibuja el formulario
+   3. ninguno: el id de la URL no existe, y se muestra un mensaje
+-->
+@if (cargando) {
+
+  <p class="mensaje">Cargando…</p>
+
+} @else if (videojuego) {
+
+  <!--
+    Migas de pan: Inicio / Catálogo / título del juego / Registrar copia.
+    El título del juego lleva de vuelta a su ficha. El último elemento es la
+    página actual, por eso es un <span> con aria-current="page".
+  -->
+  <nav class="migas" aria-label="Migas de pan">
+    <a routerLink="/">Inicio</a>
+    <span class="separador" aria-hidden="true">/</span>
+    <a routerLink="/catalogo">Catálogo</a>
+    <span class="separador" aria-hidden="true">/</span>
+    <a [routerLink]="['/videojuegos', videojuego.idVideojuego]">{{ videojuego.titulo }}</a>
+    <span class="separador" aria-hidden="true">/</span>
+    <span aria-current="page">Registrar copia</span>
+  </nav>
+
+  <header class="encabezado">
+    <h1 class="titulo">Registrar copia</h1>
+    <p class="subtitulo">Videojuego: {{ videojuego.titulo }}</p>
+    <p class="ayuda">La custodia de la copia (qué institución la guarda) se registra aparte.</p>
+  </header>
+
+  <!--
+    [formGroup] conecta este formulario con el "formulario" de registrar-copia-component.ts.
+    (ngSubmit) ejecuta guardar() al pulsar el botón de tipo submit.
+    "novalidate" apaga los mensajes del navegador: los errores los muestra Angular.
+  -->
+  <form class="formulario" [formGroup]="formulario" (ngSubmit)="guardar()" novalidate>
+
+    <!-- Tipo de copia: dos opciones con aspecto de botón -->
+    <fieldset class="grupo">
+      <legend class="etiqueta">Tipo de copia</legend>
+
+      <div class="opciones-tipo">
+        @for (opcion of opcionesTipo; track opcion.valor) {
+          <label class="opcion">
+            <input type="radio" formControlName="tipoCopia" [value]="opcion.valor">
+            <span class="opcion-texto">{{ opcion.etiqueta }}</span>
+          </label>
+        }
+      </div>
+    </fieldset>
+
+    <!-- Estado de integridad -->
+    <div class="grupo">
+      <label class="etiqueta" for="campo-estado">Estado de integridad</label>
+
+      <select id="campo-estado" class="campo" formControlName="estadoIntegridad">
+        @for (opcion of opcionesEstado; track opcion.valor) {
+          <option [value]="opcion.valor">{{ opcion.etiqueta }}</option>
+        }
+      </select>
+    </div>
+
+    <!-- Fecha de registro: no puede ser posterior a hoy -->
+    <div class="grupo">
+      <label class="etiqueta" for="campo-fecha">Fecha de registro</label>
+
+      <input id="campo-fecha"
+             class="campo"
+             type="date"
+             formControlName="fechaRegistro"
+             [max]="hoy"
+             [class.invalido]="mostrarError('fechaRegistro')"
+             [attr.aria-invalid]="mostrarError('fechaRegistro')">
+
+      @if (mostrarError('fechaRegistro')) {
+        <p class="error">{{ textoError('fechaRegistro') }}</p>
+      }
+    </div>
+
+    <!-- ========== CAMPOS DE UNA COPIA FÍSICA ========== -->
+    @if (esFisica) {
+
+      <div class="grupo">
+        <label class="etiqueta" for="campo-soporte">Tipo de soporte</label>
+
+        <input id="campo-soporte"
+               class="campo"
+               type="text"
+               formControlName="tipoSoporte"
+               placeholder="Ej.: Placa de circuito arcade"
+               [class.invalido]="mostrarError('tipoSoporte')"
+               [attr.aria-invalid]="mostrarError('tipoSoporte')">
+
+        @if (mostrarError('tipoSoporte')) {
+          <p class="error">{{ textoError('tipoSoporte') }}</p>
+        }
+      </div>
+
+      <div class="grupo">
+        <label class="etiqueta" for="campo-serie">Número de serie <span class="opcional">(opcional)</span></label>
+
+        <input id="campo-serie"
+               class="campo"
+               type="text"
+               formControlName="numeroSerie"
+               placeholder="Ej.: QX-94-0127"
+               [class.invalido]="mostrarError('numeroSerie')"
+               [attr.aria-invalid]="mostrarError('numeroSerie')">
+
+        @if (mostrarError('numeroSerie')) {
+          <p class="error">{{ textoError('numeroSerie') }}</p>
+        }
+      </div>
+
+      <div class="grupo">
+        <label class="etiqueta" for="campo-ubicacion">Ubicación física</label>
+
+        <input id="campo-ubicacion"
+               class="campo"
+               type="text"
+               formControlName="ubicacionFisica"
+               placeholder="Ej.: Vitrina 3, sala de archivo"
+               [class.invalido]="mostrarError('ubicacionFisica')"
+               [attr.aria-invalid]="mostrarError('ubicacionFisica')">
+
+        @if (mostrarError('ubicacionFisica')) {
+          <p class="error">{{ textoError('ubicacionFisica') }}</p>
+        }
+      </div>
+
+    }
+
+    <!-- ========== CAMPOS DE UNA COPIA DIGITAL ========== -->
+    @if (esDigital) {
+
+      <div class="grupo">
+        <label class="etiqueta" for="campo-formato">Formato del archivo</label>
+
+        <input id="campo-formato"
+               class="campo"
+               type="text"
+               formControlName="formatoArchivo"
+               placeholder="Ej.: ISO (imagen de disco)"
+               [class.invalido]="mostrarError('formatoArchivo')"
+               [attr.aria-invalid]="mostrarError('formatoArchivo')">
+
+        @if (mostrarError('formatoArchivo')) {
+          <p class="error">{{ textoError('formatoArchivo') }}</p>
+        }
+      </div>
+
+      <div class="grupo">
+        <label class="etiqueta" for="campo-tamanio">Tamaño</label>
+
+        <input id="campo-tamanio"
+               class="campo"
+               type="text"
+               formControlName="tamanio"
+               placeholder="Ej.: 640 MB"
+               [class.invalido]="mostrarError('tamanio')"
+               [attr.aria-invalid]="mostrarError('tamanio')">
+
+        @if (mostrarError('tamanio')) {
+          <p class="error">{{ textoError('tamanio') }}</p>
+        }
+      </div>
+
+      <div class="grupo">
+        <label class="etiqueta" for="campo-hash">Hash de verificación</label>
+
+        <input id="campo-hash"
+               class="campo"
+               type="text"
+               formControlName="hashVerificacion"
+               placeholder="Ej.: sha256:c7d1e9a0b8346f52"
+               [class.invalido]="mostrarError('hashVerificacion')"
+               [attr.aria-invalid]="mostrarError('hashVerificacion')">
+
+        @if (mostrarError('hashVerificacion')) {
+          <p class="error">{{ textoError('hashVerificacion') }}</p>
+        }
+      </div>
+
+    }
+
+    <!-- Error general: aparece si el back rechaza el guardado -->
+    @if (errorEnvio) {
+      <p class="error-general" role="alert">{{ errorEnvio }}</p>
+    }
+
+    <!-- Botones. "Cancelar" es type="button" para que NO envíe el formulario -->
+    <div class="botones">
+      <button type="button" class="boton-secundario" (click)="cancelar()">Cancelar</button>
+
+      <button type="submit" class="boton-principal" [disabled]="guardando">
+        @if (guardando) {
+          Guardando…
+        } @else {
+          Guardar copia
+        }
+      </button>
+    </div>
+
+  </form>
+
+} @else {
+
+  <p class="mensaje">
+    No encontramos ese videojuego.
+    <a routerLink="/">Volver al inicio</a>
+  </p>
+
+}
