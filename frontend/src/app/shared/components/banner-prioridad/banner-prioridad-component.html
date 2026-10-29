@@ -1,0 +1,55 @@
+<!--
+  Banner de prioridad: dos columnas.
+  Izquierda: rótulo, título del juego, subtítulo, párrafo y dos botones.
+  Derecha: un chip por cada criterio de riesgo que cumple el juego.
+-->
+<section class="banner" aria-label="Videojuego con prioridad de intervención">
+
+  <!-- COLUMNA IZQUIERDA -->
+  <div class="izquierda">
+
+    <p class="rotulo">Prioridad de intervención</p>
+
+    <h2 class="titulo">{{ videojuego.titulo }}</h2>
+
+    <p class="subtitulo">{{ subtitulo }}</p>
+
+    <p class="descripcion">{{ descripcion }}</p>
+
+    <div class="botones">
+      <!--
+        Son enlaces (<a>) y no <button>, porque llevan a otra pantalla.
+        La guía de diseño dice: enlaces con <a href>, acciones con <button>.
+      -->
+      <a class="boton primario" [routerLink]="['/videojuegos', videojuego.idVideojuego]">
+        Ver ficha completa
+      </a>
+
+      <a class="boton secundario" routerLink="/en-riesgo">
+        Ir al panel de riesgo
+      </a>
+    </div>
+
+  </div>
+
+  <!-- COLUMNA DERECHA: un chip por criterio -->
+  <div class="derecha">
+    @for (criterio of criterios; track criterio) {
+      <div class="chip">
+
+        <!-- Triángulo de alerta; decorativo, por eso aria-hidden -->
+        <svg class="icono-alerta" width="22" height="22" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2" stroke-linecap="round"
+             stroke-linejoin="round" aria-hidden="true">
+          <path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"></path>
+          <path d="M12 9v4"></path>
+          <path d="M12 17h.01"></path>
+        </svg>
+
+        <span class="texto-chip">{{ criterio }}</span>
+
+      </div>
+    }
+  </div>
+
+</section>

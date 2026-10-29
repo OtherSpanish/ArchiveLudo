@@ -1,0 +1,87 @@
+/* Bloque centrado, con aire arriba para que no quede pegado a la barra */
+.pagina {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 64px 0;
+  text-align: center;
+}
+
+.codigo {
+  margin: 0;
+  font-family: var(--font-title);
+  font-size: 96px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--border-strong);
+}
+
+.titulo {
+  margin: 16px 0 8px 0;
+  font-family: var(--font-title);
+  font-size: 32px;
+  font-weight: 600;
+  color: var(--text-strong);
+}
+
+.descripcion {
+  max-width: 480px;
+  margin: 0 0 32px 0;
+  font-size: 16px;
+  color: var(--text-soft);
+}
+
+/* ---------- Botones ---------- */
+.acciones {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+}
+
+/* Son enlaces (<a>) porque llevan a otra ruta; se ven como botones */
+.boton-principal,
+.boton-secundario {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 24px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.boton-principal {
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  color: var(--on-accent);
+}
+
+.boton-secundario {
+  background: transparent;
+  border: 1px solid var(--border-strong);
+  color: var(--text);
+}
+
+.boton-secundario:hover {
+  border-color: var(--border-hover);
+  color: var(--text-strong);
+}
+
+.boton-principal:focus-visible,
+.boton-secundario:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ---------- Móvil ---------- */
+@media (max-width: 600px) {
+  .codigo {
+    font-size: 72px;
+  }
+
+  .titulo {
+    font-size: 26px;
+  }
+}

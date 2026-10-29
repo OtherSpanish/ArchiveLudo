@@ -1,0 +1,162 @@
+:host {
+  display: block;
+}
+
+/* ---------- Título y cantidad de resultados ---------- */
+.encabezado {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 16px;
+  margin-bottom: 24px;
+}
+
+/* Título de la pantalla: Space Grotesk 40 px, igual que el H1 de la ficha */
+.titulo {
+  margin: 0;
+  font-family: var(--font-title);
+  font-size: 40px;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--text-strong);
+}
+
+.resumen {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+/* ---------- Filtros por estado ---------- */
+/*
+ * Fila de chips. flex-wrap hace que bajen de línea si no caben (móvil).
+ * Alto mínimo de 44 px en cada chip (regla táctil de la guía).
+ */
+.filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  margin-bottom: 24px;
+}
+
+.filtro {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 18px;
+  background: transparent;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-soft);
+  text-decoration: none;
+}
+
+.filtro:hover {
+  color: var(--text-strong);
+  border-color: var(--border-hover);
+}
+
+/*
+ * Filtro activo: borde y texto de acento, fondo elevado.
+ * No depende solo del color: el peso 600 también lo distingue,
+ * y el HTML marca aria-current para los lectores de pantalla.
+ */
+.filtro.activo {
+  background: var(--bg-raised);
+  border-color: var(--accent);
+  font-weight: 600;
+  color: var(--text-strong);
+}
+
+.filtro:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ---------- Aviso de búsqueda activa ---------- */
+.busqueda {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 16px;
+  margin: 0 0 24px 0;
+  font-size: 14px;
+  color: var(--text-soft);
+}
+
+.quitar-busqueda {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-weight: 500;
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.quitar-busqueda:hover {
+  text-decoration: underline;
+}
+
+.quitar-busqueda:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ---------- Cuadrícula de tarjetas ---------- */
+/*
+ * Aquí las tarjetas NO van en carrusel, van en cuadrícula.
+ * juego-card trae "flex: 0 0 208px" (ancho fijo para el carrusel), así
+ * que usamos flex-wrap: las tarjetas mantienen sus 208 px y bajan de
+ * línea solas cuando no caben. gap de 16 px, como en el carrusel.
+ */
+.resultados {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+/* ---------- Mensajes ---------- */
+.mensaje {
+  margin: 0;
+  padding: 24px 0;
+  color: var(--text-muted);
+}
+
+/* ---------- Botón "Ver más" ---------- */
+.zona-mas {
+  display: flex;
+  justify-content: center;
+  margin-top: 32px;
+}
+
+/* Botón secundario de la guía: transparente, borde fuerte, alto mínimo 44, radio 10 */
+.boton-mas {
+  min-height: 44px;
+  padding: 0 28px;
+  background: transparent;
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.boton-mas:hover {
+  border-color: var(--border-hover);
+  color: var(--text-strong);
+}
+
+.boton-mas:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ---------- Móvil ---------- */
+@media (max-width: 600px) {
+  .titulo {
+    font-size: 30px;
+  }
+}

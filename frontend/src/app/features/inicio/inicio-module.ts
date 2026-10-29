@@ -3,11 +3,11 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 
 import { SharedModule } from '../../shared/shared-module';
-import { Inicio } from './inicio';
+import { InicioComponent } from './inicio-component';
 
 @NgModule({
   declarations: [
-    Inicio
+    InicioComponent
   ],
   imports: [
     CommonModule,
@@ -15,7 +15,7 @@ import { Inicio } from './inicio';
     SharedModule
   ],
   exports: [
-    Inicio
+    InicioComponent
   ]
 })
 export class InicioModule { }

@@ -1,0 +1,47 @@
+<!--
+  Historial de custodia de una copia, como línea de tiempo vertical.
+  Es una lista ordenada (<ol>) porque el orden de los hitos importa:
+  del más antiguo al más reciente.
+-->
+<section class="historial" aria-labelledby="titulo-historial">
+
+  <h2 class="titulo" id="titulo-historial">{{ titulo }}</h2>
+
+  <p class="subtitulo">
+    Cada cambio de custodia queda registrado con su fecha y las condiciones de almacenamiento.
+  </p>
+
+  <ol class="lista">
+
+    <!--
+      Un hito por cada periodo de custodia.
+      @empty se muestra solo si la copia no tiene custodias registradas.
+    -->
+    @for (hito of hitos; track hito.id) {
+      <li class="hito">
+
+        <!--
+          Columna de la izquierda: punto y línea vertical.
+          Es decoración (aria-hidden): la información útil está en el texto,
+          y el hito vigente lo dice con la palabra "vigente" en el periodo,
+          así que el significado no depende solo del color.
+        -->
+        <div class="marca" aria-hidden="true">
+          <span class="punto" [class.vigente]="hito.vigente"></span>
+          <span class="linea"></span>
+        </div>
+
+        <div class="texto">
+          <p class="periodo">{{ hito.periodo }}</p>
+          <p class="institucion">{{ hito.institucion }}</p>
+          <p class="condiciones">{{ hito.condiciones }}</p>
+        </div>
+
+      </li>
+    } @empty {
+      <li class="vacio">Esta copia no tiene custodias registradas.</li>
+    }
+
+  </ol>
+
+</section>
