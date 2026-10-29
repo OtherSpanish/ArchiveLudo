@@ -1,0 +1,72 @@
+:host {
+  display: block;
+}
+
+/* Misma base que las otras tarjetas: fondo, borde, radio 14 y padding 20 */
+.tarjeta {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 20px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: 14px;
+}
+
+/* Código y estado en la misma línea */
+.fila-superior {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+.codigo {
+  font-family: var(--font-title);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-strong);
+}
+
+.detalle {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-soft);
+}
+
+/* "3 expertos": etiqueta pequeña en mayúsculas, igual que el contacto de la institución */
+.subtitulo {
+  margin: 8px 0 0;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.lista-expertos {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Cada experto: nombre arriba y rol con fecha debajo */
+.experto {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.nombre {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.rol {
+  font-size: 13px;
+  color: var(--text-muted);
+}

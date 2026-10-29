@@ -1,0 +1,301 @@
+<!--
+  @if (videojuego): solo dibuja la ficha si el juego existe.
+  Si el id de la URL no coincide con ningún juego, el @else muestra
+  un mensaje en vez de una pantalla rota.
+-->
+@if (videojuego) {
+
+  <!--
+    Migas de pan: Inicio / Catálogo / título del juego.
+    El último elemento es la página actual, por eso es un <span>
+    con aria-current="page" y no un enlace.
+    Las barras "/" son decoración, así que llevan aria-hidden.
+  -->
+  <nav class="migas" aria-label="Migas de pan">
+    <a routerLink="/">Inicio</a>
+    <span class="separador" aria-hidden="true">/</span>
+    <a routerLink="/catalogo">Catálogo</a>
+    <span class="separador" aria-hidden="true">/</span>
+    <span aria-current="page">{{ videojuego.titulo }}</span>
+  </nav>
+
+  <!-- Cabecera: portada cuadrada a la izquierda, datos a la derecha -->
+  <header class="cabecera">
+
+    <!-- Portada de relleno de 112 px, con las iniciales del título -->
+    <div class="portada" [style.background]="colorPortada">
+      <span class="iniciales">{{ iniciales }}</span>
+    </div>
+
+    <div class="datos">
+
+      <h1 class="titulo">{{ videojuego.titulo }}</h1>
+
+      <!-- "Arcade · 1994 · Estudio: Quark Interactive (desaparecido)" -->
+      <p class="linea-datos">
+        {{ plataformaYAnio }}
+        @if (textoEstudio) {
+          · {{ textoEstudio }}
+        }
+      </p>
+
+      <!-- Fila con la píldora de estado y el estatus legal vigente -->
+      <div class="fila-estado">
+
+        <span class="pildora">
+          <app-estado-badge [estado]="videojuego.estadoConservacion"></app-estado-badge>
+        </span>
+
+        <span class="estatus-legal">Estatus legal: {{ estatusLegal }}</span>
+
+      </div>
+
+    </div>
+
+  </header>
+
+  <!--
+    Pestañas. Son <button> porque ejecutan una acción en la misma pantalla
+    (no llevan a otra URL). role="tablist", role="tab" y aria-selected
+    le dicen a los lectores de pantalla que esto es un grupo de pestañas
+    y cuál está seleccionada.
+    [class.activa] agrega la clase "activa" solo a la pestaña elegida.
+  -->
+  <div class="pestanas" role="tablist" aria-label="Secciones de la ficha">
+
+    <button type="button"
+            class="pestana"
+            role="tab"
+            [class.activa]="pestanaActiva === 'copias'"
+            [attr.aria-selected]="pestanaActiva === 'copias'"
+            (click)="seleccionarPestana('copias')">
+      Copias ({{ numeroCopias }})
+    </button>
+
+    <button type="button"
+            class="pestana"
+            role="tab"
+            [class.activa]="pestanaActiva === 'proyectos'"
+            [attr.aria-selected]="pestanaActiva === 'proyectos'"
+            (click)="seleccionarPestana('proyectos')">
+      Proyectos ({{ numeroProyectos }})
+    </button>
+
+    <button type="button"
+            class="pestana"
+            role="tab"
+            [class.activa]="pestanaActiva === 'legal'"
+            [attr.aria-selected]="pestanaActiva === 'legal'"
+            (click)="seleccionarPestana('legal')">
+      Estatus legal
+    </button>
+
+    <button type="button"
+            class="pestana"
+            role="tab"
+            [class.activa]="pestanaActiva === 'eventos'"
+            [attr.aria-selected]="pestanaActiva === 'eventos'"
+            (click)="seleccionarPestana('eventos')">
+      Eventos de riesgo
+    </button>
+
+  </div>
+
+  <!-- Contenido de cada pestaña. Solo se dibuja la que está activa. -->
+  <section class="contenido-pestana" role="tabpanel">
+
+    @if (pestanaActiva === 'copias') {
+
+      <div class="dos-columnas">
+
+        <!-- COLUMNA IZQUIERDA: copias registradas -->
+        <section class="columna-copias" aria-label="Copias registradas">
+
+          <div class="encabezado-seccion">
+            <h2 class="titulo-seccion">Copias registradas</h2>
+
+            <!--
+              Es un enlace (<a>) y no un botón porque lleva a otra pantalla:
+              el formulario /videojuegos/:id/copias/nueva. El routerLink arma
+              la ruta con el id del juego: ['/videojuegos', 8, 'copias', 'nueva'].
+
+              *appHasRole: solo se dibuja si la persona es curador o
+              administrador. Quien tiene el rol de consulta no lo ve.
+            -->
+            <a class="boton-registrar"
+               *appHasRole="['curador', 'administrador']"
+               [routerLink]="['/videojuegos', videojuego.idVideojuego, 'copias', 'nueva']">
+              Registrar copia
+            </a>
+          </div>
+
+          <div class="lista">
+            <!--
+              Una tarjeta por copia. @empty se muestra solo si la lista viene vacía.
+              "item.copia" es la copia y "item.custodiaActual" su custodia vigente.
+            -->
+            @for (item of copias; track item.copia.idCopia) {
+              <app-copia-card
+                [copia]="item.copia"
+                [custodiaActual]="item.custodiaActual">
+              </app-copia-card>
+            } @empty {
+              <p class="provisional">Este videojuego no tiene copias registradas.</p>
+            }
+          </div>
+
+        </section>
+
+        <!-- COLUMNA DERECHA: instituciones custodias -->
+        <aside class="columna-instituciones" aria-label="Instituciones custodias">
+
+          <div class="encabezado-seccion">
+            <h2 class="titulo-seccion">Instituciones custodias</h2>
+          </div>
+
+          <div class="lista">
+            @for (item of instituciones; track item.institucion.idInstitucion) {
+              <app-institucion-card
+                [institucion]="item.institucion"
+                [numeroCopias]="item.numeroCopias">
+              </app-institucion-card>
+            } @empty {
+              <p class="provisional">Ninguna institución custodia copias de este juego.</p>
+            }
+          </div>
+
+        </aside>
+
+      </div>
+
+      <!--
+        Historial de custodia: a todo el ancho, debajo de las dos columnas.
+        Solo se dibuja si el juego tiene al menos una copia (idCopiaHistorial
+        vale 0 cuando no hay copias).
+      -->
+      @if (idCopiaHistorial > 0) {
+        <div class="zona-historial">
+          <app-timeline-custodia
+            [idCopia]="idCopiaHistorial"
+            [custodias]="custodiasHistorial">
+          </app-timeline-custodia>
+        </div>
+      }
+
+    }
+
+    @if (pestanaActiva === 'proyectos') {
+
+      <section aria-label="Proyectos de restauración">
+
+        <div class="encabezado-seccion">
+          <h2 class="titulo-seccion">Proyectos de restauración</h2>
+        </div>
+
+        <!--
+          Una tarjeta por proyecto, en una cuadrícula que se adapta al ancho.
+          @empty se muestra solo si el juego no tiene proyectos.
+        -->
+        <div class="cuadricula-proyectos">
+          @for (item of proyectos; track item.proyecto.idProyecto) {
+            <app-proyecto-card [detalle]="item"></app-proyecto-card>
+          } @empty {
+            <p class="provisional">Este videojuego no tiene proyectos de restauración.</p>
+          }
+        </div>
+
+      </section>
+
+    }
+
+    @if (pestanaActiva === 'legal') {
+
+      <section aria-label="Historial de estatus legal">
+
+        <div class="encabezado-seccion">
+          <h2 class="titulo-seccion">Historial de estatus legal</h2>
+        </div>
+
+        <!--
+          Línea de tiempo, del registro más reciente al más antiguo.
+          "let primero = $first" guarda en "primero" si este es el primer
+          elemento de la lista: ese es el estatus vigente.
+        -->
+        <ul class="linea-tiempo">
+          @for (registro of historialLegal; track registro.idEstatusLegal; let primero = $first) {
+
+            <li class="registro" [class.vigente]="primero">
+
+              <time class="fecha" [attr.datetime]="registro.fechaDeterminacion">
+                {{ formatearFecha(registro.fechaDeterminacion) }}
+              </time>
+
+              <div class="fila-titulo">
+                <span class="nombre-registro">{{ registro.estatus }}</span>
+
+                @if (primero) {
+                  <span class="etiqueta-vigente">Vigente</span>
+                }
+              </div>
+
+            </li>
+
+          } @empty {
+            <li class="vacio">Este videojuego no tiene estatus legal registrado.</li>
+          }
+        </ul>
+
+      </section>
+
+    }
+
+    @if (pestanaActiva === 'eventos') {
+
+      <section aria-label="Bitácora de eventos de riesgo">
+
+        <div class="encabezado-seccion">
+          <h2 class="titulo-seccion">Bitácora de eventos de riesgo</h2>
+        </div>
+
+        <!-- Línea de tiempo, del evento más reciente al más antiguo -->
+        <ul class="linea-tiempo">
+          @for (evento of eventos; track evento.idEvento) {
+
+            <li class="registro evento">
+
+              <time class="fecha" [attr.datetime]="evento.fecha">
+                {{ formatearFecha(evento.fecha) }}
+              </time>
+
+              <div class="fila-titulo">
+                <span class="nombre-registro">{{ evento.tipoEvento }}</span>
+              </div>
+
+              <p class="descripcion">{{ evento.descripcion }}</p>
+
+              <!-- La fuente es opcional: solo se muestra si viene -->
+              @if (evento.fuente) {
+                <p class="fuente">Fuente: {{ evento.fuente }}</p>
+              }
+
+            </li>
+
+          } @empty {
+            <li class="vacio">Este videojuego no tiene eventos de riesgo registrados.</li>
+          }
+        </ul>
+
+      </section>
+
+    }
+
+  </section>
+
+} @else {
+
+  <p class="no-encontrado">
+    No encontramos ese videojuego.
+    <a routerLink="/">Volver al inicio</a>
+  </p>
+
+}

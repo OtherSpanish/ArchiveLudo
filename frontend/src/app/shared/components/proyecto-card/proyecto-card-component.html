@@ -1,0 +1,32 @@
+<!--
+  Tarjeta de proyecto de restauración: código y estado arriba, después el
+  período, la herramienta usada (si hay) y la lista de expertos con su rol.
+-->
+<article class="tarjeta">
+
+  <!-- Código del proyecto y su estado (punto de color + texto) -->
+  <div class="fila-superior">
+    <span class="codigo">{{ codigo }}</span>
+    <app-estado-badge [estado]="detalle.proyecto.estado"></app-estado-badge>
+  </div>
+
+  <p class="detalle">{{ periodo }}</p>
+
+  <!-- La herramienta o emulador es opcional: solo se muestra si viene -->
+  @if (detalle.proyecto.herramientaEmulador) {
+    <p class="detalle">Herramienta: {{ detalle.proyecto.herramientaEmulador }}</p>
+  }
+
+  <!-- Expertos asignados, cada uno con su rol y la fecha en que se incorporó -->
+  <h3 class="subtitulo">{{ textoExpertos }}</h3>
+
+  <ul class="lista-expertos">
+    @for (experto of detalle.expertos; track experto.idExperto) {
+      <li class="experto">
+        <span class="nombre">{{ experto.nombre }}</span>
+        <span class="rol">{{ experto.rolEnProyecto }} · desde {{ formatearFecha(experto.fechaIncorporacion) }}</span>
+      </li>
+    }
+  </ul>
+
+</article>

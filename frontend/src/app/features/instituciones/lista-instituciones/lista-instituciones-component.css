@@ -1,0 +1,81 @@
+/* El componente completo ocupa todo el ancho disponible */
+:host {
+  display: block;
+}
+
+/* ---------- Migas de pan (igual que las fichas) ---------- */
+.migas {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  margin-bottom: 28px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.migas a {
+  color: var(--text-muted);
+  text-decoration: none;
+}
+
+.migas a:hover {
+  color: var(--text-strong);
+  text-decoration: underline;
+}
+
+/* La página actual se ve más clara que los enlaces */
+.migas [aria-current='page'] {
+  color: var(--text);
+}
+
+/* ---------- Encabezado ---------- */
+.encabezado {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px 16px;
+  margin-bottom: 28px;
+}
+
+/* Título de la pantalla (H1): Space Grotesk 40 px, interlineado 1.1 */
+.titulo {
+  margin: 0;
+  font-family: var(--font-title);
+  font-size: 40px;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--text-strong);
+}
+
+.total {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+/* ---------- Cuadrícula de tarjetas ---------- */
+
+/*
+ * auto-fill con minmax: cada tarjeta mide al menos 320 px y las que
+ * quepan se reparten el ancho. En una pantalla angosta queda una sola
+ * columna; en una ancha, tres o cuatro. Sin media queries.
+ */
+.cuadricula {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+/* ---------- Mensajes (cargando, lista vacía) ---------- */
+.mensaje {
+  margin: 0;
+  color: var(--text-soft);
+}
+
+/* ---------- Móvil ---------- */
+@media (max-width: 600px) {
+  .titulo {
+    font-size: 30px;
+  }
+}

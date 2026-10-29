@@ -1,0 +1,88 @@
+/* ---------- Encabezado ---------- */
+.encabezado {
+  margin-bottom: 32px;
+}
+
+.titulo {
+  margin: 0 0 8px 0;
+  font-family: var(--font-title);
+  font-size: 36px;
+  font-weight: 600;
+  color: var(--text-strong);
+}
+
+.descripcion {
+  max-width: 640px;
+  margin: 0 0 16px 0;
+  font-size: 16px;
+  color: var(--text-soft);
+}
+
+/* Contador con un punto rojo, el color del estado "en riesgo" */
+.conteo {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--state-bad-label);
+}
+
+.punto {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--state-bad);
+}
+
+/* ---------- Cuadrícula de tarjetas ---------- */
+/* Igual que el Catálogo: las tarjetas mantienen su ancho y bajan de línea solas. */
+.resultados {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+/* ---------- Mensajes ---------- */
+.mensaje {
+  margin: 0;
+  padding: 24px 0;
+  color: var(--text-muted);
+}
+
+/* ---------- Botón "Ver más" ---------- */
+.zona-mas {
+  display: flex;
+  justify-content: center;
+  margin-top: 32px;
+}
+
+.boton-mas {
+  min-height: 44px;
+  padding: 0 28px;
+  background: transparent;
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.boton-mas:hover {
+  border-color: var(--border-hover);
+  color: var(--text-strong);
+}
+
+.boton-mas:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ---------- Móvil ---------- */
+@media (max-width: 600px) {
+  .titulo {
+    font-size: 30px;
+  }
+}
