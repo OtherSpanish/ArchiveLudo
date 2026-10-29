@@ -1,0 +1,44 @@
+<!--
+  Tarjeta de una copia.
+  Fila superior: código y tipo a la izquierda, integridad a la derecha.
+  Después los campos (según sea física o digital) y un pie con la custodia actual.
+-->
+<article class="tarjeta">
+
+  <div class="fila-superior">
+
+    <div class="identificacion">
+      <span class="codigo">{{ codigo }}</span>
+
+      <!--
+        Etiqueta FÍSICA / DIGITAL. [ngClass]="claseTipo" agrega la clase
+        'fisica' o 'digital', y el CSS pone el color de cada una.
+      -->
+      <span class="etiqueta-tipo" [ngClass]="claseTipo">{{ textoTipo }}</span>
+    </div>
+
+    <!-- "Integridad: Buena" con su punto de color (reutilizamos estado-badge) -->
+    <div class="integridad">
+      <span class="texto-integridad">Integridad:</span>
+      <app-estado-badge [estado]="copia.estadoIntegridad"></app-estado-badge>
+    </div>
+
+  </div>
+
+  <!--
+    Campos del subtipo. El @for crea uno por cada elemento de "campos"
+    (3 para una copia física, 3 para una digital).
+  -->
+  <div class="campos">
+    @for (campo of campos; track campo.etiqueta) {
+      <div class="campo">
+        <span class="etiqueta-campo">{{ campo.etiqueta }}</span>
+        <span class="valor-campo">{{ campo.valor }}</span>
+      </div>
+    }
+  </div>
+
+  <!-- Pie separado por una línea: custodia actual y fecha de registro -->
+  <p class="pie">{{ textoPie }}</p>
+
+</article>

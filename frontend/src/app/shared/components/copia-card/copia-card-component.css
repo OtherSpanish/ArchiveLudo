@@ -1,0 +1,124 @@
+/*
+ * :host es el elemento <app-copia-card> en sí.
+ * Aquí también definimos los colores de las etiquetas FÍSICA y DIGITAL.
+ * Salen de la tabla "Etiquetas de tipo de copia" de la guía de diseño y
+ * solo se usan en este componente, por eso viven aquí y no en styles.css.
+ */
+:host {
+  display: block;
+  --tipo-fisica-borde: #5AAEF2;
+  --tipo-fisica-texto: #9CCBF7;
+  --tipo-digital-borde: #B79CF2;
+  --tipo-digital-texto: #CDB9F7;
+}
+
+/* Tarjeta: fondo, borde, radio 14, padding 20 y separación de 16 */
+.tarjeta {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: 14px;
+}
+
+/* Fila superior: identificación a la izquierda, integridad a la derecha */
+.fila-superior {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+}
+
+.identificacion {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Código de la copia: Space Grotesk 18 px, peso 700 */
+.codigo {
+  font-family: var(--font-title);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-strong);
+}
+
+/* Etiqueta de tipo: píldora, 12 px, peso 600, espaciado 0.06em */
+.etiqueta-tipo {
+  padding: 3px 12px;
+  border: 1px solid;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+}
+
+.etiqueta-tipo.fisica {
+  border-color: var(--tipo-fisica-borde);
+  color: var(--tipo-fisica-texto);
+}
+
+.etiqueta-tipo.digital {
+  border-color: var(--tipo-digital-borde);
+  color: var(--tipo-digital-texto);
+}
+
+/* "Integridad:" y el badge, uno al lado del otro */
+.integridad {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.texto-integridad {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+/*
+ * Campos en rejilla fluida: cada uno tiene base de 160 px y crece para
+ * repartirse el ancho. Si no caben, bajan a la línea siguiente.
+ */
+.campos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1 1 160px;
+}
+
+/* Etiqueta del campo: 12 px, mayúsculas, espaciado 0.04em */
+.etiqueta-campo {
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/*
+ * Valor del campo: 15 px.
+ * overflow-wrap: anywhere deja que los hashes largos se partan
+ * en vez de salirse de la tarjeta.
+ */
+.valor-campo {
+  font-size: 15px;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+/* Pie: separado por una línea, 14 px */
+.pie {
+  margin: 0;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-card);
+  font-size: 14px;
+  color: var(--text-soft);
+}

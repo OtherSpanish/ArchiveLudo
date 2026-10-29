@@ -1,0 +1,238 @@
+/* El componente completo ocupa todo el ancho disponible */
+:host {
+  display: block;
+}
+
+/* ---------- Migas de pan (igual que la ficha de videojuego) ---------- */
+.migas {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  margin-bottom: 28px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.migas a {
+  color: var(--text-muted);
+  text-decoration: none;
+}
+
+.migas a:hover {
+  color: var(--text-strong);
+  text-decoration: underline;
+}
+
+/* La página actual se ve más clara que los enlaces */
+.migas [aria-current='page'] {
+  color: var(--text);
+}
+
+/* ---------- Cabecera ---------- */
+.cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 24px;
+  margin-bottom: 40px;
+}
+
+/* Caja cuadrada de 112 px con el edificio en color de acento */
+.icono-caja {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 112px;
+  height: 112px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: 14px;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.datos {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Título de la ficha (H1): Space Grotesk 40 px, interlineado 1.1 */
+.titulo {
+  margin: 0;
+  font-family: var(--font-title);
+  font-size: 40px;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--text-strong);
+}
+
+.linea-datos {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+/* ---------- Dos columnas ---------- */
+
+/*
+ * Copias a la izquierda (base 640 px, el doble de peso) y contacto a la
+ * derecha (base 340 px), con 32 px entre ellas. Si no caben lado a lado
+ * (por ejemplo en móvil), se apilan solas.
+ */
+.dos-columnas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 32px;
+}
+
+.columna-copias {
+  flex: 2 1 640px;
+}
+
+.columna-contacto {
+  flex: 1 1 340px;
+}
+
+/* Título de sección (H2): Space Grotesk 24 px, peso 700 */
+.titulo-seccion {
+  margin: 0 0 16px;
+  font-family: var(--font-title);
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-strong);
+}
+
+/* Lista de tarjetas de copia, una debajo de otra */
+.lista {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ---------- Tarjeta de copia ---------- */
+
+/* Misma base que las otras tarjetas: fondo, borde, radio 14 y padding 20 */
+.tarjeta-copia {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 20px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: 14px;
+}
+
+/* Código, etiqueta de tipo y estado en la misma línea */
+.fila-copia {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+.codigo {
+  font-family: var(--font-title);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-strong);
+}
+
+/* Etiqueta "FÍSICA" / "DIGITAL": borde fuerte, radio 999 */
+.etiqueta-tipo {
+  padding: 2px 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--text-soft);
+}
+
+/* Nombre del videojuego: enlace con alto mínimo de 44 px (regla táctil) */
+.enlace-juego {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  min-height: 44px;
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.enlace-juego:hover {
+  text-decoration: underline;
+}
+
+.enlace-juego:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.detalle {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-soft);
+}
+
+/* ---------- Contacto ---------- */
+.tarjeta-contacto {
+  padding: 20px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: 14px;
+}
+
+.subtitulo {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.lista-contacto {
+  margin: 0 0 20px;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+  color: var(--text-soft);
+}
+
+/* La última lista no necesita espacio debajo */
+.lista-contacto:last-child {
+  margin-bottom: 0;
+}
+
+.lista-contacto a {
+  color: var(--accent);
+  text-decoration: none;
+  word-break: break-word;
+}
+
+.lista-contacto a:hover {
+  text-decoration: underline;
+}
+
+.vacio {
+  color: var(--text-faint);
+}
+
+/* ---------- Mensajes (cargando, no encontrada, sin copias) ---------- */
+.mensaje {
+  margin: 0;
+  color: var(--text-soft);
+}
+
+/* ---------- Móvil ---------- */
+@media (max-width: 600px) {
+  .titulo {
+    font-size: 30px;
+  }
+}

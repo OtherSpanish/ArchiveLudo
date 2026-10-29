@@ -1,0 +1,89 @@
+<!--
+  Pantalla de login: una tarjeta centrada. Es la única pantalla pública.
+  [formGroup] conecta el formulario con el "formulario" de login-component.ts.
+  (ngSubmit) ejecuta entrar() al pulsar el botón de tipo submit o la tecla Enter.
+  "novalidate" apaga los mensajes del navegador: los errores los muestra Angular.
+-->
+<main class="pagina">
+
+  <section class="tarjeta" aria-labelledby="titulo-login">
+
+    <header class="encabezado">
+      <p class="marca">ArchiveLudo</p>
+      <h1 id="titulo-login" class="titulo">Iniciar sesión</h1>
+      <p class="subtitulo">Plataforma de preservación de videojuegos</p>
+    </header>
+
+    <form class="formulario" [formGroup]="formulario" (ngSubmit)="entrar()" novalidate>
+
+      <!-- Usuario -->
+      <div class="grupo">
+        <label class="etiqueta" for="campo-usuario">Usuario</label>
+
+        <input id="campo-usuario"
+               class="campo"
+               type="text"
+               formControlName="nombreUsuario"
+               autocomplete="username"
+               [class.invalido]="mostrarError('nombreUsuario')"
+               [attr.aria-invalid]="mostrarError('nombreUsuario')">
+
+        @if (mostrarError('nombreUsuario')) {
+          <p class="error">Escribe tu usuario.</p>
+        }
+      </div>
+
+      <!-- Contraseña: type="password" oculta lo que se escribe -->
+      <div class="grupo">
+        <label class="etiqueta" for="campo-contrasenia">Contraseña</label>
+
+        <input id="campo-contrasenia"
+               class="campo"
+               type="password"
+               formControlName="contrasenia"
+               autocomplete="current-password"
+               [class.invalido]="mostrarError('contrasenia')"
+               [attr.aria-invalid]="mostrarError('contrasenia')">
+
+        @if (mostrarError('contrasenia')) {
+          <p class="error">Escribe tu contraseña.</p>
+        }
+      </div>
+
+      <!-- Error general: aparece si las credenciales no son válidas. role="alert" lo anuncia a los lectores de pantalla -->
+      @if (errorLogin) {
+        <p class="error-general" role="alert">{{ errorLogin }}</p>
+      }
+
+      <button type="submit" class="boton-principal" [disabled]="iniciando">
+        @if (iniciando) {
+          Entrando…
+        } @else {
+          Entrar
+        }
+      </button>
+
+    </form>
+
+    <!--
+      Ayuda solo para el hardcode: las cuentas de prueba. Con el back,
+      cuentasPrueba queda vacío y este bloque no se dibuja.
+    -->
+    @if (cuentasPrueba.length > 0) {
+      <aside class="ayuda" aria-label="Cuentas de prueba">
+        <p class="ayuda-titulo">Cuentas de prueba (contraseña 1234)</p>
+
+        <ul class="ayuda-lista">
+          @for (cuenta of cuentasPrueba; track cuenta.nombreUsuario) {
+            <li>
+              <span class="ayuda-usuario">{{ cuenta.nombreUsuario }}</span>
+              <span class="ayuda-rol">{{ cuenta.rol }}</span>
+            </li>
+          }
+        </ul>
+      </aside>
+    }
+
+  </section>
+
+</main>

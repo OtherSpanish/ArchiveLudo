@@ -1,0 +1,142 @@
+<!--
+  Tres casos posibles:
+   1. cargando: se espera la respuesta (en el hardcode dura un instante)
+   2. institucion existe: se dibuja la ficha
+   3. ninguno: el id de la URL no existe, y se muestra un mensaje
+-->
+@if (cargando) {
+
+  <p class="mensaje">Cargando institución…</p>
+
+} @else if (institucion) {
+
+  <!--
+    Migas de pan: Inicio / Instituciones / nombre.
+    "Instituciones" apunta a /instituciones, pantalla que todavía no
+    existe (la lista), igual que el enlace de la barra superior.
+    El último elemento es la página actual, por eso es un <span>.
+  -->
+  <nav class="migas" aria-label="Migas de pan">
+    <a routerLink="/">Inicio</a>
+    <span class="separador" aria-hidden="true">/</span>
+    <a routerLink="/instituciones">Instituciones</a>
+    <span class="separador" aria-hidden="true">/</span>
+    <span aria-current="page">{{ institucion.nombre }}</span>
+  </nav>
+
+  <!-- Cabecera: ícono de edificio a la izquierda, datos a la derecha -->
+  <header class="cabecera">
+
+    <div class="icono-caja" aria-hidden="true">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="2" stroke-linecap="round"
+           stroke-linejoin="round">
+        <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"></path>
+        <path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"></path>
+        <path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"></path>
+        <path d="M10 6h4"></path>
+        <path d="M10 10h4"></path>
+        <path d="M10 14h4"></path>
+        <path d="M10 18h4"></path>
+      </svg>
+    </div>
+
+    <div class="datos">
+      <h1 class="titulo">{{ institucion.nombre }}</h1>
+
+      <!-- "Museo · Colombia" -->
+      <p class="linea-datos">{{ tipoYPais }}</p>
+
+      <!-- "Custodia 2 copias" -->
+      <p class="linea-datos">{{ textoCopias }}</p>
+    </div>
+
+  </header>
+
+  <!-- Dos columnas: copias a la izquierda, contacto a la derecha -->
+  <div class="dos-columnas">
+
+    <!-- COLUMNA IZQUIERDA: copias que custodia ahora -->
+    <section class="columna-copias" aria-label="Copias en custodia">
+
+      <h2 class="titulo-seccion">Copias en custodia</h2>
+
+      <div class="lista">
+        <!--
+          Una tarjeta por copia. @empty se muestra solo si la lista viene vacía.
+          track copia.idCopia le dice a Angular cómo identificar cada elemento.
+        -->
+        @for (copia of copias; track copia.idCopia) {
+
+          <article class="tarjeta-copia">
+
+            <!-- Fila superior: código, etiqueta de tipo y estado de la copia -->
+            <div class="fila-copia">
+              <span class="codigo">{{ codigo(copia.idCopia) }}</span>
+              <span class="etiqueta-tipo">{{ textoTipo(copia.tipoCopia) }}</span>
+              <app-estado-badge [estado]="copia.estadoIntegridad"></app-estado-badge>
+            </div>
+
+            <!-- Videojuego al que pertenece; lleva a su ficha: /videojuegos/:id -->
+            <a class="enlace-juego" [routerLink]="['/videojuegos', copia.videojuego.idVideojuego]">
+              {{ copia.videojuego.titulo }}
+            </a>
+
+            <p class="detalle">{{ plataformaYAnio(copia) }}</p>
+
+            <p class="detalle">En custodia desde {{ formatearFecha(copia.fechaInicio) }}</p>
+
+            <!-- La condición de almacenamiento es opcional: solo se muestra si viene -->
+            @if (copia.condicionAlmacenamiento) {
+              <p class="detalle">Almacenamiento: {{ copia.condicionAlmacenamiento }}</p>
+            }
+
+          </article>
+
+        } @empty {
+          <p class="mensaje">Esta institución no custodia copias por ahora.</p>
+        }
+      </div>
+
+    </section>
+
+    <!-- COLUMNA DERECHA: teléfonos y correos -->
+    <aside class="columna-contacto" aria-label="Contacto">
+
+      <h2 class="titulo-seccion">Contacto</h2>
+
+      <div class="tarjeta-contacto">
+
+        <h3 class="subtitulo">Teléfonos</h3>
+        <ul class="lista-contacto">
+          @for (telefono of telefonos; track telefono) {
+            <li>{{ telefono }}</li>
+          } @empty {
+            <li class="vacio">Sin teléfonos registrados</li>
+          }
+        </ul>
+
+        <h3 class="subtitulo">Correos</h3>
+        <ul class="lista-contacto">
+          @for (correo of correos; track correo) {
+            <!-- "mailto:" abre el programa de correo del usuario -->
+            <li><a [href]="'mailto:' + correo">{{ correo }}</a></li>
+          } @empty {
+            <li class="vacio">Sin correos registrados</li>
+          }
+        </ul>
+
+      </div>
+
+    </aside>
+
+  </div>
+
+} @else {
+
+  <p class="mensaje">
+    No encontramos esa institución.
+    <a routerLink="/">Volver al inicio</a>
+  </p>
+
+}
