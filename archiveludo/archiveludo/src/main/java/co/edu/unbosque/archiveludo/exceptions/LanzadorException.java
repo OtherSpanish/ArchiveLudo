@@ -1,0 +1,261 @@
+package co.edu.unbosque.archiveludo.exceptions;
+
+import java.time.LocalDate;
+
+import co.edu.unbosque.archiveludo.entity.Videojuego;
+import co.edu.unbosque.archiveludo.model.EstadoConservacion;
+import co.edu.unbosque.archiveludo.model.Rol;
+
+/**
+ * Lanzador de las excepciones propias de ArchiveLudo.
+ * Los services llaman a estos metodos; si la condicion no se cumple, se lanza
+ * la excepcion correspondiente y mediante try catch en el controller son convertidas en respuesta HTTP.
+ */
+public class LanzadorException {
+
+	/** Anio minimo aceptado como anio de lanzamiento de un videojuego. */
+	private static final int ANIO_MINIMO_LANZAMIENTO = 1950;
+
+	/**
+	 * Verifica que un id recibido por la URL sea valido.
+	 *
+	 * @param id          id a verificar
+	 * @param nombreDueno nombre del recurso para el mensaje (por ejemplo "videojuego")
+	 * @throws IdInvalidoException si el id es nulo o menor o igual a cero
+	 */
+	public static void verificarIdValido(Long id, String nombreDueno) {
+		if (id == null || id <= 0) {
+			throw new IdInvalidoException(nombreDueno);
+		}
+	}
+
+	/**
+	 * Verifica que el correo ingresado sea valido
+	 * @param entrada
+	 * @throws CorreoElectronicoException
+	 */
+	public static void verificarCorreoValido(String entrada) throws CorreoElectronicoException {
+		if (entrada == null || entrada.trim().isEmpty()) {
+			throw new CorreoElectronicoException();
+		}
+
+		entrada = entrada.trim();
+
+		String patronDelCorreo = "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.(?:[A-Za-z]{2,})$";
+
+		if (!entrada.matches(patronDelCorreo)) {
+			throw new CorreoElectronicoException();
+		}
+
+		if (!(entrada.endsWith("@unbosque.edu.co") || entrada.endsWith("@gmail.com")
+				|| entrada.endsWith("@hotmail.com"))) {
+			throw new CorreoElectronicoException();
+		}
+	}
+
+	/**
+	 * Valida que la contraseña cumpla con los parametros de contener mayúscula, minúscula y número
+	 * @param entrada
+	 * @throws ContraseniaUsuarioException
+	 */
+	public static void verificarContrasenaValida(String entrada) throws ContraseniaUsuarioException {
+		if (entrada == null || entrada.isEmpty()) {
+			throw new ContraseniaUsuarioException();
+		}
+
+		if (entrada.length() < 8) {
+			throw new ContraseniaUsuarioException();
+		}
+
+		boolean tieneMayuscula = false;
+		boolean tieneMinuscula = false;
+		boolean tieneNumero = false;
+
+		for (char c : entrada.toCharArray()) {
+			if (Character.isUpperCase(c)) {
+				tieneMayuscula = true;
+			} else if (Character.isLowerCase(c)) {
+				tieneMinuscula = true;
+			} else if (Character.isDigit(c)) {
+				tieneNumero = true;
+			}
+		}
+
+		if (!(tieneMayuscula && tieneMinuscula && tieneNumero)) {
+			throw new ContraseniaUsuarioException();
+		}
+	}
+
+	/**
+	 * Verifica que el nombre de usuario tenga entre 4-14 caracteres y contenga una letra
+	 * @param entrada
+	 * @throws NombreUsuarioException
+	 */
+	public static void verificarNombreUsuario(String entrada) throws NombreUsuarioException {
+		if (entrada == null || entrada.trim().isEmpty()) {
+			throw new NombreUsuarioException();
+		}
+
+		if (entrada.length() < 4 || entrada.length() > 14) {
+			throw new NombreUsuarioException();
+		}
+
+		boolean tieneLetra = false;
+
+		for (char c : entrada.toCharArray()) {
+			if (Character.isLetter(c)) {
+				tieneLetra = true;
+			}
+		}
+
+		if (!tieneLetra) {
+			throw new NombreUsuarioException();
+		}
+	}
+
+	/**
+	 * Verifica que un campo de texto obligatorio venga con contenido.
+	 *
+	 * @param valor       valor recibido
+	 * @param nombreCampo nombre del campo para el mensaje (por ejemplo "correo")
+	 * @throws CampoObligatorioException si el valor es nulo o esta vacio
+	 */
+	public static void verificarCampoObligatorio(String valor, String nombreCampo) {
+		if (valor == null || valor.trim().isEmpty()) {
+			throw new CampoObligatorioException(nombreCampo);
+		}
+	}
+
+	/**
+	 * Verifica el resultado de comparar las credenciales de inicio de sesion.
+	 *
+	 * @param credencialesCorrectas true si el correo existe y la contrasena coincide
+	 * @throws CredencialInvalidaException si las credenciales no son correctas
+	 */
+	public static void verificarCredencialesCorrectas(boolean credencialesCorrectas) {
+		if (!credencialesCorrectas) {
+			throw new CredencialInvalidaException();
+		}
+	}
+
+	/**
+	 * Convierte el id que llega por la URL (como texto) a numero y verifica que sea valido.
+	 * Se recibe como String para que un valor como "abc" llegue hasta aqui
+	 * y lo podamos atrapar nosotros, en vez de que Spring lo rechace antes del controller.
+	 *
+	 * @param idTexto     id tal como llego en la URL
+	 * @param nombreDueno nombre del recurso para el mensaje (por ejemplo "videojuego")
+	 * @return el id convertido a numero
+	 * @throws IdInvalidoException si el id esta vacio, no es numerico o es menor o igual a cero
+	 */
+	public static long convertirId(String idTexto, String nombreDueno) {
+		if (idTexto == null || idTexto.trim().isEmpty()) {
+			throw new IdInvalidoException(nombreDueno);
+		}
+
+		long id;
+		try {
+			id = Long.parseLong(idTexto.trim());
+		} catch (NumberFormatException e) {
+			throw new IdInvalidoException(nombreDueno);
+		}
+
+		verificarIdValido(id, nombreDueno);
+		return id;
+	}
+
+	/**
+	 * Verifica que el videojuego buscado exista.
+	 *
+	 * @param videojuego   resultado de la busqueda en el repository
+	 * @param idVideojuego id que se busco (para el mensaje)
+	 * @throws VideojuegoNoEncontradoException si el videojuego es null
+	 */
+	public static void verificarVideojuegoExiste(Videojuego videojuego, long idVideojuego) {
+		if (videojuego == null) {
+			throw new VideojuegoNoEncontradoException(idVideojuego);
+		}
+	}
+
+	/**
+	 * Convierte el texto del rol (por ejemplo "curador") al enum Rol.
+	 *
+	 * @param textoRol rol tal como llego en el cuerpo de la peticion
+	 * @return el rol correspondiente
+	 * @throws RolInvalidoException si el rol viene vacio o no es administrador, curador ni consulta
+	 */
+	public static Rol convertirRol(String textoRol) {
+		if (textoRol == null || textoRol.trim().isEmpty()) {
+			throw new RolInvalidoException();
+		}
+
+		Rol rol = Rol.buscarPorValor(textoRol.trim().toLowerCase());
+		if (rol == null) {
+			throw new RolInvalidoException();
+		}
+		return rol;
+	}
+
+	/**
+	 * Verifica que el correo no este registrado por otro usuario.
+	 *
+	 * @param correoYaExiste resultado de consultar el correo en el repository
+	 * @param correo         correo consultado (para el mensaje)
+	 * @throws CorreoYaRegistradoException si el correo ya existe
+	 */
+	public static void verificarCorreoNoRegistrado(boolean correoYaExiste, String correo) {
+		if (correoYaExiste) {
+			throw new CorreoYaRegistradoException(correo);
+		}
+	}
+
+	/**
+	 * Convierte el anio que llega por la URL (como texto) a numero y verifica que este en un rango valido
+	 * (entre 1950 y el anio actual).
+	 *
+	 * @param anioTexto anio tal como llego en la URL
+	 * @return el anio convertido a numero
+	 * @throws AnioInvalidoException si viene vacio, no es numerico o esta fuera del rango
+	 */
+	public static int convertirAnio(String anioTexto) {
+		int anioMaximo = LocalDate.now().getYear();
+
+		if (anioTexto == null || anioTexto.trim().isEmpty()) {
+			throw new AnioInvalidoException(ANIO_MINIMO_LANZAMIENTO, anioMaximo);
+		}
+
+		int anio;
+		try {
+			anio = Integer.parseInt(anioTexto.trim());
+		} catch (NumberFormatException e) {
+			throw new AnioInvalidoException(ANIO_MINIMO_LANZAMIENTO, anioMaximo);
+		}
+
+		if (anio < ANIO_MINIMO_LANZAMIENTO || anio > anioMaximo) {
+			throw new AnioInvalidoException(ANIO_MINIMO_LANZAMIENTO, anioMaximo);
+		}
+		return anio;
+	}
+
+	/**
+	 * Convierte el texto del estado de conservacion al enum EstadoConservacion.
+	 * Acepta "en riesgo" o "en_riesgo", sin importar mayusculas.
+	 *
+	 * @param textoEstado estado tal como llego en la URL
+	 * @return el estado correspondiente
+	 * @throws EstadoConservacionInvalidoException si viene vacio o no es uno de los 5 estados
+	 */
+	public static EstadoConservacion convertirEstadoConservacion(String textoEstado) {
+		if (textoEstado == null || textoEstado.trim().isEmpty()) {
+			throw new EstadoConservacionInvalidoException();
+		}
+
+		String textoNormalizado = textoEstado.trim().toLowerCase().replace('_', ' ');
+		EstadoConservacion estado = EstadoConservacion.buscarPorValor(textoNormalizado);
+		if (estado == null) {
+			throw new EstadoConservacionInvalidoException();
+		}
+		return estado;
+	}
+
+}

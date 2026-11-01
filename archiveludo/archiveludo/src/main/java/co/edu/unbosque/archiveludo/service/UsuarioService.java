@@ -2,20 +2,20 @@ package co.edu.unbosque.archiveludo.service;
 
 import java.time.LocalDate;
 
-import org.springframework.dao.DuplicateKeyException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import co.edu.unbosque.archiveludo.dto.UsuarioDTO;
 import co.edu.unbosque.archiveludo.entity.Usuario;
 import co.edu.unbosque.archiveludo.exceptions.ContraseniaUsuarioException;
 import co.edu.unbosque.archiveludo.exceptions.CorreoElectronicoException;
-import co.edu.unbosque.archiveludo.exceptions.LanzadorExcepcion;
+import co.edu.unbosque.archiveludo.exceptions.LanzadorException;
 import co.edu.unbosque.archiveludo.model.Rol;
 import co.edu.unbosque.archiveludo.repository.UsuarioRepository;
 
 /**
- * Logica de negocio de usuarios.
+ * Logica de negocio de usuarios. Solo el administrador crea usuarios (lo controla SecurityConfig).
  * Recibe la contrasena en texto plano, la valida y la guarda hasheada con BCrypt.
  */
 @Service
@@ -30,28 +30,30 @@ public class UsuarioService {
 	}
 
 	/**
-	 * Crea un usuario nuevo.
+	 * Crea un usuario nuevo con el rol que elige el administrador.
 	 *
 	 * @param usuarioDTO datos del usuario con la contrasena en texto plano
 	 * @return el usuario creado, sin contrasena
-	 * @throws CorreoElectronicoException  si el correo no es valido
-	 * @throws ContraseniaUsuarioException si la contrasena no cumple las reglas
-	 * @throws IllegalArgumentException    si el rol no existe
-	 * @throws DuplicateKeyException       si el correo ya esta registrado
+	 * @throws CampoObligatorioException    si falta primer nombre, primer apellido, correo o contrasena
+	 * @throws CorreoElectronicoException   si el correo no es valido
+	 * @throws ContraseniaUsuarioException  si la contrasena no cumple las reglas
+	 * @throws RolInvalidoException         si el rol viene vacio o no existe
+	 * @throws CorreoYaRegistradoException  si el correo ya esta registrado
 	 */
+	@Transactional
 	public UsuarioDTO crear(UsuarioDTO usuarioDTO) throws CorreoElectronicoException, ContraseniaUsuarioException {
-		LanzadorExcepcion.verificarCorreoValido(usuarioDTO.getCorreo());
-		LanzadorExcepcion.verificarContrasenaValida(usuarioDTO.getContrasenia());
+		LanzadorException.verificarCampoObligatorio(usuarioDTO.getPrimerNombre(), "primerNombre");
+		LanzadorException.verificarCampoObligatorio(usuarioDTO.getPrimerApellido(), "primerApellido");
+		LanzadorException.verificarCampoObligatorio(usuarioDTO.getCorreo(), "correo");
+		LanzadorException.verificarCampoObligatorio(usuarioDTO.getContrasenia(), "contrasenia");
 
-		Rol rol = Rol.buscarPorValor(usuarioDTO.getRol());
-		if (rol == null) {
-			throw new IllegalArgumentException("El rol debe ser administrador, curador o consulta");
-		}
+		LanzadorException.verificarCorreoValido(usuarioDTO.getCorreo());
+		LanzadorException.verificarContrasenaValida(usuarioDTO.getContrasenia());
+
+		Rol rol = LanzadorException.convertirRol(usuarioDTO.getRol());
 
 		String correo = usuarioDTO.getCorreo().trim();
-		if (usuarioRepository.existeCorreo(correo)) {
-			throw new DuplicateKeyException("Ya existe un usuario con el correo " + correo);
-		}
+		LanzadorException.verificarCorreoNoRegistrado(usuarioRepository.existeCorreo(correo), correo);
 
 		String hashContrasenia = passwordEncoder.encode(usuarioDTO.getContrasenia());
 
