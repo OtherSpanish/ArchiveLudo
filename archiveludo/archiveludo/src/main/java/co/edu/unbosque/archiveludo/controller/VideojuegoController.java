@@ -20,6 +20,7 @@ import co.edu.unbosque.archiveludo.exceptions.AnioInvalidoException;
 import co.edu.unbosque.archiveludo.exceptions.CampoObligatorioException;
 import co.edu.unbosque.archiveludo.exceptions.EstadoConservacionInvalidoException;
 import co.edu.unbosque.archiveludo.exceptions.IdInvalidoException;
+import co.edu.unbosque.archiveludo.exceptions.PaginacionInvalidaException;
 import co.edu.unbosque.archiveludo.exceptions.VideojuegoNoEncontradoException;
 import co.edu.unbosque.archiveludo.service.VideojuegoService;
 
@@ -34,20 +35,33 @@ public class VideojuegoController {
 
 	private static final Logger log = LoggerFactory.getLogger(VideojuegoController.class);
 
+	/** Cabecera donde viaja el total de coincidencias del catalogo (expuesta en CorsConfig). */
+	private static final String CABECERA_TOTAL = "X-Total-Count";
+
 	@Autowired
 	private VideojuegoService videojuegoService;
 
 	/**
-	 * GET /api/videojuegos
-	 * Respuesta: 200 con todos los videojuegos.
+	 * GET /api/videojuegos?estado=en riesgo&q=ambar&pagina=0&limite=10
+	 * Todos los parametros son opcionales.
+	 * Respuesta: 200 con los videojuegos de la pagina pedida y la cabecera
+	 *            X-Total-Count con el total de coincidencias en toda la base.
 	 */
 	@GetMapping
-	public ResponseEntity<?> buscarTodos() {
+	public ResponseEntity<?> buscarCatalogo(@RequestParam(name = "estado", required = false) String estado,
+			@RequestParam(name = "q", required = false) String q,
+			@RequestParam(name = "pagina", required = false) String pagina,
+			@RequestParam(name = "limite", required = false) String limite) {
 		try {
-			List<VideojuegoDTO> videojuegos = videojuegoService.buscarTodos();
-			return new ResponseEntity<List<VideojuegoDTO>>(videojuegos, HttpStatus.OK);
+			List<VideojuegoDTO> videojuegos = videojuegoService.buscarCatalogo(estado, q, pagina, limite);
+			long total = videojuegoService.contarCatalogo(estado, q);
+			return ResponseEntity.ok().header(CABECERA_TOTAL, String.valueOf(total)).body(videojuegos);
+		} catch (EstadoConservacionInvalidoException e) {
+			return crearRespuestaError(HttpStatus.BAD_REQUEST, e.getMessage());
+		} catch (PaginacionInvalidaException e) {
+			return crearRespuestaError(HttpStatus.BAD_REQUEST, e.getMessage());
 		} catch (Exception e) {
-			log.error("Error inesperado al listar los videojuegos", e);
+			log.error("Error inesperado al consultar el catalogo", e);
 			return crearRespuestaError(HttpStatus.INTERNAL_SERVER_ERROR, "Ocurrio un error interno en el servidor");
 		}
 	}
