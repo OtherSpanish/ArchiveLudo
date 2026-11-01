@@ -100,5 +100,29 @@ public class LanzadorExcepcion {
 			throw new NombreUsuarioException();
 		}
 	}
+	/**
+	 * Verifica que un campo de texto obligatorio venga con contenido.
+	 *
+	 * @param valor       valor recibido
+	 * @param nombreCampo nombre del campo para el mensaje (por ejemplo "correo")
+	 * @throws CampoObligatorioException si el valor es nulo o esta vacio
+	 */
+	public static void verificarCampoObligatorio(String valor, String nombreCampo) {
+		if (valor == null || valor.trim().isEmpty()) {
+			throw new CampoObligatorioException(nombreCampo);
+		}
+	}
+
+	/**
+	 * Verifica el resultado de comparar las credenciales de inicio de sesion.
+	 *
+	 * @param credencialesCorrectas true si el correo existe y la contrasena coincide
+	 * @throws CredencialesInvalidasException si las credenciales no son correctas
+	 */
+	public static void verificarCredencialesCorrectas(boolean credencialesCorrectas) {
+		if (!credencialesCorrectas) {
+			throw new CredencialInvalidaException();
+		}
+	}
 
 }
