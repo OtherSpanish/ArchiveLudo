@@ -1,57 +1,63 @@
 package co.edu.unbosque.archiveludo.repository;
 
 import java.sql.Date;
+import java.sql.Timestamp;
 import java.time.LocalDate;
-import java.util.HashMap;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
 import org.springframework.stereotype.Repository;
 
 import co.edu.unbosque.archiveludo.entity.Usuario;
 import co.edu.unbosque.archiveludo.model.Rol;
 
 /**
- * Acceso a datos de la tabla USUARIO con SQL (Spring JDBC).
+ * Acceso a datos de la tabla USUARIO con SQL escrito a mano (Spring JDBC).
  */
 @Repository
 public class UsuarioRepository {
 
+	private static final String SQL_INSERTAR = "INSERT INTO USUARIO (primer_nombre, segundo_nombre, "
+			+ "primer_apellido, segundo_apellido, correo, hash_contrasenia, rol, fecha_creacion) "
+			+ "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+
+	private static final String SQL_BUSCAR_ID_POR_CORREO = "SELECT id_usuario FROM USUARIO WHERE correo = ?";
+
+	private static final String SQL_BUSCAR_POR_CORREO = "SELECT id_usuario, primer_nombre, segundo_nombre, "
+			+ "primer_apellido, segundo_apellido, correo, hash_contrasenia, rol, fecha_creacion "
+			+ "FROM USUARIO WHERE correo = ?";
+
+	private static final String SQL_CONTAR_POR_CORREO = "SELECT COUNT(*) FROM USUARIO WHERE correo = ?";
+
 	private final JdbcTemplate jdbcTemplate;
-	private final SimpleJdbcInsert insercionUsuario;
 
 	public UsuarioRepository(JdbcTemplate jdbcTemplate) {
 		this.jdbcTemplate = jdbcTemplate;
-		this.insercionUsuario = new SimpleJdbcInsert(jdbcTemplate)
-				.withTableName("USUARIO")
-				.usingColumns("primer_nombre", "segundo_nombre", "primer_apellido", "segundo_apellido",
-						"correo", "hash_contrasenia", "rol", "fecha_creacion")
-				.usingGeneratedKeyColumns("id_usuario")
-				.withoutTableColumnMetaDataAccess();
 	}
 
 	/**
-	 * Inserta un usuario y le asigna el id generado por la base de datos.
+	 * Inserta un usuario y le asigna el id generado por la base de datos (AUTO_INCREMENT).
+	 * Como el correo es unico, el id se recupera buscandolo por correo justo despues del INSERT.
 	 * El usuario ya debe traer la contrasena hasheada.
 	 *
 	 * @param usuario usuario a guardar
 	 * @return el mismo usuario con su idUsuario
 	 */
 	public Usuario guardar(Usuario usuario) {
-		Map<String, Object> valores = new HashMap<String, Object>();
-		valores.put("primer_nombre", usuario.getPrimerNombre());
-		valores.put("segundo_nombre", usuario.getSegundoNombre());
-		valores.put("primer_apellido", usuario.getPrimerApellido());
-		valores.put("segundo_apellido", usuario.getSegundoApellido());
-		valores.put("correo", usuario.getCorreo());
-		valores.put("hash_contrasenia", usuario.getHashContrasenia());
-		valores.put("rol", usuario.getRol().getValor());
-		valores.put("fecha_creacion", Date.valueOf(usuario.getFechaCreacion()));
+		jdbcTemplate.update(SQL_INSERTAR,
+				usuario.getPrimerNombre(),
+				usuario.getSegundoNombre(),
+				usuario.getPrimerApellido(),
+				usuario.getSegundoApellido(),
+				usuario.getCorreo(),
+				usuario.getHashContrasenia(),
+				usuario.getRol().getValor(),
+				Date.valueOf(usuario.getFechaCreacion()));
 
-		Number idGenerado = insercionUsuario.executeAndReturnKey(valores);
-		usuario.setIdUsuario(idGenerado.longValue());
+		Long idGenerado = jdbcTemplate.queryForObject(SQL_BUSCAR_ID_POR_CORREO, Long.class, usuario.getCorreo());
+		usuario.setIdUsuario(idGenerado);
 		return usuario;
 	}
 
@@ -62,10 +68,7 @@ public class UsuarioRepository {
 	 * @return el usuario encontrado (con su hash de contrasena), o null si no existe
 	 */
 	public Usuario buscarPorCorreo(String correo) {
-		String sql = "SELECT id_usuario, primer_nombre, segundo_nombre, primer_apellido, segundo_apellido, "
-				+ "correo, hash_contrasenia, rol, fecha_creacion FROM USUARIO WHERE correo = ?";
-
-		List<Map<String, Object>> filas = jdbcTemplate.queryForList(sql, correo);
+		List<Map<String, Object>> filas = jdbcTemplate.queryForList(SQL_BUSCAR_POR_CORREO, correo);
 
 		if (filas.isEmpty()) {
 			return null;
@@ -74,14 +77,13 @@ public class UsuarioRepository {
 	}
 
 	/**
-	 * Cuenta cuantos usuarios tienen el correo dado.
+	 * Indica si ya existe un usuario con el correo dado.
 	 *
 	 * @param correo correo a buscar
 	 * @return true si ya existe un usuario con ese correo
 	 */
 	public boolean existeCorreo(String correo) {
-		String sql = "SELECT COUNT(*) FROM USUARIO WHERE correo = ?";
-		Integer cantidad = jdbcTemplate.queryForObject(sql, Integer.class, correo);
+		Integer cantidad = jdbcTemplate.queryForObject(SQL_CONTAR_POR_CORREO, Integer.class, correo);
 		return cantidad != null && cantidad > 0;
 	}
 
@@ -91,7 +93,6 @@ public class UsuarioRepository {
 	 */
 	private Usuario convertirFilaAUsuario(Map<String, Object> fila) {
 		Number idUsuario = (Number) fila.get("id_usuario");
-		String textoRol = (String) fila.get("rol");
 
 		Usuario usuario = new Usuario();
 		usuario.setIdUsuario(idUsuario.longValue());
@@ -101,13 +102,25 @@ public class UsuarioRepository {
 		usuario.setSegundoApellido((String) fila.get("segundo_apellido"));
 		usuario.setCorreo((String) fila.get("correo"));
 		usuario.setHashContrasenia((String) fila.get("hash_contrasenia"));
-		usuario.setRol(Rol.buscarPorValor(textoRol));
+		usuario.setRol(convertirRol(fila.get("rol")));
 		usuario.setFechaCreacion(convertirFecha(fila.get("fecha_creacion")));
 		return usuario;
 	}
 
 	/**
+	 * Convierte el texto de la columna rol al enum Rol, sin importar mayusculas.
+	 */
+	private Rol convertirRol(Object valor) {
+		if (valor == null) {
+			return null;
+		}
+		String textoRol = valor.toString().trim().toLowerCase();
+		return Rol.buscarPorValor(textoRol);
+	}
+
+	/**
 	 * Convierte la fecha que entrega el driver de MySQL a LocalDate.
+	 * Si la columna es DATE llega como java.sql.Date; si es DATETIME, como fecha y hora.
 	 */
 	private LocalDate convertirFecha(Object valor) {
 		if (valor == null) {
@@ -116,6 +129,14 @@ public class UsuarioRepository {
 		if (valor instanceof Date) {
 			Date fechaSql = (Date) valor;
 			return fechaSql.toLocalDate();
+		}
+		if (valor instanceof Timestamp) {
+			Timestamp fechaHora = (Timestamp) valor;
+			return fechaHora.toLocalDateTime().toLocalDate();
+		}
+		if (valor instanceof LocalDateTime) {
+			LocalDateTime fechaHora = (LocalDateTime) valor;
+			return fechaHora.toLocalDate();
 		}
 		return (LocalDate) valor;
 	}

@@ -2,64 +2,80 @@ package co.edu.unbosque.archiveludo.dto;
 
 public class EstudioDTO {
 
-	private long idEstado;
+	private long idEstudio;
 	private String nombre;
 	private String pais;
 	private String estadoActual;
-	private int anioFundacion;
-	private int anioCierre;
+	private Integer anioFundacion;
+	private Integer anioCierre;
+
 	public EstudioDTO() {
-		// TODO Auto-generated constructor stub
+
 	}
-	public EstudioDTO(long idEstado, String nombre, String pais, String estadoActual, int anioFundacion,
-			int anioCierre) {
+
+	public EstudioDTO(long idEstudio, String nombre, String pais, String estadoActual, Integer anioFundacion,
+			Integer anioCierre) {
 		super();
-		this.idEstado = idEstado;
+		this.idEstudio = idEstudio;
 		this.nombre = nombre;
 		this.pais = pais;
 		this.estadoActual = estadoActual;
 		this.anioFundacion = anioFundacion;
 		this.anioCierre = anioCierre;
 	}
-	public long getIdEstado() {
-		return idEstado;
+
+	@Override
+	public String toString() {
+		return "EstudioDTO [idEstudio=" + idEstudio + ", nombre=" + nombre + ", pais=" + pais + ", estadoActual="
+				+ estadoActual + ", anioFundacion=" + anioFundacion + ", anioCierre=" + anioCierre + "]";
 	}
-	public void setIdEstado(long idEstado) {
-		this.idEstado = idEstado;
+
+	public long getIdEstudio() {
+		return idEstudio;
 	}
+
+	public void setIdEstudio(long idEstudio) {
+		this.idEstudio = idEstudio;
+	}
+
 	public String getNombre() {
 		return nombre;
 	}
+
 	public void setNombre(String nombre) {
 		this.nombre = nombre;
 	}
+
 	public String getPais() {
 		return pais;
 	}
+
 	public void setPais(String pais) {
 		this.pais = pais;
 	}
+
 	public String getEstadoActual() {
 		return estadoActual;
 	}
+
 	public void setEstadoActual(String estadoActual) {
 		this.estadoActual = estadoActual;
 	}
-	public int getAnioFundacion() {
+
+	public Integer getAnioFundacion() {
 		return anioFundacion;
 	}
-	public void setAnioFundacion(int anioFundacion) {
+
+	public void setAnioFundacion(Integer anioFundacion) {
 		this.anioFundacion = anioFundacion;
 	}
-	public int getAnioCierre() {
+
+	public Integer getAnioCierre() {
 		return anioCierre;
 	}
-	public void setAnioCierre(int anioCierre) {
+
+	public void setAnioCierre(Integer anioCierre) {
 		this.anioCierre = anioCierre;
 	}
-	
-	
-	
 
-	
 }
