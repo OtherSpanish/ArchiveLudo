@@ -13,7 +13,8 @@ import co.edu.unbosque.archiveludo.model.EstadoConservacion;
 
 /**
  * Acceso a datos de la tabla VIDEOJUEGO con SQL escrito a mano (Spring JDBC).
- * Todas las listas salen ordenadas por anio de lanzamiento y luego por titulo.
+ * Todas las listas salen ordenadas por anio de lanzamiento, titulo e id
+ * (el id al final hace que el orden sea estable para la paginacion).
  */
 @Repository
 public class VideojuegoRepository {
@@ -21,11 +22,13 @@ public class VideojuegoRepository {
 	private static final String SQL_SELECCIONAR = "SELECT id_videojuego, titulo, genero, plataforma_original, "
 			+ "descripcion, anio_lanzamiento, estado_conservacion FROM VIDEOJUEGO ";
 
-	private static final String SQL_ORDENAR = " ORDER BY anio_lanzamiento ASC, titulo ASC";
+	private static final String SQL_CONTAR = "SELECT COUNT(*) FROM VIDEOJUEGO ";
+
+	private static final String SQL_ORDENAR = " ORDER BY anio_lanzamiento ASC, titulo ASC, id_videojuego ASC";
+
+	private static final String SQL_PAGINAR = " LIMIT ? OFFSET ?";
 
 	private static final String SQL_BUSCAR_POR_ID = SQL_SELECCIONAR + "WHERE id_videojuego = ?";
-
-	private static final String SQL_BUSCAR_TODOS = SQL_SELECCIONAR + SQL_ORDENAR;
 
 	/** Busca titulos que CONTENGAN el texto: el service le agrega los % */
 	private static final String SQL_BUSCAR_POR_TITULO = SQL_SELECCIONAR + "WHERE titulo LIKE ?" + SQL_ORDENAR;
@@ -39,8 +42,10 @@ public class VideojuegoRepository {
 			+ SQL_ORDENAR;
 
 	/** Compara sin importar mayusculas y aceptando "_" o espacio ("en_riesgo" = "en riesgo") */
-	private static final String SQL_BUSCAR_POR_ESTADO = SQL_SELECCIONAR
-			+ "WHERE REPLACE(LOWER(estado_conservacion), '_', ' ') = ?" + SQL_ORDENAR;
+	private static final String SQL_CONDICION_ESTADO = "REPLACE(LOWER(estado_conservacion), '_', ' ') = ?";
+
+	private static final String SQL_BUSCAR_POR_ESTADO = SQL_SELECCIONAR + "WHERE " + SQL_CONDICION_ESTADO
+			+ SQL_ORDENAR;
 
 	private final JdbcTemplate jdbcTemplate;
 
@@ -63,14 +68,50 @@ public class VideojuegoRepository {
 		return convertirFilaAVideojuego(filas.get(0));
 	}
 
-	public List<Videojuego> buscarTodos() {
-		List<Map<String, Object>> filas = jdbcTemplate.queryForList(SQL_BUSCAR_TODOS);
+	/**
+	 * Devuelve una pagina del catalogo, con filtros opcionales.
+	 * Ejemplo del SQL que se arma con los dos filtros:
+	 * SELECT ... FROM VIDEOJUEGO WHERE 1 = 1 AND estado = ? AND titulo LIKE ? ORDER BY ... LIMIT ? OFFSET ?
+	 *
+	 * @param estado         estado a filtrar, o null para todos
+	 * @param patronTitulo   texto con comodines ("%zelda%"), o null para todos
+	 * @param limite         cantidad de videojuegos de la pagina
+	 * @param desplazamiento cuantos videojuegos saltar (pagina * limite)
+	 * @return los videojuegos de esa pagina
+	 */
+	public List<Videojuego> buscarCatalogo(EstadoConservacion estado, String patronTitulo, int limite,
+			int desplazamiento) {
+		List<Object> parametros = new ArrayList<Object>();
+		String condiciones = construirCondicionesCatalogo(estado, patronTitulo, parametros);
+
+		String sql = SQL_SELECCIONAR + condiciones + SQL_ORDENAR + SQL_PAGINAR;
+		parametros.add(limite);
+		parametros.add(desplazamiento);
+
+		List<Map<String, Object>> filas = jdbcTemplate.queryForList(sql, parametros.toArray());
 		return convertirFilasAVideojuegos(filas);
 	}
 
 	/**
-	 * @param patronTitulo texto con comodines, por ejemplo "%zelda%"
+	 * Cuenta cuantos videojuegos cumplen los filtros del catalogo (en toda la base, no solo en una pagina).
+	 *
+	 * @param estado       estado a filtrar, o null para todos
+	 * @param patronTitulo texto con comodines ("%zelda%"), o null para todos
+	 * @return total de videojuegos que cumplen los filtros
 	 */
+	public long contarCatalogo(EstadoConservacion estado, String patronTitulo) {
+		List<Object> parametros = new ArrayList<Object>();
+		String condiciones = construirCondicionesCatalogo(estado, patronTitulo, parametros);
+
+		String sql = SQL_CONTAR + condiciones;
+
+		Long total = jdbcTemplate.queryForObject(sql, Long.class, parametros.toArray());
+		if (total == null) {
+			return 0;
+		}
+		return total;
+	}
+
 	public List<Videojuego> buscarPorTitulo(String patronTitulo) {
 		List<Map<String, Object>> filas = jdbcTemplate.queryForList(SQL_BUSCAR_POR_TITULO, patronTitulo);
 		return convertirFilasAVideojuegos(filas);
@@ -94,6 +135,27 @@ public class VideojuegoRepository {
 	public List<Videojuego> buscarPorEstadoConservacion(EstadoConservacion estado) {
 		List<Map<String, Object>> filas = jdbcTemplate.queryForList(SQL_BUSCAR_POR_ESTADO, estado.getValor());
 		return convertirFilasAVideojuegos(filas);
+	}
+
+	/**
+	 * Arma el WHERE del catalogo segun los filtros que lleguen y agrega sus valores a la lista de parametros.
+	 * "WHERE 1 = 1" siempre es verdadero; sirve para que cada filtro se agregue con " AND ..."
+	 * sin tener que revisar si es el primero.
+	 * El texto del usuario nunca se pega en el SQL: siempre viaja como parametro (?).
+	 */
+	private String construirCondicionesCatalogo(EstadoConservacion estado, String patronTitulo,
+			List<Object> parametros) {
+		StringBuilder condiciones = new StringBuilder("WHERE 1 = 1");
+
+		if (estado != null) {
+			condiciones.append(" AND ").append(SQL_CONDICION_ESTADO);
+			parametros.add(estado.getValor());
+		}
+		if (patronTitulo != null) {
+			condiciones.append(" AND titulo LIKE ?");
+			parametros.add(patronTitulo);
+		}
+		return condiciones.toString();
 	}
 
 	/**
