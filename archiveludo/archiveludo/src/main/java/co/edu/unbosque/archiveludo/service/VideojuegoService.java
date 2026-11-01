@@ -13,7 +13,7 @@ import co.edu.unbosque.archiveludo.model.EstadoConservacion;
 import co.edu.unbosque.archiveludo.repository.VideojuegoRepository;
 
 /**
- * Logica de negocio de videojuegos: ficha y busquedas por cada atributo.
+ * Logica de negocio de videojuegos: ficha, catalogo paginado y busquedas por cada atributo.
  */
 @Service
 public class VideojuegoService {
@@ -41,9 +41,42 @@ public class VideojuegoService {
 		return convertirADTO(videojuego);
 	}
 
-	public List<VideojuegoDTO> buscarTodos() {
-		List<Videojuego> videojuegos = videojuegoRepository.buscarTodos();
+	/**
+	 * Devuelve una pagina del catalogo. Todos los parametros son opcionales.
+	 *
+	 * @param estadoTexto estado de conservacion ("en riesgo"), o vacio para todos
+	 * @param textoTitulo texto que debe contener el titulo, o vacio para todos
+	 * @param paginaTexto numero de pagina desde 0 (por defecto 0)
+	 * @param limiteTexto videojuegos por pagina, de 1 a 50 (por defecto 10)
+	 * @return los videojuegos de esa pagina
+	 * @throws EstadoConservacionInvalidoException si el estado no es uno de los 5 permitidos
+	 * @throws PaginacionInvalidaException         si la pagina o el limite no son validos
+	 */
+	public List<VideojuegoDTO> buscarCatalogo(String estadoTexto, String textoTitulo, String paginaTexto,
+			String limiteTexto) {
+		EstadoConservacion estado = convertirEstadoOpcional(estadoTexto);
+		String patronTitulo = construirPatronTituloOpcional(textoTitulo);
+		int pagina = LanzadorException.convertirPagina(paginaTexto);
+		int limite = LanzadorException.convertirLimite(limiteTexto);
+
+		int desplazamiento = pagina * limite;
+
+		List<Videojuego> videojuegos = videojuegoRepository.buscarCatalogo(estado, patronTitulo, limite,
+				desplazamiento);
 		return convertirListaADTO(videojuegos);
+	}
+
+	/**
+	 * Cuenta cuantos videojuegos cumplen los filtros del catalogo, en toda la base.
+	 * El front lo usa para saber cuantas paginas hay.
+	 *
+	 * @throws EstadoConservacionInvalidoException si el estado no es uno de los 5 permitidos
+	 */
+	public long contarCatalogo(String estadoTexto, String textoTitulo) {
+		EstadoConservacion estado = convertirEstadoOpcional(estadoTexto);
+		String patronTitulo = construirPatronTituloOpcional(textoTitulo);
+
+		return videojuegoRepository.contarCatalogo(estado, patronTitulo);
 	}
 
 	/**
@@ -97,6 +130,26 @@ public class VideojuegoService {
 
 		List<Videojuego> videojuegos = videojuegoRepository.buscarPorEstadoConservacion(estado);
 		return convertirListaADTO(videojuegos);
+	}
+
+	/**
+	 * En el catalogo el estado es opcional: si viene vacio se devuelven todos los estados.
+	 */
+	private EstadoConservacion convertirEstadoOpcional(String estadoTexto) {
+		if (estadoTexto == null || estadoTexto.trim().isEmpty()) {
+			return null;
+		}
+		return LanzadorException.convertirEstadoConservacion(estadoTexto);
+	}
+
+	/**
+	 * En el catalogo el texto del titulo es opcional: si viene vacio no se filtra por titulo.
+	 */
+	private String construirPatronTituloOpcional(String textoTitulo) {
+		if (textoTitulo == null || textoTitulo.trim().isEmpty()) {
+			return null;
+		}
+		return "%" + textoTitulo.trim() + "%";
 	}
 
 	/**

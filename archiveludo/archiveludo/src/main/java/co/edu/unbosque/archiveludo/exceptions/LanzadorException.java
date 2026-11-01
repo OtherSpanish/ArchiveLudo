@@ -16,6 +16,12 @@ public class LanzadorException {
 	/** Anio minimo aceptado como anio de lanzamiento de un videojuego. */
 	private static final int ANIO_MINIMO_LANZAMIENTO = 1950;
 
+	/** Cantidad de elementos por pagina cuando no se envia el parametro limite. */
+	private static final int LIMITE_POR_DEFECTO = 10;
+
+	/** Cantidad maxima de elementos que se pueden pedir en una pagina. */
+	private static final int LIMITE_MAXIMO = 50;
+
 	/**
 	 * Verifica que un id recibido por la URL sea valido.
 	 *
@@ -256,6 +262,59 @@ public class LanzadorException {
 			throw new EstadoConservacionInvalidoException();
 		}
 		return estado;
+	}
+
+	/**
+	 * Convierte el numero de pagina que llega por la URL. Si no se envia, es la pagina 0.
+	 *
+	 * @param paginaTexto pagina tal como llego en la URL
+	 * @return la pagina convertida a numero (desde 0)
+	 * @throws PaginacionInvalidaException si no es numerico o es negativo
+	 */
+	public static int convertirPagina(String paginaTexto) {
+		if (paginaTexto == null || paginaTexto.trim().isEmpty()) {
+			return 0;
+		}
+
+		int pagina;
+		try {
+			pagina = Integer.parseInt(paginaTexto.trim());
+		} catch (NumberFormatException e) {
+			throw new PaginacionInvalidaException("El parametro 'pagina' debe ser un numero entero desde 0");
+		}
+
+		if (pagina < 0) {
+			throw new PaginacionInvalidaException("El parametro 'pagina' debe ser un numero entero desde 0");
+		}
+		return pagina;
+	}
+
+	/**
+	 * Convierte la cantidad de elementos por pagina que llega por la URL.
+	 * Si no se envia, se usan 10.
+	 *
+	 * @param limiteTexto limite tal como llego en la URL
+	 * @return el limite convertido a numero (entre 1 y 50)
+	 * @throws PaginacionInvalidaException si no es numerico o esta fuera del rango
+	 */
+	public static int convertirLimite(String limiteTexto) {
+		if (limiteTexto == null || limiteTexto.trim().isEmpty()) {
+			return LIMITE_POR_DEFECTO;
+		}
+
+		String mensaje = "El parametro 'limite' debe ser un numero entre 1 y " + LIMITE_MAXIMO;
+
+		int limite;
+		try {
+			limite = Integer.parseInt(limiteTexto.trim());
+		} catch (NumberFormatException e) {
+			throw new PaginacionInvalidaException(mensaje);
+		}
+
+		if (limite < 1 || limite > LIMITE_MAXIMO) {
+			throw new PaginacionInvalidaException(mensaje);
+		}
+		return limite;
 	}
 
 }
