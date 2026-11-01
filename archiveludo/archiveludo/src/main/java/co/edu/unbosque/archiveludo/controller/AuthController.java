@@ -6,7 +6,6 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,8 +16,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import co.edu.unbosque.archiveludo.dto.UsuarioDTO;
 import co.edu.unbosque.archiveludo.exceptions.CampoObligatorioException;
-import co.edu.unbosque.archiveludo.exceptions.ContraseniaUsuarioException;
-import co.edu.unbosque.archiveludo.exceptions.CorreoElectronicoException;
 import co.edu.unbosque.archiveludo.exceptions.CredencialInvalidaException;
 import co.edu.unbosque.archiveludo.service.AuthService;
 
@@ -32,36 +29,8 @@ public class AuthController {
 	private AuthService authService;
 
 	/**
-	 * POST /api/auth/registro
-	 * Cuerpo:    { "primerNombre": "Juan", "primerApellido": "Perez",
-	 *              "correo": "juan@gmail.com", "contrasenia": "Juan2026", "rol": "consulta" }
-	 * Respuesta: 201 con el usuario creado (sin contrasena).
-	 * La contrasena llega en texto plano y se guarda hasheada.
-	 */
-	@PostMapping("/registro")
-	public ResponseEntity<?> registrar(@RequestBody UsuarioDTO usuarioDTO) {
-		try {
-			UsuarioDTO usuarioCreado = authService.registrar(usuarioDTO);
-			return new ResponseEntity<UsuarioDTO>(usuarioCreado, HttpStatus.CREATED);
-		} catch (CampoObligatorioException e) {
-			return crearRespuestaError(HttpStatus.BAD_REQUEST, e.getMessage());
-		} catch (CorreoElectronicoException e) {
-			return crearRespuestaError(HttpStatus.BAD_REQUEST, e.getMessage());
-		} catch (ContraseniaUsuarioException e) {
-			return crearRespuestaError(HttpStatus.BAD_REQUEST, e.getMessage());
-		} catch (IllegalArgumentException e) {
-			return crearRespuestaError(HttpStatus.BAD_REQUEST, e.getMessage());
-		} catch (DuplicateKeyException e) {
-			return crearRespuestaError(HttpStatus.CONFLICT, "Ya existe un usuario con ese correo");
-		} catch (Exception e) {
-			log.error("Error inesperado en el registro", e);
-			return crearRespuestaError(HttpStatus.INTERNAL_SERVER_ERROR, "Ocurrio un error interno en el servidor");
-		}
-	}
-
-	/**
 	 * POST /api/auth/login
-	 * Cuerpo:    { "correo": "juan@gmail.com", "contrasenia": "Juan2026" }
+	 * Cuerpo:    { "correo": "admin@archiveludo.com", "contrasenia": "1234" }
 	 * Respuesta: 200 con los datos del usuario en el cuerpo y el token en la cabecera
 	 *            Authorization: Bearer <token>
 	 */
