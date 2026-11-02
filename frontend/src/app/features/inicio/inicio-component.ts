@@ -1,16 +1,13 @@
-import { Component } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { Videojuego } from '../../shared/models/videojuego-model';
-import { JuegoConMeta } from '../../shared/models/api-model';
-
-// ===== BACK: descomentar estas 3 líneas al conectar =====
-// import { ChangeDetectorRef } from '@angular/core';
-// import { ArchiveludoApiService } from '../../core/archiveludo-api-service';
-// import { JuegosPorEstado, ResumenInicio } from '../../shared/models/api-model';
+import { JuegoConMeta, PaginaVideojuegos } from '../../shared/models/api-model';
+import { Copia } from '../../shared/models/copia-model';
+import { Estudio } from '../../shared/models/videojuego-model';
+import { ArchiveludoApiService } from '../../core/archiveludo-api-service';
 
 /*
  * Un contador de la parte de arriba: etiqueta, número y color del punto.
- * Es un tipo solo del front: el back manda los totales sueltos
- * (ver ResumenInicio) y aquí armamos los contadores.
+ * Es un tipo solo del front: se arma con los totales que entrega el back.
  */
 interface Contador {
   etiqueta: string;
@@ -19,7 +16,7 @@ interface Contador {
 }
 
 /*
- * Una fila del Inicio: "En riesgo crítico", "Perdidos" o "Restaurados con éxito".
+ * Una fila del Inicio: "En riesgo crítico", "Totalmente perdidos" o "Restaurados con éxito".
  *  - color: el color del punto junto al título (coincide con las clases del CSS)
  *  - estado: valor de la base de datos, para pedirlo a la API y para el enlace "Ver todos"
  *  - total: cuántos juegos hay en esa categoría en total (no solo los visibles)
@@ -32,258 +29,146 @@ interface FilaJuegos {
   juegos: JuegoConMeta[];
 }
 
+/*
+ * Pantalla de Inicio. El back no tiene un endpoint de "resumen", así que
+ * todo se arma con GET /api/videojuegos (la cabecera X-Total-Count da los
+ * totales) y, para el banner, con las copias y el estudio del primer juego
+ * en riesgo.
+ */
 @Component({
   selector: 'app-inicio',
   templateUrl: './inicio-component.html',
   styleUrl: './inicio-component.css',
   standalone: false,
 })
-export class InicioComponent {
-  // ==================================================================
-  // ===== HARDCODE: borrar todo este bloque al conectar el back =====
-  // ==================================================================
+export class InicioComponent implements OnInit {
+
+  /* Total de videojuegos del catálogo (primer contador). */
+  totalTitulos: number = 0;
+
+  /* El "?" indica que al principio no tiene valor. El HTML ya revisa que exista antes de dibujar el banner. */
+  juegoPrioritario?: Videojuego;
+
+  descripcionPrioritario: string = '';
+
+  criteriosPrioritario: string[] = [];
+
+  /* true si alguna petición falló; se muestra un aviso en la pantalla. */
+  hayError: boolean = false;
+
+  /* Las tres filas existen desde el inicio (con total 0 y sin juegos); cada una se llena con su llamada. */
+  filas: FilaJuegos[] = [
+    { titulo: 'En riesgo crítico', color: 'warn', estado: 'en riesgo', total: 0, juegos: [] },
+    { titulo: 'Totalmente perdidos', color: 'bad', estado: 'totalmente perdido', total: 0, juegos: [] },
+    { titulo: 'Restaurados con éxito', color: 'ok', estado: 'restaurado', total: 0, juegos: [] }
+  ];
+
+  /* ChangeDetectorRef avisa a Angular que hay datos nuevos para redibujar. */
+  constructor(private api: ArchiveludoApiService, private cambios: ChangeDetectorRef) { }
+
+  /* Los contadores salen de los totales de las filas y del total del catálogo. */
+  get contadores(): Contador[] {
+    return [
+      { etiqueta: 'Títulos catalogados', valor: this.totalTitulos, color: 'info' },
+      { etiqueta: 'En riesgo', valor: this.filas[0].total, color: 'warn' },
+      { etiqueta: 'Totalmente perdidos', valor: this.filas[1].total, color: 'bad' },
+      { etiqueta: 'Restaurados', valor: this.filas[2].total, color: 'ok' }
+    ];
+  }
+
+  /* Angular llama a ngOnInit una vez, cuando la pantalla está lista. */
+  ngOnInit(): void {
+    this.cargarTotal();
+
+    for (const fila of this.filas) {
+      this.cargarFila(fila);
+    }
+  }
+
+  /* Total del catálogo: se pide un solo juego y se lee X-Total-Count. */
+  private cargarTotal(): void {
+    this.api.buscarVideojuegos('', '', 0, 1).subscribe({
+      next: (pagina) => this.alRecibirTotal(pagina),
+      error: (error) => this.mostrarError(error)
+    });
+  }
+
+  private alRecibirTotal(pagina: PaginaVideojuegos): void {
+    this.totalTitulos = pagina.total;
+    this.cambios.markForCheck();
+  }
+
+  /* Pide los juegos de una fila: GET /api/videojuegos?estado=...&limite=10 */
+  private cargarFila(fila: FilaJuegos): void {
+    this.api.obtenerVideojuegosPorEstado(fila.estado, 10).subscribe({
+      next: (pagina) => this.llenarFila(fila, pagina),
+      error: (error) => this.mostrarError(error)
+    });
+  }
+
+  private llenarFila(fila: FilaJuegos, pagina: PaginaVideojuegos): void {
+    const juegos: JuegoConMeta[] = [];
+
+    for (const juego of pagina.juegos) {
+      juegos.push({ videojuego: juego, meta: '' });
+    }
+
+    fila.total = pagina.total;
+    fila.juegos = juegos;
+
+    // El banner usa el primer juego en riesgo.
+    if (fila.estado === 'en riesgo' && pagina.juegos.length > 0) {
+      this.prepararBanner(pagina.juegos[0]);
+    }
+
+    this.cambios.markForCheck();
+  }
 
   /*
-   * Los números coinciden con los datos de prueba del Catálogo (14 juegos:
-   * 3 en riesgo, 3 perdidos, 3 restaurados) y de Proyectos (3 activos).
+   * Arma el banner con el primer juego en riesgo. Los criterios salen de
+   * datos reales: si no tiene copias (GET /videojuegos/{id}/copias) y si su
+   * estudio desapareció (GET /estudios/{id}).
    */
-  contadores: Contador[] = [
-    { etiqueta: 'Títulos catalogados', valor: 14, color: 'info' },
-    { etiqueta: 'En riesgo', valor: 3, color: 'warn' },
-    { etiqueta: 'Perdidos', valor: 3, color: 'bad' },
-    { etiqueta: 'Con proyecto activo', valor: 3, color: 'ok' },
-  ];
+  private prepararBanner(juego: Videojuego): void {
+    this.juegoPrioritario = juego;
+    this.descripcionPrioritario = juego.descripcion || '';
+    this.criteriosPrioritario = ['Estado de conservación: en riesgo'];
 
-  juegoPrioritario: Videojuego = {
-    idVideojuego: 1,
-    titulo: 'Torre de Ámbar Online',
-    plataformaOriginal: 'PC',
-    anioLanzamiento: 2007,
-    estadoConservacion: 'en_riesgo',
-    estudio: {
-      idEstudio: 1,
-      nombre: 'Foro Digital',
-      pais: 'Colombia',
-      anioFundacion: 1998,
-      anioCierre: 2009,
-      estadoActual: 'desaparecido',
-    },
-  };
+    this.api.obtenerCopias(juego.idVideojuego).subscribe({
+      next: (copias) => this.alRecibirCopiasBanner(copias),
+      error: (error) => this.mostrarError(error)
+    });
 
-  descripcionPrioritario: string =
-    'Juego en línea cuyos servidores ya no existen. No tiene copias físicas ' +
-    'registradas ni un proyecto de restauración en marcha, y su estudio ya cerró.';
+    if (juego.idEstudio !== undefined) {
+      this.api.obtenerEstudio(juego.idEstudio).subscribe({
+        next: (estudio) => this.alRecibirEstudioBanner(juego, estudio),
+        error: (error) => this.mostrarError(error)
+      });
+    }
+  }
 
-  criteriosPrioritario: string[] = [
-    'Sin copias físicas registradas',
-    'Sin proyecto de restauración activo',
-    'Estudio desarrollador desaparecido',
-  ];
+  private alRecibirCopiasBanner(copias: Copia[]): void {
+    if (copias.length === 0) {
+      this.criteriosPrioritario = [...this.criteriosPrioritario, 'Sin copias registradas'];
+      this.cambios.markForCheck();
+    }
+  }
 
-  filas: FilaJuegos[] = [
-    {
-      titulo: 'En riesgo crítico',
-      color: 'warn',
-      estado: 'en_riesgo',
-      total: 3,
-      juegos: [
-        {
-          videojuego: {
-            idVideojuego: 1,
-            titulo: 'Torre de Ámbar Online',
-            plataformaOriginal: 'PC',
-            anioLanzamiento: 2007,
-            estadoConservacion: 'en_riesgo',
-          },
-          meta: 'Sin copias físicas registradas',
-        },
-        {
-          videojuego: {
-            idVideojuego: 2,
-            titulo: 'Crónicas de Nébula',
-            plataformaOriginal: 'PS2',
-            anioLanzamiento: 2003,
-            estadoConservacion: 'en_riesgo',
-          },
-          meta: '1 copia · Sin proyecto activo',
-        },
-        {
-          videojuego: {
-            idVideojuego: 3,
-            titulo: 'Ciudad Neón 2039',
-            plataformaOriginal: 'Dreamcast',
-            anioLanzamiento: 2000,
-            estadoConservacion: 'en_riesgo',
-          },
-          meta: '2 copias · Estatus legal: huérfano',
-        },
-      ],
-    },
-    {
-      titulo: 'Perdidos',
-      color: 'bad',
-      estado: 'perdido',
-      total: 3,
-      juegos: [
-        {
-          videojuego: {
-            idVideojuego: 4,
-            titulo: 'Mundo Tinta',
-            plataformaOriginal: 'PC',
-            anioLanzamiento: 1999,
-            estadoConservacion: 'perdido',
-          },
-          meta: 'Sin copias registradas',
-        },
-        {
-          videojuego: {
-            idVideojuego: 5,
-            titulo: 'Legión Delta',
-            plataformaOriginal: 'Saturn',
-            anioLanzamiento: 1997,
-            estadoConservacion: 'perdido',
-          },
-          meta: 'Código fuente perdido',
-        },
-        {
-          videojuego: {
-            idVideojuego: 6,
-            titulo: 'Ruinas de Océano',
-            plataformaOriginal: 'N64',
-            anioLanzamiento: 2000,
-            estadoConservacion: 'perdido',
-          },
-          meta: 'Servidores cerrados',
-        },
-      ],
-    },
-    {
-      titulo: 'Restaurados con éxito',
-      color: 'ok',
-      estado: 'restaurado',
-      total: 3,
-      juegos: [
-        {
-          videojuego: {
-            idVideojuego: 7,
-            titulo: 'Aventura Marea',
-            plataformaOriginal: 'GBA',
-            anioLanzamiento: 2002,
-            estadoConservacion: 'restaurado',
-          },
-          meta: 'Proyecto finalizado',
-        },
-        {
-          videojuego: {
-            idVideojuego: 8,
-            titulo: 'Furia Quark',
-            plataformaOriginal: 'Arcade',
-            anioLanzamiento: 1994,
-            estadoConservacion: 'restaurado',
-          },
-          meta: '3 copias · Dominio público',
-        },
-        {
-          videojuego: {
-            idVideojuego: 9,
-            titulo: 'Sendero Lunar',
-            plataformaOriginal: 'SNES',
-            anioLanzamiento: 1996,
-            estadoConservacion: 'restaurado',
-          },
-          meta: 'Proyecto finalizado',
-        },
-      ],
-    },
-  ];
+  private alRecibirEstudioBanner(juego: Videojuego, estudio: Estudio): void {
+    // Se crea una copia del juego con su estudio, para que el banner lo muestre en el subtítulo.
+    this.juegoPrioritario = { ...juego, estudio: estudio };
 
-  // ==================================================================
-  // ===== FIN DEL HARDCODE =====
-  // ==================================================================
+    if (estudio.estadoActual === 'desaparecido') {
+      this.criteriosPrioritario = [...this.criteriosPrioritario, 'Estudio desarrollador desaparecido'];
+    }
 
-  // ==================================================================
-  // ===== BACK: descomentar todo este bloque al conectar =====
-  // (en WebStorm: seleccionarlo y Ctrl + /)
-  // ==================================================================
+    this.cambios.markForCheck();
+  }
 
-  // // Empiezan vacíos y se llenan cuando el back responde.
-  // contadores: Contador[] = [];
-  //
-  // // El "?" indica que al principio no tiene valor. El HTML ya revisa
-  // // que exista antes de dibujar el banner.
-  // juegoPrioritario?: Videojuego;
-  //
-  // descripcionPrioritario: string = '';
-  //
-  // criteriosPrioritario: string[] = [];
-  //
-  // // Las tres filas existen desde el inicio (con total 0 y sin juegos);
-  // // cada una se llena con su propia llamada a la API.
-  // filas: FilaJuegos[] = [
-  //   { titulo: 'En riesgo crítico', color: 'warn', estado: 'en_riesgo', total: 0, juegos: [] },
-  //   { titulo: 'Perdidos', color: 'bad', estado: 'perdido', total: 0, juegos: [] },
-  //   { titulo: 'Restaurados con éxito', color: 'ok', estado: 'restaurado', total: 0, juegos: [] }
-  // ];
-  //
-  // // ChangeDetectorRef: avisa a Angular que hay datos nuevos para redibujar.
-  // // Se llama a markForCheck() cada vez que llega una respuesta.
-  // constructor(private api: ArchiveludoApiService, private cambios: ChangeDetectorRef) { }
-  //
-  // // Angular llama a ngOnInit una vez, cuando la pantalla está lista.
-  // ngOnInit(): void {
-  //   this.cargarResumen();
-  //
-  //   for (const fila of this.filas) {
-  //     this.cargarFila(fila);
-  //   }
-  // }
-  //
-  // // Pide contadores y banner: GET /api/inicio/resumen
-  // private cargarResumen(): void {
-  //   this.api.obtenerResumenInicio().subscribe({
-  //     next: (resumen) => this.recibirResumen(resumen),
-  //     error: (error) => this.mostrarError(error)
-  //   });
-  // }
-  //
-  // private recibirResumen(resumen: ResumenInicio): void {
-  //   this.contadores = [
-  //     { etiqueta: 'Títulos catalogados', valor: resumen.totalTitulos, color: 'info' },
-  //     { etiqueta: 'En riesgo', valor: resumen.totalEnRiesgo, color: 'warn' },
-  //     { etiqueta: 'Perdidos', valor: resumen.totalPerdidos, color: 'bad' },
-  //     { etiqueta: 'Con proyecto activo', valor: resumen.totalConProyectoActivo, color: 'ok' }
-  //   ];
-  //
-  //   // videojuegoPrioritario puede venir omitido si no hay ningún juego
-  //   // prioritario; el "?." evita el error y el HTML no dibuja el banner.
-  //   this.juegoPrioritario = resumen.videojuegoPrioritario;
-  //   this.descripcionPrioritario = resumen.videojuegoPrioritario?.descripcion || '';
-  //   this.criteriosPrioritario = resumen.criteriosPrioritario;
-  //
-  //   this.cambios.markForCheck();
-  // }
-  //
-  // // Pide los juegos de una fila: GET /api/videojuegos?estado=...&limite=10
-  // private cargarFila(fila: FilaJuegos): void {
-  //   this.api.obtenerVideojuegosPorEstado(fila.estado, 10).subscribe({
-  //     next: (respuesta) => this.llenarFila(fila, respuesta),
-  //     error: (error) => this.mostrarError(error)
-  //   });
-  // }
-  //
-  // private llenarFila(fila: FilaJuegos, respuesta: JuegosPorEstado): void {
-  //   fila.total = respuesta.total;
-  //   fila.juegos = respuesta.juegos;
-  //
-  //   this.cambios.markForCheck();
-  // }
-  //
-  // // Por ahora el error solo se escribe en la consola del navegador (F12).
-  // private mostrarError(error: unknown): void {
-  //   console.error('No se pudo cargar la información del Inicio', error);
-  // }
-
-  // ==================================================================
-  // ===== FIN DEL BLOQUE BACK =====
-  // ==================================================================
+  /* El detalle queda en la consola (F12) y la pantalla muestra un aviso. */
+  private mostrarError(error: unknown): void {
+    console.error('No se pudo cargar la información del Inicio', error);
+    this.hayError = true;
+    this.cambios.markForCheck();
+  }
 }

@@ -4,8 +4,10 @@ import { ActivatedRoute } from '@angular/router';
 import { Videojuego } from '../../../shared/models/videojuego-model';
 import { OPCIONES_REPORTE, OpcionReporte, ReporteTabla, TipoReporte } from '../../../shared/models/reporte-model';
 
-// ===== BACK: descomenta este import cuando conectes el back =====
-// import { ArchiveludoApiService } from '../../../core/archiveludo-api-service';
+import { ArchiveludoApiService } from '../../../core/archiveludo-api-service';
+import { EstatusLegal } from '../../../shared/models/estatus-legal-model';
+import { EventoRiesgo } from '../../../shared/models/evento-riesgo-model';
+import { Copia } from '../../../shared/models/copia-model';
 
 /*
  * Pantalla "Reportes": trazabilidad de un videojuego.
@@ -44,6 +46,9 @@ export class ReportesComponent implements OnInit {
   /* true si el back respondió con error. */
   hayError: boolean = false;
 
+  /* Texto del error (cambia si ese reporte aún no está disponible). */
+  mensajeError: string = 'No pudimos generar el reporte. Intenta de nuevo más tarde.';
+
   /* El reporte ya generado. Es null mientras no se haya generado ninguno. */
   reporte: ReporteTabla | null = null;
 
@@ -54,140 +59,104 @@ export class ReportesComponent implements OnInit {
   /* Meses abreviados para formatear las fechas de las celdas. */
   private meses: string[] = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
 
-  // ==================================================================
-  // ===== HARDCODE: borra desde aquí hasta "FIN HARDCODE"
-  //  cuando conectes el back (incluye este constructor, cargarJuegos
-  //  y cargarReporte)
-  // ==================================================================
-
-  /* Videojuegos de prueba. Solo el 1 y el 8 tienen datos de reporte. */
-  private juegosPrueba: Videojuego[] = [
-    { idVideojuego: 1, titulo: 'Torre de Ámbar Online', plataformaOriginal: 'PC', anioLanzamiento: 2007, estadoConservacion: 'en_riesgo' },
-    { idVideojuego: 2, titulo: 'Sombras de Vellum', plataformaOriginal: 'PlayStation', anioLanzamiento: 1999, estadoConservacion: 'en_riesgo' },
-    { idVideojuego: 3, titulo: 'Códice Nómada', plataformaOriginal: 'Web', anioLanzamiento: 2011, estadoConservacion: 'en_riesgo' },
-    { idVideojuego: 8, titulo: 'Furia Quark', plataformaOriginal: 'Arcade', anioLanzamiento: 1994, estadoConservacion: 'restaurado' }
-  ];
-
   /*
-   * Datos de prueba de los reportes. La primera llave es el id del juego y
-   * la segunda el tipo de reporte. La primera columna siempre es una fecha
-   * (yyyy-MM-dd), que es la que usa el filtro de rango de las pruebas.
-   */
-  private datosPrueba: Record<number, Partial<Record<TipoReporte, ReporteTabla>>> = {
-    1: {
-      'estatus-legal': {
-        columnas: ['Fecha de determinación', 'Estatus legal'],
-        filas: [
-          ['2012-05-03', 'Protegido por derechos de autor'],
-          ['2026-02-14', 'Obra huérfana']
-        ]
-      },
-      'eventos-riesgo': {
-        columnas: ['Fecha', 'Tipo de evento', 'Descripción', 'Fuente'],
-        filas: [
-          ['2021-06-30', 'Cierre de servidores', 'La editora apagó los servidores oficiales.', 'Comunicado oficial'],
-          ['2024-01-12', 'Quiebra del estudio', 'El estudio desarrollador cerró definitivamente.', 'Prensa especializada']
-        ]
-      },
-      'proyectos': {
-        columnas: ['Fecha de inicio', 'Fecha de fin', 'Estado', 'Herramienta / emulador'],
-        filas: [
-          ['2026-03-10', 'Vigente', 'Activo', 'Servidor privado + emulación de cliente']
-        ]
-      },
-      'copias': {
-        columnas: ['Fecha', 'Copias', 'Cambio'],
-        filas: [
-          ['2020-01-15', '1', 'Se registró una copia digital'],
-          ['2023-08-09', '2', 'Se registró una copia física']
-        ]
-      },
-      'custodias': {
-        columnas: ['Desde', 'Hasta', 'Institución', 'Copia'],
-        filas: [
-          ['2020-01-15', '2023-05-01', 'Museo del Videojuego', 'Copia #1 (digital)'],
-          ['2023-05-01', 'Vigente', 'Archivo Digital Andino', 'Copia #1 (digital)'],
-          ['2023-08-09', 'Vigente', 'Museo del Videojuego', 'Copia #2 (física)']
-        ]
-      },
-      'expertos': {
-        columnas: ['Desde', 'Hasta', 'Experto', 'Rol', 'Proyecto'],
-        filas: [
-          ['2026-03-10', 'Vigente', 'Laura Mendoza', 'Líder técnica', 'P-001'],
-          ['2026-04-02', 'Vigente', 'Andrés Quintero', 'Ingeniero de redes', 'P-001']
-        ]
-      }
-    },
-    8: {
-      'estatus-legal': {
-        columnas: ['Fecha de determinación', 'Estatus legal'],
-        filas: [
-          ['2016-09-01', 'En disputa legal'],
-          ['2025-12-01', 'Liberado por el titular']
-        ]
-      },
-      'eventos-riesgo': {
-        columnas: ['Fecha', 'Tipo de evento', 'Descripción', 'Fuente'],
-        filas: [
-          ['2022-03-18', 'Fallo de soporte', 'La placa original dejó de arrancar.', 'Informe del museo']
-        ]
-      },
-      'proyectos': {
-        columnas: ['Fecha de inicio', 'Fecha de fin', 'Estado', 'Herramienta / emulador'],
-        filas: [
-          ['2025-02-01', '2025-11-20', 'Finalizado', 'MAME']
-        ]
-      },
-      'copias': {
-        columnas: ['Fecha', 'Copias', 'Cambio'],
-        filas: [
-          ['2019-07-02', '1', 'Se registró una copia física'],
-          ['2025-11-20', '2', 'Se registró una copia digital']
-        ]
-      },
-      'custodias': {
-        columnas: ['Desde', 'Hasta', 'Institución', 'Copia'],
-        filas: [
-          ['2019-07-02', 'Vigente', 'Museo del Videojuego', 'Copia #3 (física)'],
-          ['2025-11-20', 'Vigente', 'Archivo Digital Andino', 'Copia #4 (digital)']
-        ]
-      },
-      'expertos': {
-        columnas: ['Desde', 'Hasta', 'Experto', 'Rol', 'Proyecto'],
-        filas: [
-          ['2025-02-01', '2025-11-20', 'Julián Pardo', 'Especialista en ROMs', 'P-003'],
-          ['2025-05-12', '2025-11-20', 'Camila Rojas', 'Control de calidad', 'P-003']
-        ]
-      }
-    }
-  };
-
-  /*
-   * ActivatedRoute lee la URL; FormBuilder arma el formulario;
-   * ChangeDetectorRef avisa a Angular que hay que redibujar.
+   * ApiService habla con el back; ActivatedRoute lee la URL; FormBuilder arma
+   * el formulario; ChangeDetectorRef avisa a Angular que hay que redibujar.
    */
   constructor(
+    private api: ArchiveludoApiService,
     private route: ActivatedRoute,
     private constructorFormulario: FormBuilder,
     private cambios: ChangeDetectorRef
   ) { }
 
-  /* Entrega los videojuegos de prueba para el selector. */
+  /* El selector muestra los primeros 50 juegos (el límite máximo del back). */
   private cargarJuegos(): void {
-    this.juegos = this.juegosPrueba;
-    this.cambios.markForCheck();
+    this.api.buscarVideojuegos('', '', 0, 50).subscribe({
+      next: (pagina) => {
+        this.juegos = pagina.juegos;
+        this.cambios.markForCheck();
+      },
+      error: (error) => this.alFallar(error, 'No pudimos cargar la lista de videojuegos.')
+    });
   }
 
-  /* Arma el reporte de prueba: busca los datos del juego y recorta por el rango de fechas. */
+  /*
+   * El back no tiene un endpoint de reportes. Tres reportes se arman aquí con
+   * los endpoints que sí existen (estatus legal, eventos de riesgo y copias);
+   * los otros tres (proyectos, custodias y expertos) dependen de servicios que
+   * el back todavía no tiene.
+   */
   private cargarReporte(tipo: TipoReporte, idVideojuego: number, desde: string, hasta: string): void {
-    // Las columnas salen del juego 1, que tiene todos los tipos; así un juego
-    // sin datos igual muestra la tabla vacía con sus encabezados.
-    const base = this.datosPrueba[1][tipo] as ReporteTabla;
-    const propios = this.datosPrueba[idVideojuego] ? this.datosPrueba[idVideojuego][tipo] : undefined;
-    const origen = propios ? propios : { columnas: base.columnas, filas: [] as string[][] };
+    if (tipo === 'estatus-legal') {
+      this.api.obtenerEstatusLegal(idVideojuego).subscribe({
+        next: (lista) => this.mostrarReporte(this.tablaEstatus(lista), desde, hasta),
+        error: (error) => this.alFallar(error, this.mensajeError)
+      });
+    } else if (tipo === 'eventos-riesgo') {
+      this.api.obtenerEventosRiesgo(idVideojuego).subscribe({
+        next: (lista) => this.mostrarReporte(this.tablaEventos(lista), desde, hasta),
+        error: (error) => this.alFallar(error, this.mensajeError)
+      });
+    } else if (tipo === 'copias') {
+      this.api.obtenerCopias(idVideojuego).subscribe({
+        next: (lista) => this.mostrarReporte(this.tablaCopias(lista), desde, hasta),
+        error: (error) => this.alFallar(error, this.mensajeError)
+      });
+    } else {
+      this.alFallar({}, 'Este reporte aún no está disponible: el servidor todavía no ofrece esa información.');
+    }
+  }
+
+  /* Tabla del reporte "Estatus legal": una fila por registro, del más antiguo al más reciente. */
+  private tablaEstatus(lista: EstatusLegal[]): ReporteTabla {
+    const filas: string[][] = [];
+
+    for (const registro of lista) {
+      filas.push([registro.fechaDeterminacion, registro.estatus, registro.observacion || '']);
+    }
+
+    return { columnas: ['Fecha de determinación', 'Estatus legal', 'Observación'], filas: filas };
+  }
+
+  /* Tabla del reporte "Eventos de riesgo". */
+  private tablaEventos(lista: EventoRiesgo[]): ReporteTabla {
+    const filas: string[][] = [];
+
+    for (const evento of lista) {
+      filas.push([evento.fechaEvento, evento.tipoEvento, evento.descripcion, evento.fuente || '']);
+    }
+
+    return { columnas: ['Fecha', 'Tipo de evento', 'Descripción', 'Fuente'], filas: filas };
+  }
+
+  /*
+   * Tabla del reporte "Copias en el tiempo": con las copias ordenadas por
+   * fecha de registro, la columna "Copias" cuenta cuántas había en ese momento.
+   */
+  private tablaCopias(lista: Copia[]): ReporteTabla {
+    const ordenadas = lista.slice();
+    ordenadas.sort((a, b) => a.fechaRegistro.localeCompare(b.fechaRegistro));
 
     const filas: string[][] = [];
-    for (const fila of origen.filas) {
+    let acumulado = 0;
+
+    for (const copia of ordenadas) {
+      acumulado = acumulado + 1;
+      const clase = copia.tipoCopia === 'fisica' ? 'física' : 'digital';
+      filas.push([copia.fechaRegistro.substring(0, 10), String(acumulado), 'Se registró una copia ' + clase]);
+    }
+
+    return { columnas: ['Fecha', 'Copias', 'Cambio'], filas: filas };
+  }
+
+  /* Ordena por la primera columna (una fecha yyyy-MM-dd), recorta por el rango y muestra la tabla. */
+  private mostrarReporte(tabla: ReporteTabla, desde: string, hasta: string): void {
+    const ordenadas = tabla.filas.slice();
+    ordenadas.sort((a, b) => a[0].localeCompare(b[0]));
+
+    const filas: string[][] = [];
+    for (const fila of ordenadas) {
       const despuesDeDesde = desde === '' || fila[0] >= desde;
       const antesDeHasta = hasta === '' || fila[0] <= hasta;
       if (despuesDeDesde && antesDeHasta) {
@@ -195,59 +164,19 @@ export class ReportesComponent implements OnInit {
       }
     }
 
-    this.reporte = { columnas: origen.columnas, filas: filas };
+    this.reporte = { columnas: tabla.columnas, filas: filas };
     this.cargando = false;
     this.cambios.markForCheck();
   }
 
-  // ==================================================================
-  // ===== FIN HARDCODE
-  // ==================================================================
-
-  // ==================================================================
-  // ===== BACK: cuando conectes el back, borra el bloque HARDCODE y
-  //  descomenta esto (y el import de arriba):
-  // ==================================================================
-  //
-  // constructor(
-  //   private api: ArchiveludoApiService,
-  //   private route: ActivatedRoute,
-  //   private constructorFormulario: FormBuilder,
-  //   private cambios: ChangeDetectorRef
-  // ) { }
-  //
-  // /* El selector muestra los primeros 50 juegos (el límite máximo del back). */
-  // private cargarJuegos(): void {
-  //   this.api.buscarVideojuegos('', '', 0, 50).subscribe({
-  //     next: (respuesta) => {
-  //       const lista: Videojuego[] = [];
-  //       for (const item of respuesta.juegos) {
-  //         lista.push(item.videojuego);
-  //       }
-  //       this.juegos = lista;
-  //       this.cambios.markForCheck();
-  //     },
-  //     error: () => {
-  //       this.hayError = true;
-  //       this.cambios.markForCheck();
-  //     }
-  //   });
-  // }
-  //
-  // private cargarReporte(tipo: TipoReporte, idVideojuego: number, desde: string, hasta: string): void {
-  //   this.api.obtenerReporte(tipo, idVideojuego, desde, hasta).subscribe({
-  //     next: (respuesta) => {
-  //       this.reporte = respuesta;
-  //       this.cargando = false;
-  //       this.cambios.markForCheck();
-  //     },
-  //     error: () => {
-  //       this.cargando = false;
-  //       this.hayError = true;
-  //       this.cambios.markForCheck();
-  //     }
-  //   });
-  // }
+  /* Muestra el aviso de error con el texto dado; el detalle queda en la consola (F12). */
+  private alFallar(error: unknown, mensaje: string): void {
+    console.error('No se pudo generar el reporte', error);
+    this.mensajeError = mensaje;
+    this.cargando = false;
+    this.hayError = true;
+    this.cambios.markForCheck();
+  }
 
   /* Arma el formulario, deja elegido el juego de la URL (si viene) y carga el selector. */
   ngOnInit(): void {
@@ -304,6 +233,7 @@ export class ReportesComponent implements OnInit {
 
     this.cargando = true;
     this.hayError = false;
+    this.mensajeError = 'No pudimos generar el reporte. Intenta de nuevo más tarde.';
     this.reporte = null;
 
     this.cargarReporte(tipo, idVideojuego, valores.desde, valores.hasta);

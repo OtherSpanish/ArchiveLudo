@@ -1,24 +1,28 @@
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
-import { ActivatedRoute, ParamMap } from '@angular/router';
-import { Videojuego } from '../../../shared/models/videojuego-model';
-import { Custodia, Institucion } from '../../../shared/models/custodia-model';
-import { EstatusLegal } from '../../../shared/models/estatus-legal-model';
+import { HttpErrorResponse } from '@angular/common/http';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { ActivatedRoute, ParamMap, Router } from '@angular/router';
+import { Estudio, Videojuego } from '../../../shared/models/videojuego-model';
+import { Custodia } from '../../../shared/models/custodia-model';
+import { Copia } from '../../../shared/models/copia-model';
+import { EstatusLegal, EstatusLegalNuevo } from '../../../shared/models/estatus-legal-model';
 import { EventoRiesgo } from '../../../shared/models/evento-riesgo-model';
+import { CompaniaEditora } from '../../../shared/models/compania-editora-model';
+import { ArchiveludoApiService } from '../../../core/archiveludo-api-service';
 import {
   CopiaConCustodia,
-  DatosFicha,
   InstitucionConCopias,
   ProyectoConDetalle
 } from '../../../shared/models/api-model';
-
-// ===== BACK: descomentar esta línea al conectar =====
-// import { ArchiveludoApiService } from '../../../core/archiveludo-api-service';
 
 /*
  * Las cuatro pestañas de la ficha. Cada valor es el identificador interno
  * de la pestaña; el texto que ve el usuario se arma en el HTML.
  */
 type Pestana = 'copias' | 'proyectos' | 'legal' | 'eventos';
+
+/* Los cuatro estatus legales que acepta el back (texto legible). */
+const ESTATUS_OPCIONES: string[] = ['Protegido', 'Dominio público', 'Huérfano', 'Abandonware'];
 
 /*
  * Pantalla de la ficha de un videojuego (/videojuegos/:id).
@@ -40,7 +44,11 @@ export class FichaVideojuegoComponent implements OnInit {
    */
   videojuego?: Videojuego;
 
-  estatusLegal: string = '';
+  /* Nombres de las editoras del juego (se cruzan idsEditoras con GET /api/editoras). */
+  nombresEditoras: string[] = [];
+
+  /* true cuando el back respondió que el juego no existe o falló la carga. */
+  hayError: boolean = false;
 
   numeroCopias: number = 0;
 
@@ -77,464 +85,196 @@ export class FichaVideojuegoComponent implements OnInit {
   /* Bitácora de eventos de riesgo (pestaña Eventos de riesgo), del más reciente al más antiguo. */
   eventos: EventoRiesgo[] = [];
 
+  // ---- Eliminar el videojuego (solo administrador) ----
+
+  /* true cuando se pidió eliminar y se espera la confirmación del usuario. */
+  confirmandoEliminar: boolean = false;
+
+  /* true mientras se espera la respuesta del back. */
+  eliminando: boolean = false;
+
+  /* Mensaje si el back rechaza la eliminación (por ejemplo, 409). */
+  errorEliminar: string = '';
+
+  // ---- Formulario "Agregar estatus legal" (pestaña Estatus legal) ----
+
+  /* Opciones del selector de estatus. */
+  opcionesEstatus: string[] = ESTATUS_OPCIONES;
+
+  /* true cuando el formulario está desplegado. */
+  mostrarFormularioEstatus: boolean = false;
+
+  /* El formulario. Se arma en el constructor. */
+  formularioEstatus: FormGroup;
+
+  /* true después del primer intento de guardar; sirve para mostrar errores de campos sin tocar. */
+  estatusEnviado: boolean = false;
+
+  /* true mientras se espera la respuesta del back. */
+  guardandoEstatus: boolean = false;
+
+  /* Mensaje de error si el back rechaza el guardado. */
+  errorEstatus: string = '';
+
+  /* Registro que se está editando. Es undefined cuando el formulario agrega uno nuevo. */
+  editandoEstatus?: EstatusLegal;
+
+  /* Id del registro que está pidiendo confirmación para eliminarse (0 = ninguno). */
+  idConfirmandoEliminarEstatus: number = 0;
+
+  /* Fecha máxima del campo de fecha: hoy. No se puede determinar un estatus en el futuro. */
+  hoy: string = this.fechaHoy();
+
   /* Pestaña que se está viendo. Empieza en "Copias", como en el boceto. */
   pestanaActiva: Pestana = 'copias';
 
-  // ==================================================================
-  // ===== HARDCODE: borrar este bloque al conectar el back =====
-  // (incluye instituciones, copias, custodias, proyectos, estatus y
-  //  eventos de prueba, datosPrueba, el constructor y las funciones
-  //  cargarJuego y cargarHistorial)
-  // ==================================================================
-
-  /* Instituciones de prueba. Se definen primero porque las copias y custodias las usan. */
-  private museo: Institucion = {
-    idInstitucion: 1,
-    nombre: 'Museo de Cultura Invernadero',
-    tipo: 'Museo',
-    pais: 'Colombia',
-    contacto: 'archivo@museoinvernadero.example'
-  };
-
-  private universidad: Institucion = {
-    idInstitucion: 2,
-    nombre: 'Universidad del Altiplano',
-    tipo: 'Universidad',
-    pais: 'Colombia',
-    contacto: 'preservacion@altiplano.example'
-  };
 
   /*
-   * Copias de prueba. La llave es el id del videojuego:
-   * 1 = Torre de Ámbar Online (1 copia), 8 = Furia Quark (3 copias).
-   * Coinciden con numeroCopias de datosPrueba.
-   */
-  private copiasPrueba: Record<number, CopiaConCustodia[]> = {
-    1: [
-      {
-        copia: {
-          idCopia: 4,
-          idVideojuego: 1,
-          tipoCopia: 'digital',
-          estadoIntegridad: 'deteriorada',
-          fechaRegistro: '2022-05-30',
-          formatoArchivo: 'ISO (imagen de disco)',
-          tamanio: '640 MB',
-          hashVerificacion: 'sha256:c7d1e9a0b8346f52'
-        },
-        custodiaActual: {
-          idCustodia: 4,
-          idCopia: 4,
-          institucion: this.universidad,
-          fechaInicio: '2022-05-30',
-          condicionAlmacenamiento: 'Servidor de archivo con respaldo semanal'
-        }
-      }
-    ],
-    8: [
-      {
-        copia: {
-          idCopia: 1,
-          idVideojuego: 8,
-          tipoCopia: 'fisica',
-          estadoIntegridad: 'deteriorada',
-          fechaRegistro: '2019-03-12',
-          tipoSoporte: 'Placa de circuito arcade',
-          numeroSerie: 'QX-94-0127',
-          ubicacionFisica: 'Vitrina 3, sala de archivo'
-        },
-        custodiaActual: {
-          idCustodia: 1,
-          idCopia: 1,
-          institucion: this.museo,
-          fechaInicio: '2019-08-05',
-          condicionAlmacenamiento: 'Vitrina con humedad y temperatura controladas'
-        }
-      },
-      {
-        copia: {
-          idCopia: 2,
-          idVideojuego: 8,
-          tipoCopia: 'digital',
-          estadoIntegridad: 'buena',
-          fechaRegistro: '2020-08-06',
-          formatoArchivo: 'ZIP (imagen de respaldo)',
-          tamanio: '2 MB',
-          hashVerificacion: 'sha256:9f2c4a7e1b03d58c'
-        },
-        custodiaActual: {
-          idCustodia: 2,
-          idCopia: 2,
-          institucion: this.universidad,
-          fechaInicio: '2020-08-06',
-          condicionAlmacenamiento: 'Servidor de archivo con respaldo diario'
-        }
-      },
-      {
-        copia: {
-          idCopia: 3,
-          idVideojuego: 8,
-          tipoCopia: 'digital',
-          estadoIntegridad: 'buena',
-          fechaRegistro: '2021-02-15',
-          formatoArchivo: 'ZIP (ROM comprimida)',
-          tamanio: '3 MB',
-          hashVerificacion: 'sha256:41ab90de77c3f215'
-        },
-        custodiaActual: {
-          idCustodia: 3,
-          idCopia: 3,
-          institucion: this.museo,
-          fechaInicio: '2021-02-15',
-          condicionAlmacenamiento: 'Disco de archivo con copia en la nube'
-        }
-      }
-    ]
-  };
-
-  /*
-   * Historial de custodia de prueba. La llave es el id de la COPIA.
-   * La copia 1 tiene dos periodos (Universidad y luego Museo), como el boceto.
-   * Las demás tienen uno solo, y es el vigente (no tiene fechaFin).
-   */
-  private custodiasPrueba: Record<number, Custodia[]> = {
-    1: [
-      {
-        idCustodia: 5,
-        idCopia: 1,
-        institucion: this.universidad,
-        fechaInicio: '2019-03-12',
-        fechaFin: '2019-08-04',
-        condicionAlmacenamiento: 'Armario metálico sin control de humedad'
-      },
-      {
-        idCustodia: 1,
-        idCopia: 1,
-        institucion: this.museo,
-        fechaInicio: '2019-08-05',
-        condicionAlmacenamiento: 'Vitrina con humedad y temperatura controladas'
-      }
-    ],
-    2: [
-      {
-        idCustodia: 2,
-        idCopia: 2,
-        institucion: this.universidad,
-        fechaInicio: '2020-08-06',
-        condicionAlmacenamiento: 'Servidor de archivo con respaldo diario'
-      }
-    ],
-    3: [
-      {
-        idCustodia: 3,
-        idCopia: 3,
-        institucion: this.museo,
-        fechaInicio: '2021-02-15',
-        condicionAlmacenamiento: 'Disco de archivo con copia en la nube'
-      }
-    ],
-    4: [
-      {
-        idCustodia: 4,
-        idCopia: 4,
-        institucion: this.universidad,
-        fechaInicio: '2022-05-30',
-        condicionAlmacenamiento: 'Servidor de archivo con respaldo semanal'
-      }
-    ]
-  };
-
-  /*
-   * Proyectos de restauración de prueba. La llave es el id del videojuego.
-   * El 8 (Furia Quark) tiene 1 proyecto finalizado con 2 expertos; coincide
-   * con numeroProyectos de datosPrueba. El 1 no tiene, así que se ve el
-   * mensaje de "sin proyectos".
-   */
-  private proyectosPrueba: Record<number, ProyectoConDetalle[]> = {
-    8: [
-      {
-        proyecto: {
-          idProyecto: 1,
-          estado: 'finalizado',
-          fechaInicio: '2023-02-10',
-          fechaFin: '2023-11-30',
-          herramientaEmulador: 'MAME 0.258'
-        },
-        expertos: [
-          {
-            idExperto: 1,
-            nombre: 'Marta Quintero',
-            rolEnProyecto: 'Líder técnica',
-            fechaIncorporacion: '2023-02-10'
-          },
-          {
-            idExperto: 2,
-            nombre: 'Iván Ortega',
-            rolEnProyecto: 'Archivista digital',
-            fechaIncorporacion: '2023-03-01'
-          }
-        ]
-      }
-    ]
-  };
-
-  /*
-   * Historial de estatus legal de prueba. La llave es el id del videojuego.
-   * Va del más reciente al más antiguo, como lo entregaría el back; el
-   * primero coincide con estatusLegal de datosPrueba (el vigente).
-   */
-  private estatusPrueba: Record<number, EstatusLegal[]> = {
-    1: [
-      { idEstatusLegal: 2, estatus: 'Huérfano', fechaDeterminacion: '2015-06-10' },
-      { idEstatusLegal: 1, estatus: 'Sin determinar', fechaDeterminacion: '2012-03-01' }
-    ],
-    8: [
-      { idEstatusLegal: 4, estatus: 'Dominio público', fechaDeterminacion: '2022-01-20' },
-      { idEstatusLegal: 3, estatus: 'Huérfano', fechaDeterminacion: '2010-09-05' }
-    ]
-  };
-
-  /*
-   * Bitácora de eventos de riesgo de prueba. La llave es el id del
-   * videojuego. También va del más reciente al más antiguo. La fuente es
-   * opcional: el último evento del juego 8 no la tiene, para probar eso.
-   */
-  private eventosPrueba: Record<number, EventoRiesgo[]> = {
-    1: [
-      {
-        idEvento: 2,
-        tipoEvento: 'Servidores cerrados',
-        fecha: '2009-11-15',
-        descripcion: 'Se apagaron los servidores y el juego dejó de poder jugarse en línea.',
-        fuente: 'Comunicado oficial del estudio'
-      },
-      {
-        idEvento: 1,
-        tipoEvento: 'Cierre del estudio',
-        fecha: '2009-03-02',
-        descripcion: 'Foro Digital cerró y no dejó un responsable de los derechos.',
-        fuente: 'Archivo de prensa especializada'
-      }
-    ],
-    8: [
-      {
-        idEvento: 4,
-        tipoEvento: 'Deterioro de la placa original',
-        fecha: '2018-11-02',
-        descripcion: 'La placa física presenta corrosión en los contactos y pierde lecturas intermitentes.',
-        fuente: 'Informe de conservación del museo'
-      },
-      {
-        idEvento: 3,
-        tipoEvento: 'Cierre del estudio',
-        fecha: '2001-06-30',
-        descripcion: 'Quark Interactive cerró y sus derechos quedaron sin titular.'
-      }
-    ]
-  };
-
-  /*
-   * DATOS DE PRUEBA de la cabecera. Los ids coinciden con los de las
-   * tarjetas de Inicio, así los enlaces funcionan.
-   */
-  private datosPrueba: DatosFicha[] = [
-    {
-      videojuego: {
-        idVideojuego: 1,
-        titulo: 'Torre de Ámbar Online',
-        plataformaOriginal: 'PC',
-        anioLanzamiento: 2007,
-        estadoConservacion: 'en_riesgo',
-        estudio: {
-          idEstudio: 1,
-          nombre: 'Foro Digital',
-          pais: 'Colombia',
-          anioFundacion: 1998,
-          anioCierre: 2009,
-          estadoActual: 'desaparecido'
-        }
-      },
-      estatusLegal: 'Huérfano',
-      numeroCopias: 1,
-      numeroProyectos: 0
-    },
-    {
-      videojuego: {
-        idVideojuego: 8,
-        titulo: 'Furia Quark',
-        plataformaOriginal: 'Arcade',
-        anioLanzamiento: 1994,
-        estadoConservacion: 'restaurado',
-        estudio: {
-          idEstudio: 2,
-          nombre: 'Quark Interactive',
-          pais: 'Japón',
-          anioFundacion: 1989,
-          anioCierre: 2001,
-          estadoActual: 'desaparecido'
-        }
-      },
-      estatusLegal: 'Dominio público',
-      numeroCopias: 3,
-      numeroProyectos: 1
-    }
-  ];
-
-  /*
-   * ActivatedRoute es la herramienta de Angular para leer datos de la URL actual.
-   * ChangeDetectorRef sirve para avisarle a Angular que esta pantalla cambió
-   * y hay que redibujarla. Las dos se piden en el constructor y Angular
-   * las entrega solas (inyección de dependencias).
+   * ActivatedRoute lee datos de la URL actual.
+   * ArchiveludoApiService habla con el back.
+   * ChangeDetectorRef avisa a Angular que hay que redibujar la pantalla.
    */
   constructor(
     private route: ActivatedRoute,
+    private router: Router,
+    private api: ArchiveludoApiService,
+    private constructorFormulario: FormBuilder,
     private cambios: ChangeDetectorRef
-  ) { }
+  ) {
+    this.formularioEstatus = this.constructorFormulario.group({
+      estatus: ['Protegido', Validators.required],
+      fechaDeterminacion: [this.hoy, Validators.required],
+      observacion: ['', Validators.maxLength(500)]
+    });
+  }
 
   /*
-   * Recorre los datos de prueba con un for normal.
-   * Si encuentra un juego con ese id, guarda el juego, sus datos extra,
-   * sus copias, sus proyectos, su historial legal y sus eventos.
+   * Pide al back: el videojuego, su estatus legal y sus eventos.
+   * También sus copias y sus proyectos.
+   * Si el juego no existe (404) se queda sin valor y el HTML muestra
+   * "No encontramos ese videojuego".
    */
   private cargarJuego(id: number): void {
     this.limpiarJuego();
 
-    for (const datos of this.datosPrueba) {
-      if (datos.videojuego.idVideojuego === id) {
-        this.videojuego = datos.videojuego;
-        this.estatusLegal = datos.estatusLegal;
-        this.numeroCopias = datos.numeroCopias;
-        this.numeroProyectos = datos.numeroProyectos;
+    // GET /api/videojuegos/{id}
+    this.api.obtenerVideojuego(id).subscribe({
+      next: (juego) => this.alRecibirVideojuego(juego),
+      error: (error) => this.mostrarError(error)
+    });
 
-        const copiasDelJuego = this.copiasPrueba[id] || [];
-        this.recibirCopias(copiasDelJuego);
+    // GET /api/videojuegos/{id}/estatus-legal
+    this.api.obtenerEstatusLegal(id).subscribe({
+      next: (historial) => this.alRecibirEstatusLegal(historial),
+      error: (error) => this.mostrarError(error)
+    });
 
-        this.proyectos = this.proyectosPrueba[id] || [];
-        this.historialLegal = this.estatusPrueba[id] || [];
-        this.eventos = this.eventosPrueba[id] || [];
-      }
+    // GET /api/videojuegos/{id}/eventos-riesgo
+    this.api.obtenerEventosRiesgo(id).subscribe({
+      next: (eventos) => this.alRecibirEventos(eventos),
+      error: (error) => this.mostrarError(error)
+    });
+
+    // GET /api/videojuegos/{id}/copias
+    this.api.obtenerCopias(id).subscribe({
+      next: (copias) => this.alRecibirCopias(copias),
+      error: (error) => this.mostrarError(error)
+    });
+
+    // GET /api/videojuegos/{id}/proyectos
+    // Si el servidor aún no tiene este servicio, la pestaña queda vacía; un
+    // error aquí NO debe ocultar toda la ficha (por eso no usa mostrarError).
+    this.api.obtenerProyectos(id).subscribe({
+      next: (proyectos) => this.alRecibirProyectos(proyectos),
+      error: (error) => console.error('No se pudieron cargar los proyectos del videojuego', error)
+    });
+  }
+
+  private alRecibirProyectos(proyectos: ProyectoConDetalle[]): void {
+    this.proyectos = proyectos;
+    this.numeroProyectos = proyectos.length;
+    this.cambios.markForCheck();
+  }
+
+  /*
+   * Llegan las copias. El back aún no manda la custodia, así que cada copia
+   * se guarda sin custodiaActual (la tarjeta dice "sin custodia registrada").
+   */
+  private alRecibirCopias(copias: Copia[]): void {
+    const lista: CopiaConCustodia[] = [];
+
+    for (const copia of copias) {
+      lista.push({ copia: copia });
     }
+
+    this.copias = lista;
+    this.numeroCopias = lista.length;
+    this.instituciones = this.agruparInstituciones(lista);
 
     this.cambios.markForCheck();
   }
 
-  /* Busca el historial de la copia en los datos de prueba. */
-  private cargarHistorial(idCopia: number): void {
-    this.custodiasHistorial = this.custodiasPrueba[idCopia] || [];
+  /* Llega el juego: se muestra y se piden su estudio y las editoras. */
+  private alRecibirVideojuego(juego: Videojuego): void {
+    this.videojuego = juego;
+    this.cambios.markForCheck();
+
+    // GET /api/estudios/{idEstudio}
+    if (juego.idEstudio !== undefined) {
+      this.api.obtenerEstudio(juego.idEstudio).subscribe({
+        next: (estudio) => this.alRecibirEstudio(estudio),
+        error: (error) => this.mostrarError(error)
+      });
+    }
+
+    // GET /api/editoras (se cruza con idsEditoras)
+    const ids = juego.idsEditoras || [];
+    if (ids.length > 0) {
+      this.api.obtenerEditoras().subscribe({
+        next: (editoras) => this.alRecibirEditoras(editoras, ids),
+        error: (error) => this.mostrarError(error)
+      });
+    }
   }
 
-  // ==================================================================
-  // ===== FIN DEL HARDCODE =====
-  // ==================================================================
+  /* Guarda el estudio dentro del juego, para que textoEstudio lo muestre. */
+  private alRecibirEstudio(estudio: Estudio): void {
+    if (this.videojuego) {
+      this.videojuego.estudio = estudio;
+    }
+    this.cambios.markForCheck();
+  }
 
+  /* Se queda solo con los nombres de las editoras cuyo id está en idsEditoras. */
+  private alRecibirEditoras(editoras: CompaniaEditora[], ids: number[]): void {
+    const nombres: string[] = [];
 
-  // ==================================================================
-  // ===== BACK: descomentar todo este bloque al conectar =====
-  // (en WebStorm: seleccionarlo y Ctrl + /)
-  // ==================================================================
+    for (const editora of editoras) {
+      if (ids.includes(editora.idEditora)) {
+        nombres.push(editora.nombre);
+      }
+    }
 
-  // // ArchiveludoApiService habla con el back. ChangeDetectorRef ya está
-  // // importado arriba, porque la pantalla lo necesita siempre.
-  // constructor(
-  //   private route: ActivatedRoute,
-  //   private api: ArchiveludoApiService,
-  //   private cambios: ChangeDetectorRef
-  // ) { }
-  //
-  // // Pide cinco cosas: la cabecera, las copias, los proyectos, el historial
-  // // legal y los eventos. El historial de custodia se pide después, cuando
-  // // llegan las copias (ver cargarHistorial).
-  // private cargarJuego(id: number): void {
-  //   this.limpiarJuego();
-  //
-  //   // GET /api/videojuegos/{id}
-  //   this.api.obtenerFicha(id).subscribe({
-  //     next: (datos) => this.alRecibirFicha(datos),
-  //     error: (error) => this.mostrarError(error)
-  //   });
-  //
-  //   // GET /api/videojuegos/{id}/copias
-  //   this.api.obtenerCopias(id).subscribe({
-  //     next: (copias) => this.alRecibirCopias(copias),
-  //     error: (error) => this.mostrarError(error)
-  //   });
-  //
-  //   // GET /api/videojuegos/{id}/proyectos
-  //   this.api.obtenerProyectos(id).subscribe({
-  //     next: (proyectos) => this.alRecibirProyectos(proyectos),
-  //     error: (error) => this.mostrarError(error)
-  //   });
-  //
-  //   // GET /api/videojuegos/{id}/estatus-legal
-  //   this.api.obtenerEstatusLegal(id).subscribe({
-  //     next: (historial) => this.alRecibirEstatusLegal(historial),
-  //     error: (error) => this.mostrarError(error)
-  //   });
-  //
-  //   // GET /api/videojuegos/{id}/eventos-riesgo
-  //   this.api.obtenerEventosRiesgo(id).subscribe({
-  //     next: (eventos) => this.alRecibirEventos(eventos),
-  //     error: (error) => this.mostrarError(error)
-  //   });
-  // }
-  //
-  // private alRecibirFicha(datos: DatosFicha): void {
-  //   this.videojuego = datos.videojuego;
-  //   this.estatusLegal = datos.estatusLegal;
-  //   this.numeroCopias = datos.numeroCopias;
-  //   this.numeroProyectos = datos.numeroProyectos;
-  //
-  //   this.cambios.markForCheck();
-  // }
-  //
-  // private alRecibirCopias(copias: CopiaConCustodia[]): void {
-  //   this.recibirCopias(copias);
-  //
-  //   this.cambios.markForCheck();
-  // }
-  //
-  // private alRecibirProyectos(proyectos: ProyectoConDetalle[]): void {
-  //   this.proyectos = proyectos;
-  //
-  //   this.cambios.markForCheck();
-  // }
-  //
-  // private alRecibirEstatusLegal(historial: EstatusLegal[]): void {
-  //   this.historialLegal = historial;
-  //
-  //   this.cambios.markForCheck();
-  // }
-  //
-  // private alRecibirEventos(eventos: EventoRiesgo[]): void {
-  //   this.eventos = eventos;
-  //
-  //   this.cambios.markForCheck();
-  // }
-  //
-  // // Pide el historial de custodia de una copia: GET /api/copias/{id}/custodias
-  // private cargarHistorial(idCopia: number): void {
-  //   this.api.obtenerCustodias(idCopia).subscribe({
-  //     next: (custodias) => this.alRecibirCustodias(custodias),
-  //     error: (error) => this.mostrarError(error)
-  //   });
-  // }
-  //
-  // private alRecibirCustodias(custodias: Custodia[]): void {
-  //   this.custodiasHistorial = custodias;
-  //
-  //   this.cambios.markForCheck();
-  // }
-  //
-  // // Si el back responde error (por ejemplo 404 porque el id no existe), el juego
-  // // se queda sin valor y el HTML muestra "No encontramos ese videojuego".
-  // private mostrarError(error: unknown): void {
-  //   console.error('No se pudo cargar la ficha del videojuego', error);
-  //   this.cambios.markForCheck();
-  // }
+    this.nombresEditoras = nombres;
+    this.cambios.markForCheck();
+  }
 
-  // ==================================================================
-  // ===== FIN DEL BLOQUE BACK =====
-  // ==================================================================
+  private alRecibirEstatusLegal(historial: EstatusLegal[]): void {
+    this.historialLegal = historial;
+    this.cambios.markForCheck();
+  }
+
+  private alRecibirEventos(eventos: EventoRiesgo[]): void {
+    this.eventos = eventos;
+    this.cambios.markForCheck();
+  }
+
+  /* El detalle del error queda en la consola (F12). */
+  private mostrarError(error: unknown): void {
+    console.error('No se pudo cargar la ficha del videojuego', error);
+    this.hayError = true;
+    this.cambios.markForCheck();
+  }
 
 
   /*
@@ -560,8 +300,11 @@ export class FichaVideojuegoComponent implements OnInit {
 
   /* Borra el juego anterior, para no mostrar datos mezclados al cambiar de id. */
   private limpiarJuego(): void {
+    this.confirmandoEliminar = false;
+    this.errorEliminar = '';
     this.videojuego = undefined;
-    this.estatusLegal = '';
+    this.nombresEditoras = [];
+    this.hayError = false;
     this.numeroCopias = 0;
     this.numeroProyectos = 0;
     this.copias = [];
@@ -571,21 +314,6 @@ export class FichaVideojuegoComponent implements OnInit {
     this.proyectos = [];
     this.historialLegal = [];
     this.eventos = [];
-  }
-
-  /*
-   * Guarda las copias, arma la lista de instituciones y pide el historial
-   * de la primera copia. La usan tanto el hardcode como el bloque del back,
-   * por eso está fuera de los dos.
-   */
-  private recibirCopias(copias: CopiaConCustodia[]): void {
-    this.copias = copias;
-    this.instituciones = this.agruparInstituciones(copias);
-
-    if (copias.length > 0) {
-      this.idCopiaHistorial = copias[0].copia.idCopia;
-      this.cargarHistorial(this.idCopiaHistorial);
-    }
   }
 
   /*
@@ -622,6 +350,245 @@ export class FichaVideojuegoComponent implements OnInit {
     }
 
     return lista;
+  }
+
+  /* Primer paso: pide confirmación antes de eliminar. */
+  pedirConfirmacionEliminar(): void {
+    this.errorEliminar = '';
+    this.confirmandoEliminar = true;
+  }
+
+  /* El usuario se arrepintió. */
+  cancelarEliminar(): void {
+    this.confirmandoEliminar = false;
+  }
+
+  /* Segundo paso: DELETE /api/videojuegos/{id}. Si sale bien, vuelve al catálogo. */
+  confirmarEliminar(): void {
+    if (!this.videojuego) {
+      return;
+    }
+
+    this.eliminando = true;
+    this.errorEliminar = '';
+
+    this.api.eliminarVideojuego(this.videojuego.idVideojuego).subscribe({
+      next: () => this.alEliminar(),
+      error: (error) => this.alFallarEliminar(error)
+    });
+  }
+
+  private alEliminar(): void {
+    this.eliminando = false;
+    this.router.navigate(['/catalogo']);
+  }
+
+  /*
+   * 409: el back explica que el juego tiene datos asociados (copias, estatus
+   * o eventos). 403: el rol no puede. Otro: mensaje general.
+   */
+  private alFallarEliminar(error: HttpErrorResponse): void {
+    console.error('No se pudo eliminar el videojuego', error);
+    this.eliminando = false;
+    this.confirmandoEliminar = false;
+
+    if (error.status === 409 && error.error && error.error.mensaje) {
+      this.errorEliminar = error.error.mensaje;
+    } else if (error.status === 403) {
+      this.errorEliminar = 'Solo un administrador puede eliminar videojuegos.';
+    } else {
+      this.errorEliminar = 'No se pudo eliminar el videojuego. Inténtalo de nuevo.';
+    }
+
+    this.cambios.markForCheck();
+  }
+
+  /* Despliega el formulario de estatus legal, limpio. */
+  abrirFormularioEstatus(): void {
+    this.editandoEstatus = undefined;
+    this.idConfirmandoEliminarEstatus = 0;
+    this.formularioEstatus.reset({ estatus: 'Protegido', fechaDeterminacion: this.hoy, observacion: '' });
+    this.estatusEnviado = false;
+    this.errorEstatus = '';
+    this.mostrarFormularioEstatus = true;
+  }
+
+  /* Abre el formulario con los datos de un registro existente (editar). */
+  abrirEditarEstatus(registro: EstatusLegal): void {
+    this.editandoEstatus = registro;
+    this.idConfirmandoEliminarEstatus = 0;
+    this.formularioEstatus.reset({
+      estatus: registro.estatus,
+      fechaDeterminacion: registro.fechaDeterminacion,
+      observacion: registro.observacion || ''
+    });
+    this.estatusEnviado = false;
+    this.errorEstatus = '';
+    this.mostrarFormularioEstatus = true;
+  }
+
+  /* Cierra el formulario sin guardar. */
+  cancelarFormularioEstatus(): void {
+    this.mostrarFormularioEstatus = false;
+  }
+
+  /* Dice si hay que mostrar el error de un campo del formulario de estatus. */
+  mostrarErrorEstatus(nombre: string): boolean {
+    const control = this.formularioEstatus.controls[nombre];
+    return control.invalid && (control.touched || this.estatusEnviado);
+  }
+
+  /* Texto del error de un campo del formulario de estatus. */
+  textoErrorEstatus(nombre: string): string {
+    const control = this.formularioEstatus.controls[nombre];
+
+    if (control.hasError('required')) {
+      return 'Este campo es obligatorio.';
+    }
+    if (control.hasError('maxlength')) {
+      return 'Máximo 500 caracteres.';
+    }
+    return '';
+  }
+
+  /*
+   * Guarda el estatus: valida, valida que la fecha no sea futura y envía
+   * POST /api/videojuegos/{id}/estatus-legal.
+   */
+  guardarEstatus(): void {
+    this.estatusEnviado = true;
+    this.errorEstatus = '';
+
+    if (this.formularioEstatus.invalid) {
+      this.formularioEstatus.markAllAsTouched();
+      return;
+    }
+
+    const datos = this.formularioEstatus.getRawValue();
+
+    if (datos.fechaDeterminacion > this.hoy) {
+      this.errorEstatus = 'La fecha no puede ser futura.';
+      return;
+    }
+
+    const nuevo: EstatusLegalNuevo = {
+      estatus: datos.estatus,
+      fechaDeterminacion: datos.fechaDeterminacion
+    };
+
+    const observacion = String(datos.observacion || '').trim();
+    if (observacion !== '' ) {
+      nuevo.observacion = observacion;
+    }
+
+    if (!this.videojuego) {
+      return;
+    }
+
+    this.guardandoEstatus = true;
+
+    // Editando: PUT /api/estatus-legal/{id}. Agregando: POST del videojuego.
+    if (this.editandoEstatus) {
+      this.api.actualizarEstatusLegal(this.editandoEstatus.idEstatus, nuevo).subscribe({
+        next: () => this.alGuardarEstatus(),
+        error: (error) => this.alFallarEstatus(error)
+      });
+    } else {
+      this.api.crearEstatusLegal(this.videojuego.idVideojuego, nuevo).subscribe({
+        next: () => this.alGuardarEstatus(),
+        error: (error) => this.alFallarEstatus(error)
+      });
+    }
+  }
+
+  /* Primer paso de eliminar un registro del historial: confirmación en la misma fila. */
+  pedirEliminarEstatus(registro: EstatusLegal): void {
+    this.errorEstatus = '';
+    this.idConfirmandoEliminarEstatus = registro.idEstatus;
+  }
+
+  cancelarEliminarEstatus(): void {
+    this.idConfirmandoEliminarEstatus = 0;
+  }
+
+  /* Segundo paso: DELETE /api/estatus-legal/{id}; luego se vuelve a pedir la lista. */
+  confirmarEliminarEstatus(registro: EstatusLegal): void {
+    this.api.eliminarEstatusLegal(registro.idEstatus).subscribe({
+      next: () => this.alEliminarEstatus(),
+      error: (error) => this.alFallarEliminarEstatus(error)
+    });
+  }
+
+  /* Se eliminó: el vigente puede haber cambiado, así que se pide la lista completa. */
+  private alEliminarEstatus(): void {
+    this.idConfirmandoEliminarEstatus = 0;
+
+    if (this.videojuego) {
+      this.api.obtenerEstatusLegal(this.videojuego.idVideojuego).subscribe({
+        next: (historial) => this.alRecibirEstatusLegal(historial),
+        error: (error) => this.mostrarError(error)
+      });
+    }
+
+    this.cambios.markForCheck();
+  }
+
+  private alFallarEliminarEstatus(error: HttpErrorResponse): void {
+    console.error('No se pudo eliminar el estatus legal', error);
+    this.idConfirmandoEliminarEstatus = 0;
+
+    if (error.status === 403) {
+      this.errorEstatus = 'Solo un administrador puede eliminar estatus legales.';
+    } else if (error.status === 404) {
+      this.errorEstatus = 'Ese registro ya no existe.';
+    } else {
+      this.errorEstatus = 'No se pudo eliminar el estatus. Inténtalo de nuevo.';
+    }
+
+    this.cambios.markForCheck();
+  }
+
+  /*
+   * Se guardó. Se vuelve a pedir la lista completa porque el registro nuevo
+   * puede haber cambiado cuál es el vigente.
+   */
+  private alGuardarEstatus(): void {
+    this.guardandoEstatus = false;
+    this.mostrarFormularioEstatus = false;
+
+    if (this.videojuego) {
+      this.api.obtenerEstatusLegal(this.videojuego.idVideojuego).subscribe({
+        next: (historial) => this.alRecibirEstatusLegal(historial),
+        error: (error) => this.mostrarError(error)
+      });
+    }
+
+    this.cambios.markForCheck();
+  }
+
+  /* 400: el back explica qué está mal. 403: el rol no puede. Otro: mensaje general. */
+  private alFallarEstatus(error: HttpErrorResponse): void {
+    console.error('No se pudo guardar el estatus legal', error);
+    this.guardandoEstatus = false;
+
+    if (error.status === 400 && error.error && error.error.mensaje) {
+      this.errorEstatus = error.error.mensaje;
+    } else if (error.status === 403) {
+      this.errorEstatus = 'Tu rol no permite guardar estatus legales.';
+    } else {
+      this.errorEstatus = 'No se pudo guardar el estatus. Inténtalo de nuevo.';
+    }
+
+    this.cambios.markForCheck();
+  }
+
+  /* Fecha de hoy 'yyyy-MM-dd' en hora local (toISOString daría la fecha en UTC). */
+  private fechaHoy(): string {
+    const ahora = new Date();
+    const mes = String(ahora.getMonth() + 1).padStart(2, '0');
+    const dia = String(ahora.getDate()).padStart(2, '0');
+
+    return ahora.getFullYear() + '-' + mes + '-' + dia;
   }
 
   /* Cambia la pestaña activa cuando el usuario hace clic en una. */
@@ -686,6 +653,32 @@ export class FichaVideojuegoComponent implements OnInit {
       return '';
     }
     return this.videojuego.plataformaOriginal + ' · ' + this.videojuego.anioLanzamiento;
+  }
+
+  /*
+   * Estatus legal vigente: el registro del historial con vigente === true.
+   * Si no hay ninguno (lista vacía), el juego está "Sin determinar".
+   */
+  get estatusLegal(): string {
+    for (const registro of this.historialLegal) {
+      if (registro.vigente) {
+        return registro.estatus;
+      }
+    }
+    return 'Sin determinar';
+  }
+
+  /* Línea de editoras: "Editoras: A, B" o "Sin editora registrada". */
+  get textoEditoras(): string {
+    if (this.nombresEditoras.length === 0) {
+      return 'Sin editora registrada';
+    }
+    return 'Editoras: ' + this.nombresEditoras.join(', ');
+  }
+
+  /* Una fuente que empieza por "http" se muestra como enlace. */
+  esEnlace(fuente: string): boolean {
+    return fuente.startsWith('http');
   }
 
   /* Línea del estudio: "Estudio: Quark Interactive (desaparecido)" */

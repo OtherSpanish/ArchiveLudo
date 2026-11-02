@@ -42,6 +42,16 @@ export interface JuegoConMeta {
  * (el número de "Ver todos (61)") y solo los primeros, para el carrusel.
  * El Catálogo usa la misma forma, con los parámetros extra q y pagina.
  */
+/*
+ * Página de videojuegos del back real (Catálogo y En riesgo).
+ * El back devuelve un arreglo plano en el cuerpo y el total en la cabecera
+ * X-Total-Count; el servicio los junta en este objeto.
+ */
+export interface PaginaVideojuegos {
+  total: number;
+  juegos: Videojuego[];
+}
+
 export interface JuegosPorEstado {
   total: number;
   juegos: JuegoConMeta[];
