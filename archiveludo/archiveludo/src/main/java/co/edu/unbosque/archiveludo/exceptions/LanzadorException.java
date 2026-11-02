@@ -6,6 +6,7 @@ import co.edu.unbosque.archiveludo.entity.CompaniaEditora;
 import co.edu.unbosque.archiveludo.entity.EstatusLegal;
 import co.edu.unbosque.archiveludo.entity.Estudio;
 import co.edu.unbosque.archiveludo.entity.EventoDeRiesgo;
+import co.edu.unbosque.archiveludo.entity.Experto;
 import co.edu.unbosque.archiveludo.entity.Institucion;
 import co.edu.unbosque.archiveludo.entity.Usuario;
 import co.edu.unbosque.archiveludo.entity.Videojuego;
@@ -49,6 +50,12 @@ public class LanzadorException {
 	/** Longitud maxima de CUSTODIA.condicion_almacenamiento (VARCHAR(200)). */
 	private static final int LONGITUD_MAXIMA_CONDICION_CUSTODIA = 200;
 
+	/** Longitudes maximas de las columnas de EXPERTO. */
+	public static final int LONGITUD_MAXIMA_NOMBRE_EXPERTO = 60;
+	public static final int LONGITUD_MAXIMA_ESPECIALIDAD_EXPERTO = 100;
+	public static final int LONGITUD_MAXIMA_AFILIACION_EXPERTO = 150;
+	private static final int LONGITUD_MAXIMA_CORREO_EXPERTO = 150;
+	
 	/**
 	 * Verifica que un id recibido por la URL sea valido.
 	 *
@@ -862,6 +869,77 @@ public class LanzadorException {
 	public static void verificarTipoCopiaValido(boolean tipoReconocido) {
 		if (!tipoReconocido) {
 			throw new DatoCopiaInvalidoException("El campo 'tipoCopia' es obligatorio y debe ser fisica o digital (en minuscula)");
+		}
+	}
+	
+	/**
+	 * Verifica que el experto buscado exista.
+	 *
+	 * @param experto   resultado de la busqueda en el repository
+	 * @param idExperto id que se busco (para el mensaje)
+	 * @throws ExpertoNoEncontradoException si el experto es null
+	 */
+	public static void verificarExpertoExiste(Experto experto, long idExperto) {
+		if (experto == null) {
+			throw new ExpertoNoEncontradoException(idExperto);
+		}
+	}
+
+	/**
+	 * Verifica un campo de texto de un experto: si es obligatorio, que venga con contenido,
+	 * y en todo caso, que quepa en su columna.
+	 *
+	 * @param valor            texto recibido (puede ser null si el campo es opcional)
+	 * @param nombreCampo      nombre del campo para el mensaje (por ejemplo "primerNombreEx")
+	 * @param longitudMaxima   cantidad maxima de caracteres de la columna
+	 * @param esObligatorio    true si el campo no puede venir vacio
+	 * @throws DatosExpertoInvalidosException si falta un campo obligatorio o el texto es demasiado largo
+	 */
+	public static void verificarTextoExperto(String valor, String nombreCampo, int longitudMaxima,
+			boolean esObligatorio) {
+		boolean estaVacio = (valor == null || valor.trim().isEmpty());
+
+		if (esObligatorio && estaVacio) {
+			throw new DatoExpertoInvalidoException("El campo '" + nombreCampo + "' es obligatorio");
+		}
+		if (!estaVacio && valor.trim().length() > longitudMaxima) {
+			throw new DatoExpertoInvalidoException(
+					"El campo '" + nombreCampo + "' no puede superar " + longitudMaxima + " caracteres");
+		}
+	}
+
+	/**
+	 * Verifica el correo de un experto: obligatorio, con formato de correo y que quepa en la columna.
+	 * A diferencia de los usuarios, se acepta cualquier dominio.
+	 *
+	 * @param correo correo a verificar
+	 * @throws DatosExpertoInvalidosException si esta vacio, no tiene formato de correo o es demasiado largo
+	 */
+	public static void verificarCorreoExperto(String correo) {
+		String patronDelCorreo = "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.(?:[A-Za-z]{2,})$";
+
+		if (correo == null || correo.trim().isEmpty()) {
+			throw new DatoExpertoInvalidoException("El campo 'correo' es obligatorio");
+		}
+		if (!correo.trim().matches(patronDelCorreo)) {
+			throw new DatoExpertoInvalidoException("El correo '" + correo + "' no tiene un formato valido");
+		}
+		if (correo.trim().length() > LONGITUD_MAXIMA_CORREO_EXPERTO) {
+			throw new DatoExpertoInvalidoException(
+					"El correo no puede superar " + LONGITUD_MAXIMA_CORREO_EXPERTO + " caracteres");
+		}
+	}
+
+	/**
+	 * Verifica que el correo no lo tenga ya otro experto (la columna correo es UNIQUE).
+	 *
+	 * @param correoYaExiste resultado de consultar el correo en el repository
+	 * @param correo         correo consultado (para el mensaje)
+	 * @throws DatosExpertoInvalidosException si el correo ya esta registrado
+	 */
+	public static void verificarCorreoExpertoNoRegistrado(boolean correoYaExiste, String correo) {
+		if (correoYaExiste) {
+			throw new DatoExpertoInvalidoException("Ya existe un experto con el correo " + correo);
 		}
 	}
 	
