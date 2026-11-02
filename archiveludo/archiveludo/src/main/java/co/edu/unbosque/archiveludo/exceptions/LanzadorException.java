@@ -3,6 +3,7 @@ package co.edu.unbosque.archiveludo.exceptions;
 import java.time.LocalDate;
 
 import co.edu.unbosque.archiveludo.entity.CompaniaEditora;
+import co.edu.unbosque.archiveludo.entity.EstatusLegal;
 import co.edu.unbosque.archiveludo.entity.Estudio;
 import co.edu.unbosque.archiveludo.entity.Institucion;
 import co.edu.unbosque.archiveludo.entity.Usuario;
@@ -11,6 +12,7 @@ import co.edu.unbosque.archiveludo.model.EstadoConservacion;
 import co.edu.unbosque.archiveludo.model.EstadoEstudio;
 import co.edu.unbosque.archiveludo.model.EstadoIntegridad;
 import co.edu.unbosque.archiveludo.model.Rol;
+import co.edu.unbosque.archiveludo.model.TipoEstatusLegal;
 import co.edu.unbosque.archiveludo.model.TipoInstitucion;
 
 /**
@@ -580,6 +582,61 @@ public class LanzadorException {
 		}
 		if (cantidadCorreos == 0) {
 			throw new DatoInstitucionInvalidoException("La institucion debe tener al menos un correo");
+		}
+	}
+	
+
+	/**
+	 * Verifica que el estatus legal buscado exista.
+	 *
+	 * @param estatusLegal resultado de la busqueda en el repository
+	 * @param idEstatus    id que se busco (para el mensaje)
+	 * @throws EstatusLegalNoEncontradoException si el estatus es null
+	 */
+	public static void verificarEstatusLegalExiste(EstatusLegal estatusLegal, long idEstatus) {
+		if (estatusLegal == null) {
+			throw new EstatusLegalNoEncontradoException(idEstatus);
+		}
+	}
+
+	/**
+	 * Convierte el texto del estatus legal al enum TipoEstatusLegal.
+	 * Acepta el valor de la BD ("dominio publico") o el texto legible ("Dominio público").
+	 *
+	 * @param textoEstatus estatus tal como llego en el cuerpo de la peticion
+	 * @return el tipo correspondiente
+	 * @throws DatosEstatusLegalInvalidosException si viene vacio o no es uno de los 4 estatus
+	 */
+	public static TipoEstatusLegal convertirTipoEstatusLegal(String textoEstatus) {
+		String mensaje = "El estatus legal debe ser: protegido, dominio publico, huerfano o abandonware";
+
+		if (textoEstatus == null || textoEstatus.trim().isEmpty()) {
+			throw new DatoEstatusLegalInvalidoException(mensaje);
+		}
+
+		TipoEstatusLegal tipo = TipoEstatusLegal.buscarPorValor(textoEstatus.trim().toLowerCase());
+		if (tipo == null) {
+			tipo = TipoEstatusLegal.buscarPorValor(textoEstatus.trim());
+		}
+		if (tipo == null) {
+			throw new DatoEstatusLegalInvalidoException(mensaje);
+		}
+		return tipo;
+	}
+
+	/**
+	 * Verifica la fecha de determinacion de un estatus legal: es obligatoria y no puede ser futura.
+	 *
+	 * @param fechaDeterminacion fecha a verificar
+	 * @throws DatoEstatusLegalInvalidoException si es nula o posterior a hoy
+	 */
+	public static void verificarFechaDeterminacion(LocalDate fechaDeterminacion) {
+		if (fechaDeterminacion == null) {
+			throw new DatoEstatusLegalInvalidoException(
+					"La fecha de determinacion es obligatoria (formato yyyy-MM-dd)");
+		}
+		if (fechaDeterminacion.isAfter(LocalDate.now())) {
+			throw new DatoEstatusLegalInvalidoException("La fecha de determinacion no puede ser futura");
 		}
 	}
 
