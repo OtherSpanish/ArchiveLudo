@@ -2,8 +2,11 @@ package co.edu.unbosque.archiveludo.exceptions;
 
 import java.time.LocalDate;
 
+import co.edu.unbosque.archiveludo.entity.Estudio;
+import co.edu.unbosque.archiveludo.entity.Usuario;
 import co.edu.unbosque.archiveludo.entity.Videojuego;
 import co.edu.unbosque.archiveludo.model.EstadoConservacion;
+import co.edu.unbosque.archiveludo.model.EstadoEstudio;
 import co.edu.unbosque.archiveludo.model.EstadoIntegridad;
 import co.edu.unbosque.archiveludo.model.Rol;
 
@@ -16,6 +19,9 @@ public class LanzadorException {
 
 	/** Anio minimo aceptado como anio de lanzamiento de un videojuego. */
 	private static final int ANIO_MINIMO_LANZAMIENTO = 1950;
+
+	/** Anio minimo aceptado como anio de fundacion de un estudio. */
+	private static final int ANIO_MINIMO_FUNDACION = 1800;
 
 	/** Cantidad de elementos por pagina cuando no se envia el parametro limite. */
 	private static final int LIMITE_POR_DEFECTO = 10;
@@ -346,6 +352,110 @@ public class LanzadorException {
 	public static void verificarTamanioValido(long tamanio) {
 		if (tamanio <= 0) {
 			throw new TamanioInvalidoException();
+		}
+	}
+
+	/**
+	 * Verifica que el usuario buscado exista.
+	 *
+	 * @param usuario   resultado de la busqueda en el repository
+	 * @param idUsuario id que se busco (para el mensaje)
+	 * @throws UsuarioNoEncontradoException si el usuario es null
+	 */
+	public static void verificarUsuarioExiste(Usuario usuario, long idUsuario) {
+		if (usuario == null) {
+			throw new UsuarioNoEncontradoException(idUsuario);
+		}
+	}
+
+	/**
+	 * Verifica que nada dependa del registro antes de eliminarlo.
+	 * La usan todos los DELETE.
+	 *
+	 * @param tieneRegistrosAsociados resultado de contar los registros que dependen de el
+	 * @param recursoConArticulo      por ejemplo "el usuario" o "la copia" (para el mensaje)
+	 * @param id                      id del registro que se quiere eliminar
+	 * @throws RegistrosAsociadosException si tiene registros asociados
+	 */
+	public static void verificarSinRegistrosAsociados(boolean tieneRegistrosAsociados, String recursoConArticulo,
+			long id) {
+		if (tieneRegistrosAsociados) {
+			throw new RegistroAsociadoException(recursoConArticulo, id);
+		}
+	}
+
+	/**
+	 * Verifica que el estudio buscado exista.
+	 *
+	 * @param estudio   resultado de la busqueda en el repository
+	 * @param idEstudio id que se busco (para el mensaje)
+	 * @throws EstudioNoEncontradoException si el estudio es null
+	 */
+	public static void verificarEstudioExiste(Estudio estudio, long idEstudio) {
+		if (estudio == null) {
+			throw new EstudioNoEncontradoException(idEstudio);
+		}
+	}
+
+	/**
+	 * Convierte el texto del estado de un estudio ("activo" o "desaparecido") al enum EstadoEstudio.
+	 *
+	 * @param textoEstado estado tal como llego en el cuerpo de la peticion
+	 * @return el estado correspondiente
+	 * @throws DatoEstudioInvalidoException si viene vacio o no es activo ni desaparecido
+	 */
+	public static EstadoEstudio convertirEstadoEstudio(String textoEstado) {
+		String mensaje = "El estado actual del estudio debe ser activo o desaparecido";
+
+		if (textoEstado == null || textoEstado.trim().isEmpty()) {
+			throw new DatoEstudioInvalidoException(mensaje);
+		}
+
+		EstadoEstudio estado = EstadoEstudio.buscarPorValor(textoEstado.trim().toLowerCase());
+		if (estado == null) {
+			throw new DatoEstudioInvalidoException(mensaje);
+		}
+		return estado;
+	}
+
+	/**
+	 * Verifica los anios de un estudio. Son las mismas reglas de los CHECK de la tabla ESTUDIO:
+	 * - el anio de fundacion es obligatorio y esta entre 1800 y el anio actual;
+	 * - un estudio activo NO tiene anio de cierre;
+	 * - un estudio desaparecido SI tiene anio de cierre;
+	 * - el anio de cierre no es anterior al de fundacion ni posterior al anio actual.
+	 *
+	 * @param estado        estado actual del estudio
+	 * @param anioFundacion anio de fundacion
+	 * @param anioCierre    anio de cierre (null si no tiene)
+	 * @throws DatoEstudioInvalidoException si se incumple alguna regla
+	 */
+	public static void verificarAniosEstudio(EstadoEstudio estado, Integer anioFundacion, Integer anioCierre) {
+		int anioActual = LocalDate.now().getYear();
+
+		if (anioFundacion == null) {
+			throw new DatoEstudioInvalidoException("El año de fundacion es obligatorio");
+		}
+		if (anioFundacion < ANIO_MINIMO_FUNDACION || anioFundacion > anioActual) {
+			throw new DatoEstudioInvalidoException(
+					"El año de fundacion debe estar entre " + ANIO_MINIMO_FUNDACION + " y " + anioActual);
+		}
+
+		if (estado == EstadoEstudio.ACTIVO && anioCierre != null) {
+			throw new DatoEstudioInvalidoException("Un estudio activo no puede tener año de cierre");
+		}
+		if (estado == EstadoEstudio.DESAPARECIDO && anioCierre == null) {
+			throw new DatoEstudioInvalidoException("Un estudio desaparecido debe tener año de cierre");
+		}
+
+		if (anioCierre != null) {
+			if (anioCierre < anioFundacion) {
+				throw new DatoEstudioInvalidoException(
+						"El año de cierre no puede ser anterior al año de fundacion");
+			}
+			if (anioCierre > anioActual) {
+				throw new DatoEstudioInvalidoException("El año de cierre no puede ser posterior a " + anioActual);
+			}
 		}
 	}
 
