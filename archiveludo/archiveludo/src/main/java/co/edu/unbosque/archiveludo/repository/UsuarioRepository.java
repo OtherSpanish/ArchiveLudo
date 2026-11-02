@@ -15,7 +15,7 @@ import co.edu.unbosque.archiveludo.entity.Usuario;
 import co.edu.unbosque.archiveludo.model.Rol;
 
 /**
- * Acceso a datos de la tabla USUARIO con SQL (Spring JDBC).
+ * Acceso a datos de la tabla USUARIO con SQL escrito a mano (Spring JDBC).
  */
 @Repository
 public class UsuarioRepository {
@@ -48,14 +48,16 @@ public class UsuarioRepository {
 			+ "WHERE correo = ? AND id_usuario <> ?";
 
 	/**
-	 * Suma los registros que este usuario dejo en las tablas que tienen FK a USUARIO.
-	 * Si se agregan mas tablas con id_usuario (por ejemplo PROYECTO_DE_RESTAURACION), se suman aqui.
+	 * Suma los registros que este usuario dejo en las tablas que tienen FK a USUARIO:
+	 * videojuegos, copias, estatus legales, eventos de riesgo y proyectos de restauracion.
+	 * Si se agregan mas tablas con id_usuario, se suman aqui.
 	 */
 	private static final String SQL_CONTAR_REGISTROS_ASOCIADOS = "SELECT "
 			+ "(SELECT COUNT(*) FROM VIDEOJUEGO WHERE id_usuario = ?) + "
 			+ "(SELECT COUNT(*) FROM COPIA WHERE id_usuario = ?) + "
 			+ "(SELECT COUNT(*) FROM ESTATUS_LEGAL WHERE id_usuario = ?) + "
-			+ "(SELECT COUNT(*) FROM EVENTO_DE_RIESGO WHERE id_usuario = ?)";
+			+ "(SELECT COUNT(*) FROM EVENTO_DE_RIESGO WHERE id_usuario = ?) + "
+			+ "(SELECT COUNT(*) FROM PROYECTO_DE_RESTAURACION WHERE id_usuario = ?)";
 
 	private final JdbcTemplate jdbcTemplate;
 
@@ -177,14 +179,15 @@ public class UsuarioRepository {
 	}
 
 	/**
-	 * Cuenta cuantos registros (videojuegos, copias, estatus legales, eventos de riesgo) registro este usuario.
+	 * Cuenta cuantos registros (videojuegos, copias, estatus legales, eventos de riesgo
+	 * y proyectos de restauracion) registro este usuario. El mismo id va en los 5 parametros.
 	 *
 	 * @param idUsuario id del usuario
 	 * @return cantidad total de registros asociados
 	 */
 	public long contarRegistrosAsociados(long idUsuario) {
 		Long cantidad = jdbcTemplate.queryForObject(SQL_CONTAR_REGISTROS_ASOCIADOS, Long.class, idUsuario,
-				idUsuario, idUsuario, idUsuario);
+				idUsuario, idUsuario, idUsuario, idUsuario);
 		if (cantidad == null) {
 			return 0;
 		}
