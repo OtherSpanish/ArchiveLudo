@@ -9,8 +9,14 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -18,15 +24,20 @@ import org.springframework.web.bind.annotation.RestController;
 import co.edu.unbosque.archiveludo.dto.VideojuegoDTO;
 import co.edu.unbosque.archiveludo.exceptions.AnioInvalidoException;
 import co.edu.unbosque.archiveludo.exceptions.CampoObligatorioException;
+import co.edu.unbosque.archiveludo.exceptions.CompaniaEditoraNoEncontradaException;
+import co.edu.unbosque.archiveludo.exceptions.CredencialInvalidaException;
 import co.edu.unbosque.archiveludo.exceptions.EstadoConservacionInvalidoException;
+import co.edu.unbosque.archiveludo.exceptions.EstudioNoEncontradoException;
 import co.edu.unbosque.archiveludo.exceptions.IdInvalidoException;
 import co.edu.unbosque.archiveludo.exceptions.PaginacionInvalidaException;
+import co.edu.unbosque.archiveludo.exceptions.RegistroAsociadoException;
 import co.edu.unbosque.archiveludo.exceptions.VideojuegoNoEncontradoException;
 import co.edu.unbosque.archiveludo.service.VideojuegoService;
 
 /**
- * Endpoints de lectura de videojuegos. Requieren token de cualquier rol.
- * Los parametros se reciben como opcionales (required = false) para que,
+ * Endpoints de videojuegos.
+ * Leer: cualquier rol. Crear y actualizar: curador o administrador. Eliminar: solo administrador.
+ * Los parametros de busqueda se reciben como opcionales (required = false) para que,
  * si faltan, los valide el service y la respuesta salga con el formato { estado, mensaje }.
  */
 @RestController
@@ -41,6 +52,7 @@ public class VideojuegoController {
 	@Autowired
 	private VideojuegoService videojuegoService;
 
+	
 	/**
 	 * GET /api/videojuegos?estado=en riesgo&q=ambar&pagina=0&limite=10
 	 * Todos los parametros son opcionales.
@@ -87,7 +99,6 @@ public class VideojuegoController {
 
 	/**
 	 * GET /api/videojuegos/por-titulo?titulo=zelda
-	 * Respuesta: 200 con los videojuegos cuyo titulo contiene el texto.
 	 */
 	@GetMapping("/por-titulo")
 	public ResponseEntity<?> buscarPorTitulo(@RequestParam(name = "titulo", required = false) String titulo) {
@@ -165,6 +176,93 @@ public class VideojuegoController {
 			return crearRespuestaError(HttpStatus.BAD_REQUEST, e.getMessage());
 		} catch (Exception e) {
 			log.error("Error inesperado al buscar por estado de conservacion", e);
+			return crearRespuestaError(HttpStatus.INTERNAL_SERVER_ERROR, "Ocurrio un error interno en el servidor");
+		}
+	}
+
+	
+	/**
+	 * POST /api/videojuegos
+	 * Cuerpo:    { "titulo": "Deus Ex", "genero": "RPG", "plataformaOriginal": "PC",
+	 *              "descripcion": "...", "anioLanzamiento": 2000, "estadoConservacion": "activo",
+	 *              "idEstudio": 3, "idsEditoras": [2, 5] }
+	 * Respuesta: 201 con el videojuego creado. El usuario que lo registra sale del token.
+	 */
+	@PostMapping
+	public ResponseEntity<?> crear(@RequestBody VideojuegoDTO videojuegoDTO,
+			@AuthenticationPrincipal UserDetails usuarioAutenticado) {
+		try {
+			VideojuegoDTO videojuegoCreado = videojuegoService.crear(videojuegoDTO,
+					usuarioAutenticado.getUsername());
+			return new ResponseEntity<VideojuegoDTO>(videojuegoCreado, HttpStatus.CREATED);
+		} catch (CampoObligatorioException e) {
+			return crearRespuestaError(HttpStatus.BAD_REQUEST, e.getMessage());
+		} catch (AnioInvalidoException e) {
+			return crearRespuestaError(HttpStatus.BAD_REQUEST, e.getMessage());
+		} catch (EstadoConservacionInvalidoException e) {
+			return crearRespuestaError(HttpStatus.BAD_REQUEST, e.getMessage());
+		} catch (IdInvalidoException e) {
+			return crearRespuestaError(HttpStatus.BAD_REQUEST, e.getMessage());
+		} catch (EstudioNoEncontradoException e) {
+			return crearRespuestaError(HttpStatus.NOT_FOUND, e.getMessage());
+		} catch (CompaniaEditoraNoEncontradaException e) {
+			return crearRespuestaError(HttpStatus.NOT_FOUND, e.getMessage());
+		} catch (CredencialInvalidaException e) {
+			return crearRespuestaError(HttpStatus.UNAUTHORIZED, e.getMessage());
+		} catch (Exception e) {
+			log.error("Error inesperado al crear el videojuego", e);
+			return crearRespuestaError(HttpStatus.INTERNAL_SERVER_ERROR, "Ocurrio un error interno en el servidor");
+		}
+	}
+
+	/**
+	 * PUT /api/videojuegos/{id}
+	 * Cuerpo:    los mismos campos que el POST. "idsEditoras" reemplaza la lista anterior.
+	 * Respuesta: 200 con el videojuego actualizado.
+	 */
+	@PutMapping("/{id}")
+	public ResponseEntity<?> actualizar(@PathVariable String id, @RequestBody VideojuegoDTO videojuegoDTO) {
+		try {
+			VideojuegoDTO videojuegoActualizado = videojuegoService.actualizar(id, videojuegoDTO);
+			return new ResponseEntity<VideojuegoDTO>(videojuegoActualizado, HttpStatus.OK);
+		} catch (IdInvalidoException e) {
+			return crearRespuestaError(HttpStatus.BAD_REQUEST, e.getMessage());
+		} catch (VideojuegoNoEncontradoException e) {
+			return crearRespuestaError(HttpStatus.NOT_FOUND, e.getMessage());
+		} catch (CampoObligatorioException e) {
+			return crearRespuestaError(HttpStatus.BAD_REQUEST, e.getMessage());
+		} catch (AnioInvalidoException e) {
+			return crearRespuestaError(HttpStatus.BAD_REQUEST, e.getMessage());
+		} catch (EstadoConservacionInvalidoException e) {
+			return crearRespuestaError(HttpStatus.BAD_REQUEST, e.getMessage());
+		} catch (EstudioNoEncontradoException e) {
+			return crearRespuestaError(HttpStatus.NOT_FOUND, e.getMessage());
+		} catch (CompaniaEditoraNoEncontradaException e) {
+			return crearRespuestaError(HttpStatus.NOT_FOUND, e.getMessage());
+		} catch (Exception e) {
+			log.error("Error inesperado al actualizar el videojuego " + id, e);
+			return crearRespuestaError(HttpStatus.INTERNAL_SERVER_ERROR, "Ocurrio un error interno en el servidor");
+		}
+	}
+
+	/**
+	 * DELETE /api/videojuegos/{id}
+	 * Respuesta: 204 sin cuerpo si se elimino;
+	 *            409 si tiene copias, estatus legales o eventos de riesgo.
+	 */
+	@DeleteMapping("/{id}")
+	public ResponseEntity<?> eliminar(@PathVariable String id) {
+		try {
+			videojuegoService.eliminar(id);
+			return new ResponseEntity<Void>(HttpStatus.NO_CONTENT);
+		} catch (IdInvalidoException e) {
+			return crearRespuestaError(HttpStatus.BAD_REQUEST, e.getMessage());
+		} catch (VideojuegoNoEncontradoException e) {
+			return crearRespuestaError(HttpStatus.NOT_FOUND, e.getMessage());
+		} catch (RegistroAsociadoException e) {
+			return crearRespuestaError(HttpStatus.CONFLICT, e.getMessage());
+		} catch (Exception e) {
+			log.error("Error inesperado al eliminar el videojuego " + id, e);
 			return crearRespuestaError(HttpStatus.INTERNAL_SERVER_ERROR, "Ocurrio un error interno en el servidor");
 		}
 	}
