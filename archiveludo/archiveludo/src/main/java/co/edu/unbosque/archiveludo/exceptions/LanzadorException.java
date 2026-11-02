@@ -4,6 +4,7 @@ import java.time.LocalDate;
 
 import co.edu.unbosque.archiveludo.entity.Videojuego;
 import co.edu.unbosque.archiveludo.model.EstadoConservacion;
+import co.edu.unbosque.archiveludo.model.EstadoIntegridad;
 import co.edu.unbosque.archiveludo.model.Rol;
 
 /**
@@ -315,6 +316,37 @@ public class LanzadorException {
 			throw new PaginacionInvalidaException(mensaje);
 		}
 		return limite;
+	}
+
+	/**
+	 * Convierte el texto del estado de integridad (por ejemplo "dañada") al enum EstadoIntegridad.
+	 *
+	 * @param textoEstado estado tal como llego en el cuerpo de la peticion
+	 * @return el estado correspondiente
+	 * @throws EstadoIntegridadInvalidoException si viene vacio o no es uno de los 4 estados
+	 */
+	public static EstadoIntegridad convertirEstadoIntegridad(String textoEstado) {
+		if (textoEstado == null || textoEstado.trim().isEmpty()) {
+			throw new EstadoIntegridadInvalidoException();
+		}
+
+		EstadoIntegridad estado = EstadoIntegridad.buscarPorValor(textoEstado.trim().toLowerCase());
+		if (estado == null) {
+			throw new EstadoIntegridadInvalidoException();
+		}
+		return estado;
+	}
+
+	/**
+	 * Verifica que el tamanio de un archivo digital sea mayor que cero.
+	 *
+	 * @param tamanio tamanio en bytes
+	 * @throws TamanioInvalidoException si es menor o igual a cero (o si no se envio, porque llega en 0)
+	 */
+	public static void verificarTamanioValido(long tamanio) {
+		if (tamanio <= 0) {
+			throw new TamanioInvalidoException();
+		}
 	}
 
 }
