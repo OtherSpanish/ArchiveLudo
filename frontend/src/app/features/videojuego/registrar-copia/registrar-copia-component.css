@@ -280,3 +280,18 @@
     flex: 1 1 100%;
   }
 }
+
+/* Tamaño: el número y la unidad (KB, MB, GB) en la misma fila */
+.fila-tamanio {
+  display: flex;
+  gap: 8px;
+}
+
+.fila-tamanio input {
+  flex: 1;
+  min-width: 0;
+}
+
+.fila-tamanio select {
+  flex: 0 0 96px;
+}

@@ -5,6 +5,7 @@ import { ReactiveFormsModule } from '@angular/forms';
 
 import { SharedModule } from '../../shared/shared-module';
 import { FichaVideojuegoComponent } from './ficha-videojuego/ficha-videojuego-component';
+import { FormularioVideojuegoComponent } from './formulario-videojuego/formulario-videojuego-component';
 import { RegistrarCopiaComponent } from './registrar-copia/registrar-copia-component';
 
 /*
@@ -13,8 +14,8 @@ import { RegistrarCopiaComponent } from './registrar-copia/registrar-copia-compo
  * ReactiveFormsModule da las herramientas del formulario (formGroup, formControlName).
  */
 @NgModule({
-  declarations: [FichaVideojuegoComponent, RegistrarCopiaComponent],
+  declarations: [FichaVideojuegoComponent, RegistrarCopiaComponent, FormularioVideojuegoComponent],
   imports: [CommonModule, RouterModule, ReactiveFormsModule, SharedModule],
-  exports: [FichaVideojuegoComponent, RegistrarCopiaComponent],
+  exports: [FichaVideojuegoComponent, RegistrarCopiaComponent, FormularioVideojuegoComponent],
 })
 export class VideojuegoModule {}

@@ -83,3 +83,14 @@
   overflow-x: auto;
   padding-bottom: 12px;
 }
+
+/* Aviso cuando alguna petición del Inicio falló */
+.aviso-error {
+  margin: 0 0 20px;
+  padding: 12px 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--state-bad);
+  border-radius: 10px;
+  font-size: 14px;
+  color: var(--state-bad-label);
+}

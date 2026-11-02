@@ -1,8 +1,7 @@
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { ProyectoConJuego } from '../../../shared/models/proyecto-con-juego-model';
 
-// ===== BACK: descomenta este import cuando conectes el back =====
-// import { ArchiveludoApiService } from '../../../core/archiveludo-api-service';
+import { ArchiveludoApiService } from '../../../core/archiveludo-api-service';
 
 /* Un botón de filtro: lo que dice y el estado que representa ('' = todos). */
 interface FiltroProyecto {
@@ -45,92 +44,42 @@ export class ProyectosComponent implements OnInit {
   /* true si el back respondió con error. */
   hayError: boolean = false;
 
-  // ==================================================================
-  // ===== HARDCODE: borra desde aquí hasta "FIN HARDCODE"
-  //  cuando conectes el back (incluye este constructor y cargarProyectos)
-  // ==================================================================
+  /* Texto del error (cambia si el servidor aún no ofrece los proyectos). */
+  mensajeError: string = 'No pudimos cargar los proyectos. Intenta de nuevo más tarde.';
 
-  /* 4 proyectos de prueba: 3 activos y 1 finalizado. Solo los juegos 1 y 8 tienen ficha. */
-  private proyectosPrueba: ProyectoConJuego[] = [
-    {
-      videojuego: { idVideojuego: 1, titulo: 'Torre de Ámbar Online', plataformaOriginal: 'PC', anioLanzamiento: 2007, estadoConservacion: 'en_riesgo' },
-      detalle: {
-        proyecto: { idProyecto: 1, estado: 'activo', fechaInicio: '2026-03-10', herramientaEmulador: 'Servidor privado + emulación de cliente' },
-        expertos: [
-          { idExperto: 1, nombre: 'Laura Mendoza', rolEnProyecto: 'Líder técnica', fechaIncorporacion: '2026-03-10' },
-          { idExperto: 2, nombre: 'Andrés Quintero', rolEnProyecto: 'Ingeniero de redes', fechaIncorporacion: '2026-04-02' }
-        ]
-      }
-    },
-    {
-      videojuego: { idVideojuego: 2, titulo: 'Sombras de Vellum', plataformaOriginal: 'PlayStation', anioLanzamiento: 1999, estadoConservacion: 'en_riesgo' },
-      detalle: {
-        proyecto: { idProyecto: 2, estado: 'activo', fechaInicio: '2026-06-15', herramientaEmulador: 'DuckStation' },
-        expertos: [
-          { idExperto: 3, nombre: 'Camila Rojas', rolEnProyecto: 'Restauradora de imagen de disco', fechaIncorporacion: '2026-06-15' }
-        ]
-      }
-    },
-    {
-      videojuego: { idVideojuego: 8, titulo: 'Furia Quark', plataformaOriginal: 'Arcade', anioLanzamiento: 1994, estadoConservacion: 'restaurado' },
-      detalle: {
-        proyecto: { idProyecto: 3, estado: 'finalizado', fechaInicio: '2025-02-01', fechaFin: '2025-11-20', herramientaEmulador: 'MAME' },
-        expertos: [
-          { idExperto: 4, nombre: 'Julián Pardo', rolEnProyecto: 'Especialista en ROMs', fechaIncorporacion: '2025-02-01' },
-          { idExperto: 3, nombre: 'Camila Rojas', rolEnProyecto: 'Control de calidad', fechaIncorporacion: '2025-05-12' }
-        ]
-      }
-    },
-    {
-      videojuego: { idVideojuego: 3, titulo: 'Códice Nómada', plataformaOriginal: 'Web', anioLanzamiento: 2011, estadoConservacion: 'en_riesgo' },
-      detalle: {
-        proyecto: { idProyecto: 4, estado: 'activo', fechaInicio: '2026-09-01' },
-        expertos: []
-      }
-    }
-  ];
+  /* ArchiveludoApiService habla con el back; ChangeDetectorRef avisa a Angular que hay que redibujar. */
+  constructor(
+    private api: ArchiveludoApiService,
+    private cambios: ChangeDetectorRef
+  ) { }
 
-  /* ChangeDetectorRef avisa a Angular que hay que redibujar la pantalla. */
-  constructor(private cambios: ChangeDetectorRef) { }
-
-  /* Entrega los proyectos de prueba. */
+  /* GET /api/proyectos: todos los proyectos con su videojuego y expertos. */
   private cargarProyectos(): void {
-    this.proyectos = this.proyectosPrueba;
-    this.cargando = false;
-    this.cambios.markForCheck();
+    this.cargando = true;
+    this.hayError = false;
+
+    this.api.obtenerTodosLosProyectos().subscribe({
+      next: (respuesta) => {
+        this.proyectos = respuesta;
+        this.cargando = false;
+        this.cambios.markForCheck();
+      },
+      error: (error) => this.alFallar(error)
+    });
   }
 
-  // ==================================================================
-  // ===== FIN HARDCODE
-  // ==================================================================
+  /* 404: el servidor todavía no tiene este servicio. Otro código: fallo general. */
+  private alFallar(error: { status?: number }): void {
+    console.error('No se pudieron cargar los proyectos', error);
 
-  // ==================================================================
-  // ===== BACK: cuando conectes el back, borra el bloque HARDCODE y
-  //  descomenta esto (y el import de arriba):
-  // ==================================================================
-  //
-  // constructor(
-  //   private api: ArchiveludoApiService,
-  //   private cambios: ChangeDetectorRef
-  // ) { }
-  //
-  // private cargarProyectos(): void {
-  //   this.cargando = true;
-  //   this.hayError = false;
-  //
-  //   this.api.obtenerTodosLosProyectos().subscribe({
-  //     next: (respuesta) => {
-  //       this.proyectos = respuesta;
-  //       this.cargando = false;
-  //       this.cambios.markForCheck();
-  //     },
-  //     error: () => {
-  //       this.cargando = false;
-  //       this.hayError = true;
-  //       this.cambios.markForCheck();
-  //     }
-  //   });
-  // }
+    if (error.status === 404) {
+      this.mensajeError = 'Los proyectos de restauración aún no están disponibles en el servidor.';
+    }
+
+    this.cargando = false;
+    this.hayError = true;
+    this.cambios.markForCheck();
+  }
 
   /* Al abrir la pantalla se piden los proyectos. */
   ngOnInit(): void {

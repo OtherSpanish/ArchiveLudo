@@ -19,7 +19,7 @@
     </a>
 
     <nav class="navegacion" aria-label="Navegación principal">
-      @for (enlace of enlaces; track enlace.ruta) {
+      @for (enlace of enlacesVisibles; track enlace.ruta) {
         <a class="enlace"
            [routerLink]="enlace.ruta"
            routerLinkActive="activo"

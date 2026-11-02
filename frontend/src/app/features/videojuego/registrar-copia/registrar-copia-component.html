@@ -1,6 +1,6 @@
 <!--
   Tres casos posibles:
-   1. cargando: se espera el videojuego (en el hardcode dura un instante)
+   1. cargando: se espera el videojuego (mientras llega la respuesta del servidor)
    2. videojuego existe: se dibuja el formulario
    3. ninguno: el id de la URL no existe, y se muestra un mensaje
 -->
@@ -61,23 +61,6 @@
           <option [value]="opcion.valor">{{ opcion.etiqueta }}</option>
         }
       </select>
-    </div>
-
-    <!-- Fecha de registro: no puede ser posterior a hoy -->
-    <div class="grupo">
-      <label class="etiqueta" for="campo-fecha">Fecha de registro</label>
-
-      <input id="campo-fecha"
-             class="campo"
-             type="date"
-             formControlName="fechaRegistro"
-             [max]="hoy"
-             [class.invalido]="mostrarError('fechaRegistro')"
-             [attr.aria-invalid]="mostrarError('fechaRegistro')">
-
-      @if (mostrarError('fechaRegistro')) {
-        <p class="error">{{ textoError('fechaRegistro') }}</p>
-      }
     </div>
 
     <!-- ========== CAMPOS DE UNA COPIA FÍSICA ========== -->
@@ -152,16 +135,27 @@
         }
       </div>
 
+      <!-- Tamaño: un número y su unidad; al enviar se convierte a bytes -->
       <div class="grupo">
         <label class="etiqueta" for="campo-tamanio">Tamaño</label>
 
-        <input id="campo-tamanio"
-               class="campo"
-               type="text"
-               formControlName="tamanio"
-               placeholder="Ej.: 640 MB"
-               [class.invalido]="mostrarError('tamanio')"
-               [attr.aria-invalid]="mostrarError('tamanio')">
+        <div class="fila-tamanio">
+          <input id="campo-tamanio"
+                 class="campo"
+                 type="number"
+                 min="0"
+                 step="any"
+                 formControlName="tamanio"
+                 placeholder="Ej.: 700"
+                 [class.invalido]="mostrarError('tamanio')"
+                 [attr.aria-invalid]="mostrarError('tamanio')">
+
+          <select class="campo" formControlName="unidadTamanio" aria-label="Unidad del tamaño">
+            @for (unidad of unidadesTamanio; track unidad.valor) {
+              <option [value]="unidad.valor">{{ unidad.etiqueta }}</option>
+            }
+          </select>
+        </div>
 
         @if (mostrarError('tamanio')) {
           <p class="error">{{ textoError('tamanio') }}</p>

@@ -1,18 +1,29 @@
 /*
- * Un registro del historial de estatus legal (tabla ESTATUS_LEGAL).
- * Los nombres de los campos coinciden con el MER y con el JSON del back.
+ * Un registro del historial de estatus legal (GET /api/videojuegos/{id}/estatus-legal).
  *
- *  - estatus: el estatus ya como texto legible ("Dominio público", "Huérfano").
- *    El back traduce el valor de la base de datos, igual que hace con la
- *    cabecera de la ficha.
+ *  - estatus: ya viene como texto legible ("Protegido", "Dominio público",
+ *    "Huérfano", "Abandonware").
  *  - fechaDeterminacion: texto 'yyyy-MM-dd'.
- *
- * No hay un campo "esVigente": el vigente es el registro con la
- * fechaDeterminacion más reciente, o sea el primero de la lista (el back
- * la entrega ordenada de más reciente a más antigua).
+ *  - vigente: true solo en UN registro de la lista, el más reciente.
+ *    Si la lista llega vacía, el juego está "Sin determinar".
  */
 export interface EstatusLegal {
-  idEstatusLegal: number;
+  idEstatus: number;
+  idVideojuego: number;
+  idUsuario: number;
   estatus: string;
   fechaDeterminacion: string;
+  observacion?: string;
+  vigente: boolean;
+}
+
+/*
+ * Cuerpo de POST /api/videojuegos/{id}/estatus-legal.
+ * No lleva idEstatus, idVideojuego (va en la URL), idUsuario (sale del token)
+ * ni vigente (lo calcula el back).
+ */
+export interface EstatusLegalNuevo {
+  estatus: string;
+  fechaDeterminacion: string;
+  observacion?: string;
 }

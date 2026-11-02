@@ -16,6 +16,7 @@ export type EstadoIntegridad =
 export interface Copia {
   idCopia: number;
   idVideojuego: number;
+  idUsuario?: number;
   tipoCopia: TipoCopia;
   estadoIntegridad: EstadoIntegridad;
   fechaRegistro: string;
@@ -27,7 +28,7 @@ export interface Copia {
 
   // Campos de COPIA_DIGITAL (solo si tipoCopia es 'digital')
   formatoArchivo?: string;
-  tamanio?: string;
+  tamanio?: number; // en BYTES; la tarjeta lo muestra como KB, MB o GB
   hashVerificacion?: string;
 }
 
@@ -36,8 +37,9 @@ export interface Copia {
  * Cuerpo que envía el formulario "Registrar copia". El back responde
  * 201 con la Copia creada (ya con su idCopia).
  *
- * No lleva idCopia (lo genera la base de datos) ni idVideojuego (va en la URL).
- *  - fechaRegistro: texto 'yyyy-MM-dd'.
+ * No lleva idCopia (lo genera la base de datos), ni idVideojuego (va en la URL),
+ * ni idUsuario (sale del token), ni fechaRegistro (la pone el back con la fecha de hoy).
+ *  - tamanio: en BYTES, mayor que 0.
  *  - Si tipoCopia es 'fisica', se envían tipoSoporte, numeroSerie y
  *    ubicacionFisica, y NO los campos digitales. Si es 'digital', al revés.
  *    Los campos que no corresponden se omiten del JSON.
@@ -45,7 +47,6 @@ export interface Copia {
 export interface CopiaNueva {
   tipoCopia: TipoCopia;
   estadoIntegridad: EstadoIntegridad;
-  fechaRegistro: string;
 
   // Solo si tipoCopia es 'fisica'
   tipoSoporte?: string;
@@ -54,6 +55,6 @@ export interface CopiaNueva {
 
   // Solo si tipoCopia es 'digital'
   formatoArchivo?: string;
-  tamanio?: string;
+  tamanio?: number;
   hashVerificacion?: string;
 }

@@ -25,7 +25,9 @@
 
   <p class="tipo-pais">{{ tipoYPais }}</p>
 
-  <p class="detalle">{{ textoCopias }}</p>
+  @if (textoCopias) {
+    <p class="detalle">{{ textoCopias }}</p>
+  }
 
   <p class="detalle">{{ textoContacto }}</p>
 

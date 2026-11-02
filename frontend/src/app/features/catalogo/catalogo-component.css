@@ -160,3 +160,28 @@
     font-size: 30px;
   }
 }
+
+/* Botón "Nuevo videojuego" del encabezado */
+.boton-nuevo {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 22px;
+  background: var(--accent);
+  color: var(--on-accent);
+  border: 1px solid var(--accent);
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.boton-nuevo:hover {
+  opacity: 0.9;
+}
+
+.boton-nuevo:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}

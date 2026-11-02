@@ -2,6 +2,10 @@
   Fila de contadores. El @for crea un <app-stat-card> por cada
   elemento del arreglo "contadores" de inicio.ts.
 -->
+@if (hayError) {
+  <p class="aviso-error" role="alert">No pudimos cargar parte de la información. Revisa que el servidor esté activo e inténtalo de nuevo.</p>
+}
+
 <section class="contadores" aria-label="Resumen del catálogo">
   @for (contador of contadores; track contador.etiqueta) {
     <app-stat-card

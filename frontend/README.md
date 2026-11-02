@@ -1,59 +1,72 @@
-# Frontend
+# ArchiveLudo — Frontend
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 22.2.4.
+Plataforma de preservación de videojuegos (proyecto final de Bases de Datos 1,
+Universidad El Bosque). Este repositorio es el **frontend**: Angular 22 con
+NgModules (componentes `standalone: false`). El back es Spring Boot + MySQL.
 
-## Development server
+## Requisitos
 
-To start a local development server, run:
+- Node.js 20 o superior y npm
+- Angular CLI (`npm install -g @angular/cli`)
+- El back de ArchiveLudo corriendo en `http://localhost:8080`
 
-```bash
+## Puesta en marcha (PowerShell)
+
+```powershell
+npm install
 ng serve
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+Abre `http://localhost:4200/`. La dirección del back está en
+`src/app/core/archiveludo-api-service.ts` (propiedad `urlBase`).
 
-## Code scaffolding
+## Sin el back: servidor de prueba (mock)
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+Para desarrollar sin la base de datos hay un servidor falso que imita el
+contrato real del back. **No está en el repositorio** (está en `.gitignore`);
+cada integrante lo tiene en su máquina en `mock-back/server.js`.
 
-```bash
-ng generate component component-name
+```powershell
+node mock-back/server.js
+ng serve
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+Los datos viven en memoria y se reinician al apagarlo. Usuarios de prueba
+(contraseña `1234`): `admin@archiveludo.com`, `curador@archiveludo.com`,
+`consulta@archiveludo.com`. Con el back real, apaga el mock (Ctrl + C) y no
+cambies nada del front.
 
-```bash
-ng generate --help
+## Roles
+
+| Rol | Puede |
+| --- | --- |
+| consulta | Ver todo |
+| curador | Crear y editar (videojuegos, copias, estatus, estudios, editoras, instituciones) |
+| administrador | Todo lo anterior, eliminar registros y gestionar usuarios |
+
+La sesión se guarda con el token JWT que entrega el back; un interceptor lo
+envía en cada petición y, si el back responde 401, cierra la sesión.
+**Nunca** se guardan contraseñas ni hashes en el front.
+
+## Estructura
+
+```
+src/app/
+  core/            servicio de la API, sesión, guards, interceptor
+  shared/          modelos, tarjetas, barra superior, directiva *appHasRole
+  features/
+    inicio/ catalogo/ en-riesgo/ videojuego/ instituciones/
+    proyectos/ reportes/ login/ no-encontrado/
+    administracion/   estudios, editoras, instituciones, usuarios
 ```
 
-## Building
+## Pantallas conectadas al back y pendientes
 
-To build the project run:
+Ver [`PENDIENTES_BACK.md`](PENDIENTES_BACK.md).
 
-```bash
-ng build
+## Comandos útiles
+
+```powershell
+ng build                               # compilar
+npx ngc --noEmit -p tsconfig.app.json  # revisar tipos Y plantillas HTML
 ```
-
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
-
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.

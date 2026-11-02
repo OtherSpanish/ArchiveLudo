@@ -47,7 +47,7 @@
 }
 
 @if (hayError) {
-  <p class="mensaje">No pudimos cargar los proyectos. Intenta de nuevo más tarde.</p>
+  <p class="mensaje">{{ mensajeError }}</p>
 }
 
 @if (!cargando && !hayError && proyectosVisibles.length === 0) {

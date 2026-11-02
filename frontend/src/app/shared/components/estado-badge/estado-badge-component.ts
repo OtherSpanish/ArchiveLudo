@@ -14,7 +14,7 @@ interface Apariencia {
  * Componente reutilizable que muestra un estado como "punto de color + texto".
  *
  * Uso en cualquier HTML:
- *   <app-estado-badge estado="en_riesgo"></app-estado-badge>
+ *   <app-estado-badge estado="en riesgo"></app-estado-badge>
  *   <app-estado-badge [estado]="videojuego.estadoConservacion"></app-estado-badge>
  *
  * Sirve para tres tipos de estado de la base de datos:
@@ -33,7 +33,7 @@ export class EstadoBadgeComponent {
 
   /*
    * @Input significa que el componente padre le pasa este valor desde su HTML.
-   * Aquí llega el valor tal cual está en la base de datos, por ejemplo 'en_riesgo'.
+   * Aquí llega el valor tal cual está en la base de datos, por ejemplo 'en riesgo'.
    */
   @Input() estado: string = '';
 
@@ -41,14 +41,14 @@ export class EstadoBadgeComponent {
    * Mapa de "valor en la base de datos" -> "apariencia".
    * Sale de la sección 2 de la guía de diseño.
    * Es un objeto normal: se busca por la llave, por ejemplo
-   * this.mapaEstados['perdido'] devuelve { texto: 'Perdido', color: 'bad' }.
+   * this.mapaEstados['totalmente perdido'] devuelve { texto: 'Totalmente perdido', color: 'bad' }.
    */
   private mapaEstados: Record<string, Apariencia> = {
     // estado_conservacion (VIDEOJUEGO)
     'activo': { texto: 'Activo', color: 'ok' },
-    'en_riesgo': { texto: 'En riesgo', color: 'warn' },
-    'parcialmente_perdido': { texto: 'Parcialmente perdido', color: 'warn' },
-    'perdido': { texto: 'Perdido', color: 'bad' },
+    'en riesgo': { texto: 'En riesgo', color: 'warn' },
+    'parcialmente perdido': { texto: 'Parcialmente perdido', color: 'warn' },
+    'totalmente perdido': { texto: 'Totalmente perdido', color: 'bad' },
     'restaurado': { texto: 'Restaurado', color: 'ok' },
 
     // estado_integridad (COPIA)
