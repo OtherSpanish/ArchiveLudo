@@ -4,12 +4,14 @@ import java.time.LocalDate;
 
 import co.edu.unbosque.archiveludo.entity.CompaniaEditora;
 import co.edu.unbosque.archiveludo.entity.Estudio;
+import co.edu.unbosque.archiveludo.entity.Institucion;
 import co.edu.unbosque.archiveludo.entity.Usuario;
 import co.edu.unbosque.archiveludo.entity.Videojuego;
 import co.edu.unbosque.archiveludo.model.EstadoConservacion;
 import co.edu.unbosque.archiveludo.model.EstadoEstudio;
 import co.edu.unbosque.archiveludo.model.EstadoIntegridad;
 import co.edu.unbosque.archiveludo.model.Rol;
+import co.edu.unbosque.archiveludo.model.TipoInstitucion;
 
 /**
  * Lanzador de las excepciones propias de ArchiveLudo.
@@ -29,6 +31,10 @@ public class LanzadorException {
 
 	/** Cantidad maxima de elementos que se pueden pedir en una pagina. */
 	private static final int LIMITE_MAXIMO = 50;
+
+	/** Rango de digitos de un telefono (la columna es NUMERIC(15, 0)). */
+	private static final int DIGITOS_MINIMOS_TELEFONO = 7;
+	private static final int DIGITOS_MAXIMOS_TELEFONO = 15;
 
 	/**
 	 * Verifica que un id recibido por la URL sea valido.
@@ -389,7 +395,7 @@ public class LanzadorException {
 	 * @param tieneRegistrosAsociados resultado de contar los registros que dependen de el
 	 * @param recursoConArticulo      por ejemplo "el usuario" o "la copia" (para el mensaje)
 	 * @param id                      id del registro que se quiere eliminar
-	 * @throws RegistrosAsociadosException si tiene registros asociados
+	 * @throws RegistroAsociadoException si tiene registros asociados
 	 */
 	public static void verificarSinRegistrosAsociados(boolean tieneRegistrosAsociados, String recursoConArticulo,
 			long id) {
@@ -442,7 +448,7 @@ public class LanzadorException {
 	 * @param estado        estado actual del estudio
 	 * @param anioFundacion anio de fundacion
 	 * @param anioCierre    anio de cierre (null si no tiene)
-	 * @throws DatosEstudioInvalidosException si se incumple alguna regla
+	 * @throws DatoEstudioInvalidoException si se incumple alguna regla
 	 */
 	public static void verificarAniosEstudio(EstadoEstudio estado, Integer anioFundacion, Integer anioCierre) {
 		int anioActual = LocalDate.now().getYear();
@@ -483,6 +489,97 @@ public class LanzadorException {
 	public static void verificarCompaniaEditoraExiste(CompaniaEditora companiaEditora, long idEditora) {
 		if (companiaEditora == null) {
 			throw new CompaniaEditoraNoEncontradaException(idEditora);
+		}
+	}
+
+	/**
+	 * Verifica que la institucion buscada exista.
+	 *
+	 * @param institucion   resultado de la busqueda en el repository
+	 * @param idInstitucion id que se busco (para el mensaje)
+	 * @throws InstitucionNoEncontradaException si la institucion es null
+	 */
+	public static void verificarInstitucionExiste(Institucion institucion, long idInstitucion) {
+		if (institucion == null) {
+			throw new InstitucionNoEncontradaException(idInstitucion);
+		}
+	}
+
+	/**
+	 * Convierte el tipo de institucion al enum TipoInstitucion.
+	 * Acepta el valor de la BD ("coleccion privada") o el texto legible ("Colección privada").
+	 *
+	 * @param textoTipo tipo tal como llego en el cuerpo de la peticion
+	 * @return el tipo correspondiente
+	 * @throws DatoInstitucionInvalidoException si viene vacio o no es uno de los 4 tipos
+	 */
+	public static TipoInstitucion convertirTipoInstitucion(String textoTipo) {
+		String mensaje = "El tipo de institucion debe ser: museo, universidad, archivo o coleccion privada";
+
+		if (textoTipo == null || textoTipo.trim().isEmpty()) {
+			throw new DatoInstitucionInvalidoException(mensaje);
+		}
+
+		TipoInstitucion tipo = TipoInstitucion.buscarPorValor(textoTipo.trim().toLowerCase());
+		if (tipo == null) {
+			tipo = TipoInstitucion.buscarPorTextoLegible(textoTipo.trim());
+		}
+		if (tipo == null) {
+			throw new DatoInstitucionInvalidoException(mensaje);
+		}
+		return tipo;
+	}
+
+	/**
+	 * Verifica que un telefono tenga entre 7 y 15 digitos (la columna es NUMERIC(15, 0)).
+	 *
+	 * @param telefono telefono a verificar
+	 * @throws DatoInstitucionInvalidoException si es nulo, negativo o no tiene entre 7 y 15 digitos
+	 */
+	public static void verificarTelefonoValido(Integer telefono) {
+		String mensaje = "Cada telefono debe ser un numero de entre " + DIGITOS_MINIMOS_TELEFONO + " y "
+				+ DIGITOS_MAXIMOS_TELEFONO + " digitos, sin el signo +";
+
+		if (telefono == null || telefono <= 0) {
+			throw new DatoInstitucionInvalidoException(mensaje);
+		}
+
+		int cantidadDigitos = String.valueOf(telefono).length();
+		if (cantidadDigitos < DIGITOS_MINIMOS_TELEFONO || cantidadDigitos > DIGITOS_MAXIMOS_TELEFONO) {
+			throw new DatoInstitucionInvalidoException(mensaje);
+		}
+	}
+
+	/**
+	 * Verifica el formato de un correo de institucion. A diferencia de verificarCorreoValido
+	 * (usuarios), aqui se acepta cualquier dominio: contacto@museo.org es valido.
+	 *
+	 * @param correo correo a verificar
+	 * @throws DatoInstitucionInvalidoException si esta vacio o no tiene formato de correo
+	 */
+	public static void verificarCorreoInstitucionValido(String correo) {
+		String patronDelCorreo = "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.(?:[A-Za-z]{2,})$";
+
+		if (correo == null || !correo.trim().matches(patronDelCorreo)) {
+			throw new DatoInstitucionInvalidoException("El correo '" + correo + "' no tiene un formato valido");
+		}
+	}
+
+	/**
+	 * Verifica que la institucion tenga al menos un telefono y al menos un correo
+	 * (atributos multivaluados obligatorios). La BD no puede exigirlo con una restriccion,
+	 * por eso se valida aqui.
+	 *
+	 * @param cantidadTelefonos cantidad de telefonos validos (sin repetidos)
+	 * @param cantidadCorreos   cantidad de correos validos (sin repetidos)
+	 * @throws DatoInstitucionInvalidoException si no tiene telefonos o no tiene correos
+	 */
+	public static void verificarInstitucionConContacto(int cantidadTelefonos, int cantidadCorreos) {
+		if (cantidadTelefonos == 0) {
+			throw new DatoInstitucionInvalidoException("La institucion debe tener al menos un telefono");
+		}
+		if (cantidadCorreos == 0) {
+			throw new DatoInstitucionInvalidoException("La institucion debe tener al menos un correo");
 		}
 	}
 
