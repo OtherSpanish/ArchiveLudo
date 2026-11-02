@@ -33,6 +33,18 @@ public class CopiaRepository {
 			+ "WHERE c.id_videojuego = ? "
 			+ "ORDER BY c.fecha_registro DESC, c.id_copia DESC";
 
+	private static final String SQL_INSERTAR_COPIA = "INSERT INTO COPIA (id_videojuego, id_usuario, tipo_copia, "
+			+ "estado_integridad, fecha_registro) VALUES (?, ?, ?, ?, ?)";
+
+	/** Devuelve el id AUTO_INCREMENT que genero el ultimo INSERT en esta misma conexion. */
+	private static final String SQL_ULTIMO_ID_GENERADO = "SELECT LAST_INSERT_ID()";
+
+	private static final String SQL_INSERTAR_COPIA_FISICA = "INSERT INTO COPIA_FISICA (id_copia, numero_serie, "
+			+ "ubicacion_fisica, tipo_soporte) VALUES (?, ?, ?, ?)";
+
+	private static final String SQL_INSERTAR_COPIA_DIGITAL = "INSERT INTO COPIA_DIGITAL (id_copia, "
+			+ "formato_archivo, tamanio, hash_verificacion) VALUES (?, ?, ?, ?)";
+
 	private final JdbcTemplate jdbcTemplate;
 
 	public CopiaRepository(JdbcTemplate jdbcTemplate) {
@@ -53,6 +65,63 @@ public class CopiaRepository {
 			copias.add(convertirFilaACopia(fila));
 		}
 		return copias;
+	}
+
+	/**
+	 * Inserta una copia fisica: primero en COPIA y luego en COPIA_FISICA con el mismo id.
+	 * Debe llamarse dentro de una transaccion (@Transactional en el service) para que
+	 * los dos INSERT y el LAST_INSERT_ID() usen la misma conexion, y para que si uno falla
+	 * se deshaga el otro.
+	 *
+	 * @param copiaFisica copia a guardar, sin id
+	 * @return la misma copia con su idCopia
+	 */
+	public CopiaFisica crearCopiaFisica(CopiaFisica copiaFisica) {
+		long idCopia = insertarDatosComunes(copiaFisica);
+
+		jdbcTemplate.update(SQL_INSERTAR_COPIA_FISICA,
+				idCopia,
+				copiaFisica.getNumeroSerie(),
+				copiaFisica.getUbicacionFisica(),
+				copiaFisica.getTipoSoporte());
+
+		copiaFisica.setIdCopia(idCopia);
+		return copiaFisica;
+	}
+
+	/**
+	 * Inserta una copia digital: primero en COPIA y luego en COPIA_DIGITAL con el mismo id.
+	 * Debe llamarse dentro de una transaccion (@Transactional en el service).
+	 *
+	 * @param copiaDigital copia a guardar, sin id
+	 * @return la misma copia con su idCopia
+	 */
+	public CopiaDigital crearCopiaDigital(CopiaDigital copiaDigital) {
+		long idCopia = insertarDatosComunes(copiaDigital);
+
+		jdbcTemplate.update(SQL_INSERTAR_COPIA_DIGITAL,
+				idCopia,
+				copiaDigital.getFormatoArchivo(),
+				copiaDigital.getTamanio(),
+				copiaDigital.getHashVerificacion());
+
+		copiaDigital.setIdCopia(idCopia);
+		return copiaDigital;
+	}
+
+	/**
+	 * Inserta la fila en COPIA (los datos comunes) y devuelve el id que genero MySQL.
+	 */
+	private long insertarDatosComunes(Copia copia) {
+		jdbcTemplate.update(SQL_INSERTAR_COPIA,
+				copia.getIdVideojuego(),
+				copia.getIdUsuario(),
+				copia.getTipoCopia().getValor(),
+				copia.getEstadoIntegridad().getValor(),
+				Date.valueOf(copia.getFechaRegistro()));
+
+		Long idGenerado = jdbcTemplate.queryForObject(SQL_ULTIMO_ID_GENERADO, Long.class);
+		return idGenerado;
 	}
 
 	/**
