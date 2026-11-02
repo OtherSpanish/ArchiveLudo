@@ -55,9 +55,6 @@ public class CustodiaRepository {
 		this.jdbcTemplate = jdbcTemplate;
 	}
 
-	// ──────────────────────────────────────────────
-	// Lectura
-	// ──────────────────────────────────────────────
 
 	/**
 	 * Busca el historial de custodias de una copia, de la mas reciente a la mas antigua.
@@ -116,9 +113,6 @@ public class CustodiaRepository {
 		return cantidad;
 	}
 
-	// ──────────────────────────────────────────────
-	// Escritura
-	// ──────────────────────────────────────────────
 
 	/**
 	 * Inserta una custodia y le asigna el id generado.
@@ -169,9 +163,6 @@ public class CustodiaRepository {
 		jdbcTemplate.update(SQL_ELIMINAR, idCustodia);
 	}
 
-	// ──────────────────────────────────────────────
-	// Conversiones
-	// ──────────────────────────────────────────────
 
 	/**
 	 * Convierte una fila de la tabla CUSTODIA (columna -> valor) en la entity Custodia.
