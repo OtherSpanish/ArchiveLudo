@@ -13,7 +13,7 @@ import co.edu.unbosque.archiveludo.entity.EstatusLegal;
 import co.edu.unbosque.archiveludo.model.TipoEstatusLegal;
 
 /**
- * Acceso a datos de la tabla ESTATUS_LEGAL con SQL escrito a mano (Spring JDBC).
+ * Acceso a datos de la tabla ESTATUS_LEGAL con SQL(Spring JDBC).
  */
 @Repository
 public class EstatusLegalRepository {

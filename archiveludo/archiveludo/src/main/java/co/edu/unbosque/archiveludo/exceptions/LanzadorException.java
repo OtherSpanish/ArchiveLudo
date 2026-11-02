@@ -2,6 +2,7 @@ package co.edu.unbosque.archiveludo.exceptions;
 
 import java.time.LocalDate;
 
+import co.edu.unbosque.archiveludo.entity.CompaniaEditora;
 import co.edu.unbosque.archiveludo.entity.Estudio;
 import co.edu.unbosque.archiveludo.entity.Usuario;
 import co.edu.unbosque.archiveludo.entity.Videojuego;
@@ -456,6 +457,19 @@ public class LanzadorException {
 			if (anioCierre > anioActual) {
 				throw new DatoEstudioInvalidoException("El año de cierre no puede ser posterior a " + anioActual);
 			}
+		}
+	}
+	
+	/**
+	 * Verifica que la compania editora buscada exista.
+	 *
+	 * @param companiaEditora resultado de la busqueda en el repository
+	 * @param idEditora       id que se busco (para el mensaje)
+	 * @throws CompaniaEditoraNoEncontradaException si la editora es null
+	 */
+	public static void verificarCompaniaEditoraExiste(CompaniaEditora companiaEditora, long idEditora) {
+		if (companiaEditora == null) {
+			throw new CompaniaEditoraNoEncontradaException(idEditora);
 		}
 	}
 

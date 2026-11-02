@@ -16,7 +16,7 @@ import co.edu.unbosque.archiveludo.model.EstadoIntegridad;
 import co.edu.unbosque.archiveludo.model.TipoCopia;
 
 /**
- * Acceso a datos de COPIA y sus subtipos COPIA_FISICA y COPIA_DIGITAL con SQL escrito a mano.
+ * Acceso a datos de COPIA y sus subtipos COPIA_FISICA y COPIA_DIGITAL con SQL.
  * Las copias se leen en una sola consulta: LEFT JOIN a las dos tablas hijas.
  * Para una copia fisica, las columnas de COPIA_DIGITAL llegan en NULL (y al reves).
  */

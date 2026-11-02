@@ -15,7 +15,7 @@ import co.edu.unbosque.archiveludo.entity.Usuario;
 import co.edu.unbosque.archiveludo.model.Rol;
 
 /**
- * Acceso a datos de la tabla USUARIO con SQL escrito a mano (Spring JDBC).
+ * Acceso a datos de la tabla USUARIO con SQL (Spring JDBC).
  */
 @Repository
 public class UsuarioRepository {
