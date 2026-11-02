@@ -9,16 +9,16 @@ public class InstitucionDTO {
 	private String nombre;
 	private String tipo;
 	private String pais;
-	private List<Integer> telefonos;
+	private List<Long> telefonos;
 	private List<String> correos;
 
 	public InstitucionDTO() {
-		this.telefonos = new ArrayList<Integer>();
+		this.telefonos = new ArrayList<Long>();
 		this.correos = new ArrayList<String>();
 	}
 
-	public InstitucionDTO(long idInstitucion, String nombre, String tipo, String pais, 
-			List<Integer> telefonos, List<String> correos) {
+	public InstitucionDTO(long idInstitucion, String nombre, String tipo, String pais, List<Long> telefonos,
+			List<String> correos) {
 		super();
 		this.idInstitucion = idInstitucion;
 		this.nombre = nombre;
@@ -31,8 +31,7 @@ public class InstitucionDTO {
 	@Override
 	public String toString() {
 		return "InstitucionDTO [idInstitucion=" + idInstitucion + ", nombre=" + nombre + ", tipo=" + tipo
-				+ ", pais=" + pais +  ", telefonos=" + telefonos + ", correos="
-				+ correos + "]";
+				+ ", pais=" + pais + ", telefonos=" + telefonos + ", correos=" + correos + "]";
 	}
 
 	public long getIdInstitucion() {
@@ -67,11 +66,11 @@ public class InstitucionDTO {
 		this.pais = pais;
 	}
 
-	public List<Integer> getTelefonos() {
+	public List<Long> getTelefonos() {
 		return telefonos;
 	}
 
-	public void setTelefonos(List<Integer> telefonos) {
+	public void setTelefonos(List<Long> telefonos) {
 		this.telefonos = telefonos;
 	}
 

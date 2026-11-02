@@ -36,7 +36,6 @@ public class InstitucionService {
 		this.instCorreoRepository = instCorreoRepository;
 	}
 
-
 	/**
 	 * @return todas las instituciones, cada una con sus telefonos y correos
 	 */
@@ -65,7 +64,6 @@ public class InstitucionService {
 		return convertirADTO(institucion);
 	}
 
-
 	/**
 	 * Crea una institucion con sus telefonos y correos, en una sola transaccion.
 	 *
@@ -78,7 +76,7 @@ public class InstitucionService {
 	@Transactional
 	public InstitucionDTO crear(InstitucionDTO institucionDTO) {
 		TipoInstitucion tipo = verificarDatos(institucionDTO);
-		List<Integer> telefonos = verificarTelefonos(institucionDTO.getTelefonos());
+		List<Long> telefonos = verificarTelefonos(institucionDTO.getTelefonos());
 		List<String> correos = verificarCorreos(institucionDTO.getCorreos());
 		LanzadorException.verificarInstitucionConContacto(telefonos.size(), correos.size());
 
@@ -113,7 +111,7 @@ public class InstitucionService {
 		LanzadorException.verificarInstitucionExiste(institucion, idInstitucion);
 
 		TipoInstitucion tipo = verificarDatos(institucionDTO);
-		List<Integer> telefonos = verificarTelefonos(institucionDTO.getTelefonos());
+		List<Long> telefonos = verificarTelefonos(institucionDTO.getTelefonos());
 		List<String> correos = verificarCorreos(institucionDTO.getCorreos());
 		LanzadorException.verificarInstitucionConContacto(telefonos.size(), correos.size());
 
@@ -153,6 +151,7 @@ public class InstitucionService {
 		institucionRepository.eliminar(idInstitucion);
 	}
 
+
 	/**
 	 * Valida los datos propios de la institucion y devuelve el tipo ya convertido al enum.
 	 */
@@ -166,13 +165,13 @@ public class InstitucionService {
 	 * Valida cada telefono y quita los repetidos.
 	 * Que haya al menos uno lo verifica despues verificarInstitucionConContacto.
 	 */
-	private List<Integer> verificarTelefonos(List<Integer> telefonosEnviados) {
-		List<Integer> telefonosSinRepetir = new ArrayList<Integer>();
+	private List<Long> verificarTelefonos(List<Long> telefonosEnviados) {
+		List<Long> telefonosSinRepetir = new ArrayList<Long>();
 		if (telefonosEnviados == null) {
 			return telefonosSinRepetir;
 		}
 
-		for (Integer telefono : telefonosEnviados) {
+		for (Long telefono : telefonosEnviados) {
 			LanzadorException.verificarTelefonoValido(telefono);
 			if (!telefonosSinRepetir.contains(telefono)) {
 				telefonosSinRepetir.add(telefono);
@@ -211,12 +210,15 @@ public class InstitucionService {
 		return false;
 	}
 
+	// ──────────────────────────────────────────────
+	// Utilidades
+	// ──────────────────────────────────────────────
 
 	/**
 	 * Inserta los telefonos y correos de la institucion, cada uno en su tabla.
 	 */
-	private void guardarTelefonosYCorreos(long idInstitucion, List<Integer> telefonos, List<String> correos) {
-		for (Integer telefono : telefonos) {
+	private void guardarTelefonosYCorreos(long idInstitucion, List<Long> telefonos, List<String> correos) {
+		for (Long telefono : telefonos) {
 			instTelefonoRepository.crear(new InstTelefono(idInstitucion, telefono));
 		}
 		for (String correo : correos) {
@@ -231,9 +233,9 @@ public class InstitucionService {
 	private InstitucionDTO convertirADTO(Institucion institucion) {
 		long idInstitucion = institucion.getIdInstitucion();
 
-		List<Integer> telefonos = new ArrayList<Integer>();
+		List<Long> telefonos = new ArrayList<Long>();
 		for (InstTelefono instTelefono : instTelefonoRepository.buscarPorIdInstitucion(idInstitucion)) {
-			telefonos.add((int) instTelefono.getTelefono());
+			telefonos.add(instTelefono.getTelefono());
 		}
 
 		List<String> correos = new ArrayList<String>();

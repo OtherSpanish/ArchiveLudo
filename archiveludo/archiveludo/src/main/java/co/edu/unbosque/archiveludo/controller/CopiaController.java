@@ -11,22 +11,33 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import co.edu.unbosque.archiveludo.dto.CopiaDTO;
 import co.edu.unbosque.archiveludo.exceptions.CampoObligatorioException;
+import co.edu.unbosque.archiveludo.exceptions.CopiaNoEncontradaException;
 import co.edu.unbosque.archiveludo.exceptions.CredencialInvalidaException;
+import co.edu.unbosque.archiveludo.exceptions.DatoCopiaInvalidoException;
 import co.edu.unbosque.archiveludo.exceptions.EstadoIntegridadInvalidoException;
 import co.edu.unbosque.archiveludo.exceptions.IdInvalidoException;
+import co.edu.unbosque.archiveludo.exceptions.RegistroAsociadoException;
 import co.edu.unbosque.archiveludo.exceptions.TamanioInvalidoException;
 import co.edu.unbosque.archiveludo.exceptions.VideojuegoNoEncontradoException;
 import co.edu.unbosque.archiveludo.service.CopiaService;
 
+/**
+ * Copias (fisicas y digitales) de los videojuegos.
+ * El listado y el registro van por el videojuego (/api/videojuegos/{id}/copias);
+ * ver, editar y eliminar una copia, por su propio id (/api/copias/{id}).
+ * Leer: cualquier rol. Crear y actualizar: curador o administrador. Eliminar: solo administrador.
+ */
 @RestController
 @RequestMapping("/api")
 public class CopiaController {
@@ -40,7 +51,6 @@ public class CopiaController {
 	 * GET /api/videojuegos/{id}/copias
 	 * Respuesta: 200 con las copias del videojuego. Cada copia trae sus campos comunes
 	 *            y los de su subtipo (fisica o digital), segun "tipoCopia".
-	 * Requiere token de cualquier rol.
 	 */
 	@GetMapping("/videojuegos/{id}/copias")
 	public ResponseEntity<?> buscarPorVideojuego(@PathVariable String id) {
@@ -63,9 +73,7 @@ public class CopiaController {
 	 *                     "ubicacionFisica": "Bodega A, estante 2", "tipoSoporte": "cartucho" }
 	 * Cuerpo (digital): { "tipoCopia": "digital", "estadoIntegridad": "buena", "formatoArchivo": "iso",
 	 *                     "tamanio": 734003200, "hashVerificacion": "9b1f0c3d..." }
-	 * Respuesta: 201 con la copia creada.
-	 * Solo curador o administrador (consulta recibe 403 desde SecurityConfig).
-	 * El usuario que registra la copia se toma del token, no del cuerpo.
+	 * Respuesta: 201 con la copia creada. El usuario que la registra sale del token.
 	 */
 	@PostMapping("/videojuegos/{id}/copias")
 	public ResponseEntity<?> crear(@PathVariable String id, @RequestBody CopiaDTO copiaDTO,
@@ -87,6 +95,74 @@ public class CopiaController {
 			return crearRespuestaError(HttpStatus.UNAUTHORIZED, e.getMessage());
 		} catch (Exception e) {
 			log.error("Error inesperado al registrar la copia del videojuego " + id, e);
+			return crearRespuestaError(HttpStatus.INTERNAL_SERVER_ERROR, "Ocurrio un error interno en el servidor");
+		}
+	}
+
+	/**
+	 * GET /api/copias/{id}
+	 * Respuesta: 200 con la copia y los campos de su subtipo.
+	 */
+	@GetMapping("/copias/{id}")
+	public ResponseEntity<?> buscarPorId(@PathVariable String id) {
+		try {
+			CopiaDTO copia = copiaService.buscarPorId(id);
+			return new ResponseEntity<CopiaDTO>(copia, HttpStatus.OK);
+		} catch (IdInvalidoException e) {
+			return crearRespuestaError(HttpStatus.BAD_REQUEST, e.getMessage());
+		} catch (CopiaNoEncontradaException e) {
+			return crearRespuestaError(HttpStatus.NOT_FOUND, e.getMessage());
+		} catch (Exception e) {
+			log.error("Error inesperado al buscar la copia " + id, e);
+			return crearRespuestaError(HttpStatus.INTERNAL_SERVER_ERROR, "Ocurrio un error interno en el servidor");
+		}
+	}
+
+	/**
+	 * PUT /api/copias/{id}
+	 * Cuerpo:    el mismo formato del POST. "tipoCopia" debe ser igual al de la copia guardada.
+	 * Respuesta: 200 con la copia actualizada.
+	 */
+	@PutMapping("/copias/{id}")
+	public ResponseEntity<?> actualizar(@PathVariable String id, @RequestBody CopiaDTO copiaDTO) {
+		try {
+			CopiaDTO copiaActualizada = copiaService.actualizar(id, copiaDTO);
+			return new ResponseEntity<CopiaDTO>(copiaActualizada, HttpStatus.OK);
+		} catch (IdInvalidoException e) {
+			return crearRespuestaError(HttpStatus.BAD_REQUEST, e.getMessage());
+		} catch (CopiaNoEncontradaException e) {
+			return crearRespuestaError(HttpStatus.NOT_FOUND, e.getMessage());
+		} catch (DatoCopiaInvalidoException e) {
+			return crearRespuestaError(HttpStatus.BAD_REQUEST, e.getMessage());
+		} catch (EstadoIntegridadInvalidoException e) {
+			return crearRespuestaError(HttpStatus.BAD_REQUEST, e.getMessage());
+		} catch (CampoObligatorioException e) {
+			return crearRespuestaError(HttpStatus.BAD_REQUEST, e.getMessage());
+		} catch (TamanioInvalidoException e) {
+			return crearRespuestaError(HttpStatus.BAD_REQUEST, e.getMessage());
+		} catch (Exception e) {
+			log.error("Error inesperado al actualizar la copia " + id, e);
+			return crearRespuestaError(HttpStatus.INTERNAL_SERVER_ERROR, "Ocurrio un error interno en el servidor");
+		}
+	}
+
+	/**
+	 * DELETE /api/copias/{id}
+	 * Respuesta: 204 sin cuerpo si se elimino; 409 si la copia tiene custodias.
+	 */
+	@DeleteMapping("/copias/{id}")
+	public ResponseEntity<?> eliminar(@PathVariable String id) {
+		try {
+			copiaService.eliminar(id);
+			return new ResponseEntity<Void>(HttpStatus.NO_CONTENT);
+		} catch (IdInvalidoException e) {
+			return crearRespuestaError(HttpStatus.BAD_REQUEST, e.getMessage());
+		} catch (CopiaNoEncontradaException e) {
+			return crearRespuestaError(HttpStatus.NOT_FOUND, e.getMessage());
+		} catch (RegistroAsociadoException e) {
+			return crearRespuestaError(HttpStatus.CONFLICT, e.getMessage());
+		} catch (Exception e) {
+			log.error("Error inesperado al eliminar la copia " + id, e);
 			return crearRespuestaError(HttpStatus.INTERNAL_SERVER_ERROR, "Ocurrio un error interno en el servidor");
 		}
 	}

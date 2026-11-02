@@ -74,7 +74,7 @@ public class InstitucionController {
 	/**
 	 * POST /api/instituciones
 	 * Cuerpo:    { "nombre": "Museo del Videojuego", "tipo": "museo", "pais": "Colombia",
-	 *              "direccion": "Calle 100 # 15-20", "telefonos": [6015551234],
+	 *               "telefonos": [6015551234],
 	 *              "correos": ["contacto@museovideojuego.org"] }
 	 * Respuesta: 201 con la institucion creada.
 	 */

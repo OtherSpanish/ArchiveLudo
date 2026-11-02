@@ -269,10 +269,6 @@ public class VideojuegoService {
 		return idsSinRepetir;
 	}
 
-	// ──────────────────────────────────────────────
-	// Utilidades
-	// ──────────────────────────────────────────────
-
 	/**
 	 * En el catalogo el estado es opcional: si viene vacio se devuelven todos los estados.
 	 */

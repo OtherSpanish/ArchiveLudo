@@ -5,6 +5,7 @@ import java.time.LocalDate;
 import co.edu.unbosque.archiveludo.entity.CompaniaEditora;
 import co.edu.unbosque.archiveludo.entity.EstatusLegal;
 import co.edu.unbosque.archiveludo.entity.Estudio;
+import co.edu.unbosque.archiveludo.entity.EventoDeRiesgo;
 import co.edu.unbosque.archiveludo.entity.Institucion;
 import co.edu.unbosque.archiveludo.entity.Usuario;
 import co.edu.unbosque.archiveludo.entity.Videojuego;
@@ -13,7 +14,10 @@ import co.edu.unbosque.archiveludo.model.EstadoEstudio;
 import co.edu.unbosque.archiveludo.model.EstadoIntegridad;
 import co.edu.unbosque.archiveludo.model.Rol;
 import co.edu.unbosque.archiveludo.model.TipoEstatusLegal;
+import co.edu.unbosque.archiveludo.model.TipoEventoRiesgo;
 import co.edu.unbosque.archiveludo.model.TipoInstitucion;
+import co.edu.unbosque.archiveludo.entity.Copia;
+import co.edu.unbosque.archiveludo.model.TipoCopia;
 
 /**
  * Lanzador de las excepciones propias de ArchiveLudo.
@@ -21,7 +25,6 @@ import co.edu.unbosque.archiveludo.model.TipoInstitucion;
  * la excepcion correspondiente y mediante try catch en el controller son convertidas en respuesta HTTP.
  */
 public class LanzadorException {
-
 	/** Anio minimo aceptado como anio de lanzamiento de un videojuego. */
 	private static final int ANIO_MINIMO_LANZAMIENTO = 1950;
 
@@ -37,6 +40,10 @@ public class LanzadorException {
 	/** Rango de digitos de un telefono (la columna es NUMERIC(15, 0)). */
 	private static final int DIGITOS_MINIMOS_TELEFONO = 7;
 	private static final int DIGITOS_MAXIMOS_TELEFONO = 15;
+
+	/** Longitudes maximas de EVENTO_DE_RIESGO (descripcion VARCHAR(500), fuente VARCHAR(200)). */
+	private static final int LONGITUD_MAXIMA_DESCRIPCION_EVENTO = 500;
+	private static final int LONGITUD_MAXIMA_FUENTE_EVENTO = 200;
 
 	/**
 	 * Verifica que un id recibido por la URL sea valido.
@@ -538,7 +545,7 @@ public class LanzadorException {
 	 * @param telefono telefono a verificar
 	 * @throws DatoInstitucionInvalidoException si es nulo, negativo o no tiene entre 7 y 15 digitos
 	 */
-	public static void verificarTelefonoValido(Integer telefono) {
+	public static void verificarTelefonoValido(Long telefono) {
 		String mensaje = "Cada telefono debe ser un numero de entre " + DIGITOS_MINIMOS_TELEFONO + " y "
 				+ DIGITOS_MAXIMOS_TELEFONO + " digitos, sin el signo +";
 
@@ -639,5 +646,117 @@ public class LanzadorException {
 			throw new DatoEstatusLegalInvalidoException("La fecha de determinacion no puede ser futura");
 		}
 	}
+	
+	/**
+	 * Verifica que el evento de riesgo buscado exista.
+	 *
+	 * @param eventoDeRiesgo resultado de la busqueda en el repository
+	 * @param idEvento       id que se busco (para el mensaje)
+	 * @throws EventoDeRiesgoNoEncontradoException si el evento es null
+	 */
+	public static void verificarEventoDeRiesgoExiste(EventoDeRiesgo eventoDeRiesgo, long idEvento) {
+		if (eventoDeRiesgo == null) {
+			throw new EventoDeRiesgoNoEncontradoException(idEvento);
+		}
+	}
 
+	/**
+	 * Convierte el texto del tipo de evento al enum TipoEventoRiesgo.
+	 * Acepta el valor de la BD ("perdida de codigo fuente") o el texto legible ("Pérdida de código fuente").
+	 *
+	 * @param textoTipo tipo tal como llego en el cuerpo de la peticion
+	 * @return el tipo correspondiente
+	 * @throws DatosEventoRiesgoInvalidosException si viene vacio o no es uno de los 5 tipos
+	 */
+	public static TipoEventoRiesgo convertirTipoEventoRiesgo(String textoTipo) {
+		String mensaje = "El tipo de evento debe ser: cierre de servidores, perdida de codigo fuente, "
+				+ "retiro de tienda digital, deterioro de medios o disputa legal";
+
+		if (textoTipo == null || textoTipo.trim().isEmpty()) {
+			throw new DatoEventoRiesgoInvalidoException(mensaje);
+		}
+
+		TipoEventoRiesgo tipo = TipoEventoRiesgo.buscarPorValor(textoTipo.trim().toLowerCase());
+		if (tipo == null) {
+			tipo = TipoEventoRiesgo.buscarPorTextoLegible(textoTipo.trim());
+		}
+		if (tipo == null) {
+			throw new DatoEventoRiesgoInvalidoException(mensaje);
+		}
+		return tipo;
+	}
+
+	/**
+	 * Verifica la fecha de un evento de riesgo: es obligatoria y no puede ser futura.
+	 *
+	 * @param fechaEvento fecha a verificar
+	 * @throws DatosEventoRiesgoInvalidosException si es nula o posterior a hoy
+	 */
+	public static void verificarFechaEvento(LocalDate fechaEvento) {
+		if (fechaEvento == null) {
+			throw new DatoEventoRiesgoInvalidoException("La fecha del evento es obligatoria (formato yyyy-MM-dd)");
+		}
+		if (fechaEvento.isAfter(LocalDate.now())) {
+			throw new DatoEventoRiesgoInvalidoException("La fecha del evento no puede ser futura");
+		}
+	}
+
+	/**
+	 * Verifica la descripcion de un evento de riesgo: es obligatoria y cabe en la columna.
+	 *
+	 * @param descripcion descripcion a verificar
+	 * @throws DatosEventoRiesgoInvalidosException si esta vacia o supera el maximo de caracteres
+	 */
+	public static void verificarDescripcionEvento(String descripcion) {
+		if (descripcion == null || descripcion.trim().isEmpty()) {
+			throw new DatoEventoRiesgoInvalidoException("La descripcion del evento es obligatoria");
+		}
+		if (descripcion.trim().length() > LONGITUD_MAXIMA_DESCRIPCION_EVENTO) {
+			throw new DatoEventoRiesgoInvalidoException(
+					"La descripcion del evento no puede superar " + LONGITUD_MAXIMA_DESCRIPCION_EVENTO + " caracteres");
+		}
+	}
+
+	/**
+	 * Verifica la fuente de un evento de riesgo. Es opcional: solo se revisa que quepa en la columna.
+	 *
+	 * @param fuente fuente a verificar (puede ser null)
+	 * @throws DatosEventoRiesgoInvalidosException si supera el maximo de caracteres
+	 */
+	public static void verificarFuenteEvento(String fuente) {
+		if (fuente != null && fuente.trim().length() > LONGITUD_MAXIMA_FUENTE_EVENTO) {
+			throw new DatoEventoRiesgoInvalidoException(
+					"La fuente del evento no puede superar " + LONGITUD_MAXIMA_FUENTE_EVENTO + " caracteres");
+		}
+	}
+
+	/**
+	 * Verifica que la copia buscada exista.
+	 *
+	 * @param copia   resultado de la busqueda en el repository
+	 * @param idCopia id que se busco (para el mensaje)
+	 * @throws CopiaNoEncontradaException si la copia es null
+	 */
+	public static void verificarCopiaExiste(Copia copia, long idCopia) {
+		if (copia == null) {
+			throw new CopiaNoEncontradaException(idCopia);
+		}
+	}
+
+	/**
+	 * Verifica que al actualizar una copia no se cambie su tipo.
+	 * Una copia fisica sigue siendo fisica y una digital sigue siendo digital,
+	 * porque cada una vive en su propia tabla hija (COPIA_FISICA o COPIA_DIGITAL).
+	 *
+	 * @param tipoGuardado tipo que tiene la copia en la BD
+	 * @param tipoEnviado  tipo que llego en el cuerpo de la peticion
+	 * @throws DatosCopiaInvalidosException si los tipos son distintos
+	 */
+	public static void verificarMismoTipoCopia(TipoCopia tipoGuardado, TipoCopia tipoEnviado) {
+		if (tipoGuardado != tipoEnviado) {
+			throw new DatoCopiaInvalidoException("No se puede cambiar el tipo de una copia (es "
+					+ tipoGuardado.getValor() + "). Para cambiarlo, elimine la copia y registre una nueva");
+		}
+	}
+	
 }
