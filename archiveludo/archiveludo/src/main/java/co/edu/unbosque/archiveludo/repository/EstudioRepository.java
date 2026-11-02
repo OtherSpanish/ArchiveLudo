@@ -11,7 +11,7 @@ import co.edu.unbosque.archiveludo.entity.Estudio;
 import co.edu.unbosque.archiveludo.model.EstadoEstudio;
 
 /**
- * Acceso a datos de la tabla ESTUDIO con SQL escrito a mano (Spring JDBC).
+ * Acceso a datos de la tabla ESTUDIO con SQL(Spring JDBC).
  */
 @Repository
 public class EstudioRepository {
