@@ -14,16 +14,23 @@ import co.edu.unbosque.archiveludo.dto.CopiaFisicaDTO;
 import co.edu.unbosque.archiveludo.entity.Copia;
 import co.edu.unbosque.archiveludo.entity.CopiaDigital;
 import co.edu.unbosque.archiveludo.entity.CopiaFisica;
+import co.edu.unbosque.archiveludo.entity.Custodia;
+import co.edu.unbosque.archiveludo.entity.Institucion;
 import co.edu.unbosque.archiveludo.entity.Usuario;
 import co.edu.unbosque.archiveludo.entity.Videojuego;
 import co.edu.unbosque.archiveludo.exceptions.LanzadorException;
 import co.edu.unbosque.archiveludo.model.EstadoIntegridad;
+import co.edu.unbosque.archiveludo.model.TipoCopia;
 import co.edu.unbosque.archiveludo.repository.CopiaRepository;
+import co.edu.unbosque.archiveludo.repository.CustodiaRepository;
+import co.edu.unbosque.archiveludo.repository.InstitucionRepository;
 import co.edu.unbosque.archiveludo.repository.UsuarioRepository;
 import co.edu.unbosque.archiveludo.repository.VideojuegoRepository;
 
 /**
  * Logica de negocio de las copias (fisicas y digitales) de los videojuegos.
+ * Una copia vive en dos tablas: COPIA (datos comunes) y su tabla hija (COPIA_FISICA o COPIA_DIGITAL).
+ * Cada copia que sale hacia el front lleva la institucion de su custodia vigente, si tiene.
  */
 @Service
 public class CopiaService {
@@ -31,15 +38,21 @@ public class CopiaService {
 	private final CopiaRepository copiaRepository;
 	private final VideojuegoRepository videojuegoRepository;
 	private final UsuarioRepository usuarioRepository;
+	private final CustodiaRepository custodiaRepository;
+	private final InstitucionRepository institucionRepository;
 	private final ModelMapper mapper;
 
 	public CopiaService(CopiaRepository copiaRepository, VideojuegoRepository videojuegoRepository,
-			UsuarioRepository usuarioRepository, ModelMapper mapper) {
+			UsuarioRepository usuarioRepository, CustodiaRepository custodiaRepository,
+			InstitucionRepository institucionRepository, ModelMapper mapper) {
 		this.copiaRepository = copiaRepository;
 		this.videojuegoRepository = videojuegoRepository;
 		this.usuarioRepository = usuarioRepository;
+		this.custodiaRepository = custodiaRepository;
+		this.institucionRepository = institucionRepository;
 		this.mapper = mapper;
 	}
+
 
 	/**
 	 * Devuelve las copias de un videojuego, de la mas reciente a la mas antigua.
@@ -65,6 +78,21 @@ public class CopiaService {
 	}
 
 	/**
+	 * @param idTexto id de la copia tal como llego en la URL
+	 * @return la copia (CopiaFisicaDTO o CopiaDigitalDTO segun su tipo)
+	 * @throws IdInvalidoException        si el id no es un numero mayor que cero
+	 * @throws CopiaNoEncontradaException si no existe
+	 */
+	public CopiaDTO buscarPorId(String idTexto) {
+		long idCopia = LanzadorException.convertirId(idTexto, "copia");
+
+		Copia copia = copiaRepository.buscarPorId(idCopia);
+		LanzadorException.verificarCopiaExiste(copia, idCopia);
+
+		return convertirADTO(copia);
+	}
+
+	/**
 	 * Registra una copia nueva (fisica o digital) de un videojuego.
 	 * El videojuego sale de la URL, el usuario del token y la fecha de registro es hoy;
 	 * si el front los envia en el cuerpo, se ignoran.
@@ -77,6 +105,7 @@ public class CopiaService {
 	 * @throws IdInvalidoException               si el id no es un numero mayor que cero
 	 * @throws VideojuegoNoEncontradoException   si no existe el videojuego
 	 * @throws CredencialInvalidaException       si el usuario del token ya no existe
+	 * @throws DatosCopiaInvalidosException      si falta "tipoCopia" o no es fisica ni digital
 	 * @throws EstadoIntegridadInvalidoException si el estado de integridad no es valido
 	 * @throws CampoObligatorioException         si falta un campo obligatorio del subtipo
 	 * @throws TamanioInvalidoException          si el tamanio de una copia digital no es mayor que cero
@@ -91,20 +120,29 @@ public class CopiaService {
 		Usuario usuario = usuarioRepository.buscarPorCorreo(correoUsuario);
 		LanzadorException.verificarCredencialesCorrectas(usuario != null);
 
+		TipoCopia tipoEnviado = obtenerTipoEnviado(copiaDTO);
+		LanzadorException.verificarTipoCopiaValido(tipoEnviado != null);
+
 		EstadoIntegridad estadoIntegridad = LanzadorException
 				.convertirEstadoIntegridad(copiaDTO.getEstadoIntegridad());
 		LocalDate fechaRegistro = LocalDate.now();
 
 		Copia copiaGuardada;
-		if (copiaDTO instanceof CopiaFisicaDTO) {
+		if (tipoEnviado == TipoCopia.FISICA) {
 			CopiaFisicaDTO copiaFisicaDTO = (CopiaFisicaDTO) copiaDTO;
-			CopiaFisica copiaFisica = construirCopiaFisica(copiaFisicaDTO, idVideojuego, usuario.getIdUsuario(),
-					estadoIntegridad, fechaRegistro);
+			verificarDatosFisicos(copiaFisicaDTO);
+
+			CopiaFisica copiaFisica = new CopiaFisica(idVideojuego, usuario.getIdUsuario(), estadoIntegridad,
+					fechaRegistro, limpiarTextoOpcional(copiaFisicaDTO.getNumeroSerie()),
+					copiaFisicaDTO.getUbicacionFisica().trim(), copiaFisicaDTO.getTipoSoporte().trim());
 			copiaGuardada = copiaRepository.crearCopiaFisica(copiaFisica);
 		} else {
 			CopiaDigitalDTO copiaDigitalDTO = (CopiaDigitalDTO) copiaDTO;
-			CopiaDigital copiaDigital = construirCopiaDigital(copiaDigitalDTO, idVideojuego,
-					usuario.getIdUsuario(), estadoIntegridad, fechaRegistro);
+			verificarDatosDigitales(copiaDigitalDTO);
+
+			CopiaDigital copiaDigital = new CopiaDigital(idVideojuego, usuario.getIdUsuario(), estadoIntegridad,
+					fechaRegistro, copiaDigitalDTO.getFormatoArchivo().trim(), copiaDigitalDTO.getTamanio(),
+					copiaDigitalDTO.getHashVerificacion().trim());
 			copiaGuardada = copiaRepository.crearCopiaDigital(copiaDigital);
 		}
 
@@ -112,33 +150,110 @@ public class CopiaService {
 	}
 
 	/**
-	 * Valida los campos de una copia fisica y arma la entity.
-	 * ubicacionFisica y tipoSoporte son obligatorios; numeroSerie es opcional.
+	 * Actualiza el estado de integridad y los datos del subtipo de una copia.
+	 * No cambian el videojuego, el usuario que la registro, la fecha de registro ni el tipo de copia.
+	 * Los dos UPDATE (COPIA y su tabla hija) van en la misma transaccion.
+	 *
+	 * @param idTexto  id de la copia tal como llego en la URL
+	 * @param copiaDTO datos nuevos (con el mismo "tipoCopia" que la copia guardada)
+	 * @return la copia actualizada
+	 * @throws IdInvalidoException               si el id no es un numero mayor que cero
+	 * @throws CopiaNoEncontradaException        si no existe
+	 * @throws DatosCopiaInvalidosException      si falta "tipoCopia" o se intenta cambiar el tipo de copia
+	 * @throws EstadoIntegridadInvalidoException si el estado de integridad no es valido
+	 * @throws CampoObligatorioException         si falta un campo obligatorio del subtipo
+	 * @throws TamanioInvalidoException          si el tamanio de una copia digital no es mayor que cero
 	 */
-	private CopiaFisica construirCopiaFisica(CopiaFisicaDTO copiaFisicaDTO, long idVideojuego, long idUsuario,
-			EstadoIntegridad estadoIntegridad, LocalDate fechaRegistro) {
-		LanzadorException.verificarCampoObligatorio(copiaFisicaDTO.getUbicacionFisica(), "ubicacionFisica");
-		LanzadorException.verificarCampoObligatorio(copiaFisicaDTO.getTipoSoporte(), "tipoSoporte");
+	@Transactional
+	public CopiaDTO actualizar(String idTexto, CopiaDTO copiaDTO) {
+		long idCopia = LanzadorException.convertirId(idTexto, "copia");
 
-		String numeroSerie = limpiarTextoOpcional(copiaFisicaDTO.getNumeroSerie());
+		Copia copia = copiaRepository.buscarPorId(idCopia);
+		LanzadorException.verificarCopiaExiste(copia, idCopia);
 
-		return new CopiaFisica(idVideojuego, idUsuario, estadoIntegridad, fechaRegistro, numeroSerie,
-				copiaFisicaDTO.getUbicacionFisica().trim(), copiaFisicaDTO.getTipoSoporte().trim());
+		TipoCopia tipoEnviado = obtenerTipoEnviado(copiaDTO);
+		LanzadorException.verificarTipoCopiaValido(tipoEnviado != null);
+		LanzadorException.verificarMismoTipoCopia(copia.getTipoCopia(), tipoEnviado);
+
+		EstadoIntegridad estadoIntegridad = LanzadorException
+				.convertirEstadoIntegridad(copiaDTO.getEstadoIntegridad());
+		copia.setEstadoIntegridad(estadoIntegridad);
+
+		if (copia instanceof CopiaFisica) {
+			CopiaFisica copiaFisica = (CopiaFisica) copia;
+			CopiaFisicaDTO copiaFisicaDTO = (CopiaFisicaDTO) copiaDTO;
+			verificarDatosFisicos(copiaFisicaDTO);
+
+			copiaFisica.setNumeroSerie(limpiarTextoOpcional(copiaFisicaDTO.getNumeroSerie()));
+			copiaFisica.setUbicacionFisica(copiaFisicaDTO.getUbicacionFisica().trim());
+			copiaFisica.setTipoSoporte(copiaFisicaDTO.getTipoSoporte().trim());
+			copiaRepository.actualizarCopiaFisica(copiaFisica);
+		} else {
+			CopiaDigital copiaDigital = (CopiaDigital) copia;
+			CopiaDigitalDTO copiaDigitalDTO = (CopiaDigitalDTO) copiaDTO;
+			verificarDatosDigitales(copiaDigitalDTO);
+
+			copiaDigital.setFormatoArchivo(copiaDigitalDTO.getFormatoArchivo().trim());
+			copiaDigital.setTamanio(copiaDigitalDTO.getTamanio());
+			copiaDigital.setHashVerificacion(copiaDigitalDTO.getHashVerificacion().trim());
+			copiaRepository.actualizarCopiaDigital(copiaDigital);
+		}
+
+		return convertirADTO(copia);
 	}
 
 	/**
-	 * Valida los campos de una copia digital y arma la entity.
-	 * formatoArchivo, tamanio y hashVerificacion son obligatorios.
+	 * Elimina una copia solo si no tiene custodias (ni vigentes ni historicas).
+	 * Se borra de su tabla hija y de COPIA en la misma transaccion.
+	 *
+	 * @param idTexto id de la copia tal como llego en la URL
+	 * @throws IdInvalidoException         si el id no es un numero mayor que cero
+	 * @throws CopiaNoEncontradaException  si no existe
+	 * @throws RegistrosAsociadosException si tiene custodias
 	 */
-	private CopiaDigital construirCopiaDigital(CopiaDigitalDTO copiaDigitalDTO, long idVideojuego,
-			long idUsuario, EstadoIntegridad estadoIntegridad, LocalDate fechaRegistro) {
+	@Transactional
+	public void eliminar(String idTexto) {
+		long idCopia = LanzadorException.convertirId(idTexto, "copia");
+
+		Copia copia = copiaRepository.buscarPorId(idCopia);
+		LanzadorException.verificarCopiaExiste(copia, idCopia);
+
+		boolean tieneCustodias = copiaRepository.contarCustodiasAsociadas(idCopia) > 0;
+		LanzadorException.verificarSinRegistrosAsociados(tieneCustodias, "la copia", idCopia);
+
+		copiaRepository.eliminar(idCopia);
+	}
+
+
+	/**
+	 * Campos de una copia fisica: ubicacionFisica y tipoSoporte son obligatorios; numeroSerie es opcional.
+	 */
+	private void verificarDatosFisicos(CopiaFisicaDTO copiaFisicaDTO) {
+		LanzadorException.verificarCampoObligatorio(copiaFisicaDTO.getUbicacionFisica(), "ubicacionFisica");
+		LanzadorException.verificarCampoObligatorio(copiaFisicaDTO.getTipoSoporte(), "tipoSoporte");
+	}
+
+	/**
+	 * Campos de una copia digital: formatoArchivo, hashVerificacion y tamanio (mayor que cero) son obligatorios.
+	 */
+	private void verificarDatosDigitales(CopiaDigitalDTO copiaDigitalDTO) {
 		LanzadorException.verificarCampoObligatorio(copiaDigitalDTO.getFormatoArchivo(), "formatoArchivo");
 		LanzadorException.verificarCampoObligatorio(copiaDigitalDTO.getHashVerificacion(), "hashVerificacion");
 		LanzadorException.verificarTamanioValido(copiaDigitalDTO.getTamanio());
+	}
 
-		return new CopiaDigital(idVideojuego, idUsuario, estadoIntegridad, fechaRegistro,
-				copiaDigitalDTO.getFormatoArchivo().trim(), copiaDigitalDTO.getTamanio(),
-				copiaDigitalDTO.getHashVerificacion().trim());
+	/**
+	 * Jackson ya decidio la clase del DTO con el campo "tipoCopia".
+	 * Aqui se traduce esa clase al enum. Si es un CopiaDTO simple (tipo ausente o desconocido), devuelve null.
+	 */
+	private TipoCopia obtenerTipoEnviado(CopiaDTO copiaDTO) {
+		if (copiaDTO instanceof CopiaFisicaDTO) {
+			return TipoCopia.FISICA;
+		}
+		if (copiaDTO instanceof CopiaDigitalDTO) {
+			return TipoCopia.DIGITAL;
+		}
+		return null;
 	}
 
 	/**
@@ -153,7 +268,8 @@ public class CopiaService {
 
 	/**
 	 * Convierte la entity al DTO de su mismo subtipo.
-	 * El tipo de copia y el estado de integridad se pasan a su texto ("fisica", "dañada").
+	 * El tipo de copia y el estado de integridad se pasan a su texto ("fisica", "dañada"),
+	 * y se completa la institucion de la custodia vigente.
 	 */
 	private CopiaDTO convertirADTO(Copia copia) {
 		CopiaDTO copiaDTO;
@@ -169,7 +285,27 @@ public class CopiaService {
 		if (copia.getEstadoIntegridad() != null) {
 			copiaDTO.setEstadoIntegridad(copia.getEstadoIntegridad().getValor());
 		}
+
+		completarInstitucionActual(copiaDTO, copia.getIdCopia());
 		return copiaDTO;
+	}
+
+	/**
+	 * Si la copia tiene custodia vigente, pone en el DTO el id y el nombre de esa institucion.
+	 * Si no tiene, los dos campos quedan en null y no salen en el JSON.
+	 */
+	private void completarInstitucionActual(CopiaDTO copiaDTO, long idCopia) {
+		Custodia custodiaVigente = custodiaRepository.buscarVigentePorIdCopia(idCopia);
+		if (custodiaVigente == null) {
+			return;
+		}
+
+		copiaDTO.setIdInstitucionActual(custodiaVigente.getIdInstitucion());
+
+		Institucion institucion = institucionRepository.buscarPorId(custodiaVigente.getIdInstitucion());
+		if (institucion != null) {
+			copiaDTO.setNombreInstitucionActual(institucion.getNombre());
+		}
 	}
 
 }

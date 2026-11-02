@@ -12,6 +12,7 @@ import co.edu.unbosque.archiveludo.entity.InstTelefono;
 import co.edu.unbosque.archiveludo.entity.Institucion;
 import co.edu.unbosque.archiveludo.exceptions.LanzadorException;
 import co.edu.unbosque.archiveludo.model.TipoInstitucion;
+import co.edu.unbosque.archiveludo.repository.CustodiaRepository;
 import co.edu.unbosque.archiveludo.repository.InstCorreoRepository;
 import co.edu.unbosque.archiveludo.repository.InstTelefonoRepository;
 import co.edu.unbosque.archiveludo.repository.InstitucionRepository;
@@ -21,6 +22,7 @@ import co.edu.unbosque.archiveludo.repository.InstitucionRepository;
  * Une tres tablas: INSTITUCION, INST_TELEFONO e INST_CORREO, cada una con su propio repository.
  * Los telefonos y correos viajan como listas dentro de InstitucionDTO.
  * Toda institucion debe tener al menos un telefono y al menos un correo.
+ * Cada institucion que sale hacia el front lleva cuantas copias custodia hoy.
  */
 @Service
 public class InstitucionService {
@@ -28,17 +30,20 @@ public class InstitucionService {
 	private final InstitucionRepository institucionRepository;
 	private final InstTelefonoRepository instTelefonoRepository;
 	private final InstCorreoRepository instCorreoRepository;
+	private final CustodiaRepository custodiaRepository;
 
 	public InstitucionService(InstitucionRepository institucionRepository,
-			InstTelefonoRepository instTelefonoRepository, InstCorreoRepository instCorreoRepository) {
+			InstTelefonoRepository instTelefonoRepository, InstCorreoRepository instCorreoRepository,
+			CustodiaRepository custodiaRepository) {
 		this.institucionRepository = institucionRepository;
 		this.instTelefonoRepository = instTelefonoRepository;
 		this.instCorreoRepository = instCorreoRepository;
+		this.custodiaRepository = custodiaRepository;
 	}
 
 
 	/**
-	 * @return todas las instituciones, cada una con sus telefonos y correos
+	 * @return todas las instituciones, cada una con sus telefonos, correos y copias custodiadas
 	 */
 	public List<InstitucionDTO> buscarTodas() {
 		List<Institucion> instituciones = institucionRepository.buscarTodas();
@@ -52,7 +57,7 @@ public class InstitucionService {
 
 	/**
 	 * @param idTexto id tal como llego en la URL
-	 * @return la institucion con sus telefonos y correos
+	 * @return la institucion con sus telefonos, correos y copias custodiadas
 	 * @throws IdInvalidoException              si el id no es un numero mayor que cero
 	 * @throws InstitucionNoEncontradaException si no existe
 	 */
@@ -64,7 +69,6 @@ public class InstitucionService {
 
 		return convertirADTO(institucion);
 	}
-
 
 	/**
 	 * Crea una institucion con sus telefonos y correos, en una sola transaccion.
@@ -78,7 +82,7 @@ public class InstitucionService {
 	@Transactional
 	public InstitucionDTO crear(InstitucionDTO institucionDTO) {
 		TipoInstitucion tipo = verificarDatos(institucionDTO);
-		List<Integer> telefonos = verificarTelefonos(institucionDTO.getTelefonos());
+		List<Long> telefonos = verificarTelefonos(institucionDTO.getTelefonos());
 		List<String> correos = verificarCorreos(institucionDTO.getCorreos());
 		LanzadorException.verificarInstitucionConContacto(telefonos.size(), correos.size());
 
@@ -113,7 +117,7 @@ public class InstitucionService {
 		LanzadorException.verificarInstitucionExiste(institucion, idInstitucion);
 
 		TipoInstitucion tipo = verificarDatos(institucionDTO);
-		List<Integer> telefonos = verificarTelefonos(institucionDTO.getTelefonos());
+		List<Long> telefonos = verificarTelefonos(institucionDTO.getTelefonos());
 		List<String> correos = verificarCorreos(institucionDTO.getCorreos());
 		LanzadorException.verificarInstitucionConContacto(telefonos.size(), correos.size());
 
@@ -153,6 +157,7 @@ public class InstitucionService {
 		institucionRepository.eliminar(idInstitucion);
 	}
 
+
 	/**
 	 * Valida los datos propios de la institucion y devuelve el tipo ya convertido al enum.
 	 */
@@ -166,13 +171,13 @@ public class InstitucionService {
 	 * Valida cada telefono y quita los repetidos.
 	 * Que haya al menos uno lo verifica despues verificarInstitucionConContacto.
 	 */
-	private List<Integer> verificarTelefonos(List<Integer> telefonosEnviados) {
-		List<Integer> telefonosSinRepetir = new ArrayList<Integer>();
+	private List<Long> verificarTelefonos(List<Long> telefonosEnviados) {
+		List<Long> telefonosSinRepetir = new ArrayList<Long>();
 		if (telefonosEnviados == null) {
 			return telefonosSinRepetir;
 		}
 
-		for (Integer telefono : telefonosEnviados) {
+		for (Long telefono : telefonosEnviados) {
 			LanzadorException.verificarTelefonoValido(telefono);
 			if (!telefonosSinRepetir.contains(telefono)) {
 				telefonosSinRepetir.add(telefono);
@@ -215,8 +220,8 @@ public class InstitucionService {
 	/**
 	 * Inserta los telefonos y correos de la institucion, cada uno en su tabla.
 	 */
-	private void guardarTelefonosYCorreos(long idInstitucion, List<Integer> telefonos, List<String> correos) {
-		for (Integer telefono : telefonos) {
+	private void guardarTelefonosYCorreos(long idInstitucion, List<Long> telefonos, List<String> correos) {
+		for (Long telefono : telefonos) {
 			instTelefonoRepository.crear(new InstTelefono(idInstitucion, telefono));
 		}
 		for (String correo : correos) {
@@ -225,15 +230,15 @@ public class InstitucionService {
 	}
 
 	/**
-	 * Arma el DTO con los datos de la institucion y sus listas de telefonos y correos.
-	 * El tipo se pasa a su texto legible ("Colección privada").
+	 * Arma el DTO con los datos de la institucion, sus listas de telefonos y correos
+	 * y la cantidad de copias que custodia hoy. El tipo se pasa a su texto legible ("Colección privada").
 	 */
 	private InstitucionDTO convertirADTO(Institucion institucion) {
 		long idInstitucion = institucion.getIdInstitucion();
 
-		List<Integer> telefonos = new ArrayList<Integer>();
+		List<Long> telefonos = new ArrayList<Long>();
 		for (InstTelefono instTelefono : instTelefonoRepository.buscarPorIdInstitucion(idInstitucion)) {
-			telefonos.add((int) instTelefono.getTelefono());
+			telefonos.add(instTelefono.getTelefono());
 		}
 
 		List<String> correos = new ArrayList<String>();
@@ -250,6 +255,7 @@ public class InstitucionService {
 		institucionDTO.setPais(institucion.getPais());
 		institucionDTO.setTelefonos(telefonos);
 		institucionDTO.setCorreos(correos);
+		institucionDTO.setCantidadCopiasCustodiadas(custodiaRepository.contarVigentesPorInstitucion(idInstitucion));
 		return institucionDTO;
 	}
 

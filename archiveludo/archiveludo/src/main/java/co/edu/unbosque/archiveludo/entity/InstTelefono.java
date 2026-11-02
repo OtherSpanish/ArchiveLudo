@@ -5,6 +5,7 @@ import java.util.Objects;
 /**
  * Entity de InstTelefono (tabla INST_TELEFONO): un telefono de una institucion.
  * Su llave primaria es compuesta (idInstitucion, telefono): no tiene id propio.
+ * El telefono es long porque un numero de 10 digitos (celular o fijo en Colombia) no cabe en un int.
  */
 public class InstTelefono {
 

@@ -37,9 +37,6 @@ public class EstatusLegalService {
 		this.mapper = mapper;
 	}
 
-	// ──────────────────────────────────────────────
-	// Lectura
-	// ──────────────────────────────────────────────
 
 	/**
 	 * Devuelve el historial de estatus legal de un videojuego, del mas reciente al mas antiguo.
@@ -168,9 +165,6 @@ public class EstatusLegalService {
 		estatusLegalRepository.eliminar(idEstatus);
 	}
 
-	// ──────────────────────────────────────────────
-	// Utilidades
-	// ──────────────────────────────────────────────
 
 	/**
 	 * Un texto opcional vacio ("" o "   ") se guarda como NULL en la BD.

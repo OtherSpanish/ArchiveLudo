@@ -44,4 +44,20 @@ public enum TipoEventoRiesgo {
 		return null;
 	}
 
+	/**
+	 * Busca el tipo a partir de su texto legible (por ejemplo "Pérdida de código fuente"), sin importar mayusculas.
+	 * Sirve para aceptar del front tanto "perdida de codigo fuente" como "Pérdida de código fuente".
+	 *
+	 * @param textoLegible texto legible del tipo de evento
+	 * @return el tipo encontrado, o null si el texto no corresponde a ningun tipo
+	 */
+	public static TipoEventoRiesgo buscarPorTextoLegible(String textoLegible) {
+		for (TipoEventoRiesgo tipo : TipoEventoRiesgo.values()) {
+			if (tipo.getTextoLegible().equalsIgnoreCase(textoLegible)) {
+				return tipo;
+			}
+		}
+		return null;
+	}
+
 }
