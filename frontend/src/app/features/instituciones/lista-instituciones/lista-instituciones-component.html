@@ -14,7 +14,7 @@
   <h1 class="titulo">Instituciones</h1>
 
   <!-- Mientras carga no se muestra el conteo, para no decir "0 instituciones" -->
-  @if (!cargando) {
+  @if (!cargando && !hayError) {
     <p class="total">{{ textoTotal }}</p>
   }
 </header>
@@ -29,6 +29,10 @@
 
   <p class="mensaje">Cargando instituciones…</p>
 
+} @else if (hayError) {
+
+  <p class="mensaje">No pudimos cargar las instituciones. Intenta de nuevo más tarde.</p>
+
 } @else {
 
   <!--
@@ -37,11 +41,8 @@
     la lista viene vacía.
   -->
   <div class="cuadricula">
-    @for (item of instituciones; track item.institucion.idInstitucion) {
-      <app-institucion-card
-        [institucion]="item.institucion"
-        [numeroCopias]="item.numeroCopias">
-      </app-institucion-card>
+    @for (institucion of instituciones; track institucion.idInstitucion) {
+      <app-institucion-card [institucion]="institucion"></app-institucion-card>
     } @empty {
       <p class="mensaje">Todavía no hay instituciones registradas.</p>
     }

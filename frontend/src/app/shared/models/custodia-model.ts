@@ -1,17 +1,32 @@
 /*
- * Institución que custodia copias (museo, universidad, biblioteca,
- * coleccionista privado). Viene de la tabla INSTITUCION.
+ * Institución que custodia copias (museo, universidad, archivo o colección
+ * privada). Viene de GET /api/instituciones y GET /api/instituciones/{id}.
  *
- * En el MER los teléfonos y correos están en tablas aparte
- * (INST_TELEFONO e INST_CORREO). Aquí los resumimos en un solo texto,
- * "contacto", que es lo que la guía de diseño pide que mande la API.
+ *  - tipo: ya llega legible ("Museo", "Universidad", "Archivo", "Colección privada").
+ *  - telefonos: lista de números (puede venir vacía).
+ *  - correos: lista de correos (puede venir vacía).
+ * Ya no hay contacto, dirección ni ciudad: esos campos no existen en el back.
  */
 export interface Institucion {
   idInstitucion: number;
   nombre: string;
   tipo: string;
   pais: string;
-  contacto?: string;
+  telefonos: number[];
+  correos: string[];
+}
+
+/*
+ * Cuerpo de POST /api/instituciones y PUT /api/instituciones/{id}.
+ *  - tipo: texto legible ("Museo", "Universidad", "Archivo", "Colección privada").
+ *  - telefonos y correos: al menos uno de cada uno; en un PUT REEMPLAZAN las listas.
+ */
+export interface InstitucionNueva {
+  nombre: string;
+  tipo: string;
+  pais: string;
+  telefonos: number[];
+  correos: string[];
 }
 
 /*

@@ -9,8 +9,8 @@ import { Institucion } from '../../models/custodia-model';
  *   <app-institucion-card [institucion]="inst" [numeroCopias]="2"></app-institucion-card>
  *
  * Recibe dos datos del componente padre:
- *   - institucion: los datos de la institución (nombre, tipo, país, contacto)
- *   - numeroCopias: cuántas copias de ESTE videojuego custodia esa institución
+ *   - institucion: los datos de la institución (nombre, tipo, país, teléfonos y correos)
+ *   - numeroCopias: cuántas copias de ESTE videojuego custodia esa institución (opcional)
  */
 @Component({
   selector: 'app-institucion-card',
@@ -22,7 +22,8 @@ export class InstitucionCardComponent {
   /* El "!" le dice a TypeScript: "el padre siempre me va a pasar este valor". */
   @Input() institucion!: Institucion;
 
-  @Input() numeroCopias: number = 0;
+  /* Opcional: el back aún no calcula cuántas copias custodia cada institución. */
+  @Input() numeroCopias?: number;
 
   /* Línea de tipo y país: "Museo · Colombia" */
   get tipoYPais(): string {
@@ -31,17 +32,36 @@ export class InstitucionCardComponent {
 
   /* Texto de copias, en singular o plural: "Custodia 1 copia" / "Custodia 2 copias" */
   get textoCopias(): string {
+    if (this.numeroCopias === undefined) {
+      return '';
+    }
     if (this.numeroCopias === 1) {
       return 'Custodia 1 copia de este juego';
     }
     return 'Custodia ' + this.numeroCopias + ' copias de este juego';
   }
 
-  /* Contacto de la institución; si no hay, lo dice en vez de dejar un hueco. */
+  /*
+   * Contacto de la institución: el primer correo, o si no hay, el primer
+   * teléfono. Si tiene más de uno, se avisa con "(+N más)".
+   */
   get textoContacto(): string {
-    if (this.institucion.contacto) {
-      return 'Contacto: ' + this.institucion.contacto;
+    const correos = this.institucion.correos || [];
+    const telefonos = this.institucion.telefonos || [];
+    const total = correos.length + telefonos.length;
+
+    if (total === 0) {
+      return 'Contacto: sin datos';
     }
-    return 'Contacto: sin datos';
+
+    let principal = String(telefonos[0]);
+    if (correos.length > 0) {
+      principal = correos[0];
+    }
+
+    if (total > 1) {
+      return 'Contacto: ' + principal + ' (+' + (total - 1) + ' más)';
+    }
+    return 'Contacto: ' + principal;
   }
 }

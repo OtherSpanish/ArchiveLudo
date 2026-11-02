@@ -42,3 +42,6 @@ __screenshots__/
 # System files
 .DS_Store
 Thumbs.db
+
+# Servidor de prueba local (mock): solo para desarrollar sin el back real
+/mock-back/

@@ -1,0 +1,117 @@
+<!-- Migas de pan: Inicio / Administración / Editoras -->
+<nav class="migas" aria-label="Migas de pan">
+  <a routerLink="/">Inicio</a>
+  <span class="separador" aria-hidden="true">/</span>
+  <span>Administración</span>
+  <span class="separador" aria-hidden="true">/</span>
+  <span aria-current="page">Editoras</span>
+</nav>
+
+<!-- Cambio entre las pantallas de administración -->
+<nav class="subnav" aria-label="Secciones de administración">
+  <a class="subenlace" routerLink="/administracion/estudios" routerLinkActive="activo">Estudios</a>
+  <a class="subenlace" routerLink="/administracion/editoras" routerLinkActive="activo">Editoras</a>
+  <a class="subenlace" routerLink="/administracion/instituciones" routerLinkActive="activo">Instituciones</a>
+  <a *appHasRole="['administrador']" class="subenlace" routerLink="/administracion/usuarios" routerLinkActive="activo">Usuarios</a>
+</nav>
+
+<header class="encabezado">
+  <h1 class="titulo">Compañías editoras</h1>
+
+  @if (!mostrarFormulario) {
+    <button type="button" class="boton-principal" (click)="abrirNueva()">Nueva editora</button>
+  }
+</header>
+
+<!-- Formulario (crear o editar) -->
+@if (mostrarFormulario) {
+  <form class="formulario" [formGroup]="formulario" (ngSubmit)="guardar()" novalidate>
+
+    <h2 class="titulo-formulario">{{ editando ? 'Editar editora' : 'Nueva editora' }}</h2>
+
+    <div class="grupo">
+      <label class="etiqueta" for="campo-nombre">Nombre</label>
+      <input id="campo-nombre" class="campo" type="text" formControlName="nombre"
+             [class.invalido]="mostrarError('nombre')" [attr.aria-invalid]="mostrarError('nombre')">
+      @if (mostrarError('nombre')) {
+        <p class="error">{{ textoError('nombre') }}</p>
+      }
+    </div>
+
+    <div class="grupo">
+      <label class="etiqueta" for="campo-pais">País</label>
+      <input id="campo-pais" class="campo" type="text" formControlName="pais"
+             [class.invalido]="mostrarError('pais')" [attr.aria-invalid]="mostrarError('pais')">
+      @if (mostrarError('pais')) {
+        <p class="error">{{ textoError('pais') }}</p>
+      }
+    </div>
+
+    @if (errorMensaje) {
+      <p class="error-general" role="alert">{{ errorMensaje }}</p>
+    }
+
+    <div class="botones">
+      <button type="button" class="boton-secundario" (click)="cancelarFormulario()">Cancelar</button>
+      <button type="submit" class="boton-principal" [disabled]="guardando">
+        @if (guardando) {
+          Guardando…
+        } @else {
+          Guardar
+        }
+      </button>
+    </div>
+
+  </form>
+}
+
+<!-- Error fuera del formulario (por ejemplo, al eliminar) -->
+@if (errorMensaje && !mostrarFormulario) {
+  <p class="error-general" role="alert">{{ errorMensaje }}</p>
+}
+
+<!-- Lista de editoras -->
+@if (cargando) {
+
+  <p class="mensaje">Cargando editoras…</p>
+
+} @else if (hayError) {
+
+  <p class="mensaje">No pudimos cargar las editoras. Intenta de nuevo más tarde.</p>
+
+} @else {
+
+  <ul class="lista-registros">
+    @for (editora of editoras; track editora.idEditora) {
+      <li class="registro">
+
+        <div class="datos-registro">
+          <span class="nombre-registro">{{ editora.nombre }}</span>
+          <span class="detalle-registro">{{ editora.pais }}</span>
+        </div>
+
+        <div class="acciones-registro">
+          @if (idConfirmandoEliminar === editora.idEditora) {
+            <span class="texto-confirmacion">¿Eliminar?</span>
+            <button type="button" class="boton-secundario boton-chico" (click)="cancelarEliminar()">No</button>
+            <button type="button" class="boton-peligro boton-chico" (click)="confirmarEliminar(editora)">Sí, eliminar</button>
+          } @else {
+            <button type="button" class="boton-secundario boton-chico" (click)="abrirEditar(editora)">Editar</button>
+
+            <!-- Solo administrador -->
+            <button type="button"
+                    class="boton-eliminar boton-chico"
+                    *appHasRole="['administrador']"
+                    (click)="pedirEliminar(editora)">
+              Eliminar
+            </button>
+          }
+        </div>
+
+      </li>
+    } @empty {
+      <li class="mensaje">Todavía no hay editoras registradas.</li>
+    }
+  </ul>
+
+}

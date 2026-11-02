@@ -1,9 +1,10 @@
-// Valores exactos que guarda la base de datos en estado_conservacion
+// Valores exactos que manda el back en estadoConservacion (con espacios).
+// OJO: 'perdido' ya no existe; ahora es 'totalmente perdido'.
 export type EstadoConservacion =
   | 'activo'
-  | 'en_riesgo'
-  | 'parcialmente_perdido'
-  | 'perdido'
+  | 'en riesgo'
+  | 'parcialmente perdido'
+  | 'totalmente perdido'
   | 'restaurado';
 
 export interface Estudio {
@@ -24,4 +25,41 @@ export interface Videojuego {
   descripcion?: string;
   estadoConservacion: EstadoConservacion;
   estudio?: Estudio;
+
+  // Campos que manda el back (VideojuegoDTO). Son opcionales porque los
+  // datos de prueba de otras pantallas todavía no los traen.
+  idEstudio?: number;
+  idUsuario?: number;
+  idsEditoras?: number[];
+}
+
+/*
+ * Cuerpo de POST /api/videojuegos y PUT /api/videojuegos/{id}.
+ * No lleva idVideojuego (va en la URL) ni idUsuario (sale del token).
+ *  - anioLanzamiento: entre 1950 y el año actual.
+ *  - idsEditoras: en un PUT REEMPLAZA la lista anterior ([] las quita todas).
+ */
+export interface VideojuegoNuevo {
+  titulo: string;
+  genero: string;
+  plataformaOriginal: string;
+  descripcion?: string;
+  anioLanzamiento: number;
+  estadoConservacion: EstadoConservacion;
+  idEstudio: number;
+  idsEditoras: number[];
+}
+
+/*
+ * Cuerpo de POST /api/estudios y PUT /api/estudios/{id}.
+ *  - estadoActual: 'activo' o 'desaparecido'.
+ *  - anioFundacion: entre 1800 y el año actual.
+ *  - anioCierre: SOLO si está desaparecido (obligatorio); si está activo no se envía.
+ */
+export interface EstudioNuevo {
+  nombre: string;
+  pais: string;
+  estadoActual: string;
+  anioFundacion: number;
+  anioCierre?: number;
 }

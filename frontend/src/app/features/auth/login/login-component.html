@@ -16,20 +16,20 @@
 
     <form class="formulario" [formGroup]="formulario" (ngSubmit)="entrar()" novalidate>
 
-      <!-- Usuario -->
+      <!-- Correo -->
       <div class="grupo">
-        <label class="etiqueta" for="campo-usuario">Usuario</label>
+        <label class="etiqueta" for="campo-correo">Correo</label>
 
-        <input id="campo-usuario"
+        <input id="campo-correo"
                class="campo"
-               type="text"
-               formControlName="nombreUsuario"
-               autocomplete="username"
-               [class.invalido]="mostrarError('nombreUsuario')"
-               [attr.aria-invalid]="mostrarError('nombreUsuario')">
+               type="email"
+               formControlName="correo"
+               autocomplete="email"
+               [class.invalido]="mostrarError('correo')"
+               [attr.aria-invalid]="mostrarError('correo')">
 
-        @if (mostrarError('nombreUsuario')) {
-          <p class="error">Escribe tu usuario.</p>
+        @if (mostrarError('correo')) {
+          <p class="error">Escribe tu correo.</p>
         }
       </div>
 

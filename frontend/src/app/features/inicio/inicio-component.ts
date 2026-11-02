@@ -50,7 +50,7 @@ export class InicioComponent {
   contadores: Contador[] = [
     { etiqueta: 'Títulos catalogados', valor: 14, color: 'info' },
     { etiqueta: 'En riesgo', valor: 3, color: 'warn' },
-    { etiqueta: 'Perdidos', valor: 3, color: 'bad' },
+    { etiqueta: 'Totalmente perdidos', valor: 3, color: 'bad' },
     { etiqueta: 'Con proyecto activo', valor: 3, color: 'ok' },
   ];
 
@@ -59,7 +59,7 @@ export class InicioComponent {
     titulo: 'Torre de Ámbar Online',
     plataformaOriginal: 'PC',
     anioLanzamiento: 2007,
-    estadoConservacion: 'en_riesgo',
+    estadoConservacion: 'en riesgo',
     estudio: {
       idEstudio: 1,
       nombre: 'Foro Digital',
@@ -84,7 +84,7 @@ export class InicioComponent {
     {
       titulo: 'En riesgo crítico',
       color: 'warn',
-      estado: 'en_riesgo',
+      estado: 'en riesgo',
       total: 3,
       juegos: [
         {
@@ -93,7 +93,7 @@ export class InicioComponent {
             titulo: 'Torre de Ámbar Online',
             plataformaOriginal: 'PC',
             anioLanzamiento: 2007,
-            estadoConservacion: 'en_riesgo',
+            estadoConservacion: 'en riesgo',
           },
           meta: 'Sin copias físicas registradas',
         },
@@ -103,7 +103,7 @@ export class InicioComponent {
             titulo: 'Crónicas de Nébula',
             plataformaOriginal: 'PS2',
             anioLanzamiento: 2003,
-            estadoConservacion: 'en_riesgo',
+            estadoConservacion: 'en riesgo',
           },
           meta: '1 copia · Sin proyecto activo',
         },
@@ -113,16 +113,16 @@ export class InicioComponent {
             titulo: 'Ciudad Neón 2039',
             plataformaOriginal: 'Dreamcast',
             anioLanzamiento: 2000,
-            estadoConservacion: 'en_riesgo',
+            estadoConservacion: 'en riesgo',
           },
           meta: '2 copias · Estatus legal: huérfano',
         },
       ],
     },
     {
-      titulo: 'Perdidos',
+      titulo: 'Totalmente perdidos',
       color: 'bad',
-      estado: 'perdido',
+      estado: 'totalmente perdido',
       total: 3,
       juegos: [
         {
@@ -131,7 +131,7 @@ export class InicioComponent {
             titulo: 'Mundo Tinta',
             plataformaOriginal: 'PC',
             anioLanzamiento: 1999,
-            estadoConservacion: 'perdido',
+            estadoConservacion: 'totalmente perdido',
           },
           meta: 'Sin copias registradas',
         },
@@ -141,7 +141,7 @@ export class InicioComponent {
             titulo: 'Legión Delta',
             plataformaOriginal: 'Saturn',
             anioLanzamiento: 1997,
-            estadoConservacion: 'perdido',
+            estadoConservacion: 'totalmente perdido',
           },
           meta: 'Código fuente perdido',
         },
@@ -151,7 +151,7 @@ export class InicioComponent {
             titulo: 'Ruinas de Océano',
             plataformaOriginal: 'N64',
             anioLanzamiento: 2000,
-            estadoConservacion: 'perdido',
+            estadoConservacion: 'totalmente perdido',
           },
           meta: 'Servidores cerrados',
         },
@@ -220,8 +220,8 @@ export class InicioComponent {
   // // Las tres filas existen desde el inicio (con total 0 y sin juegos);
   // // cada una se llena con su propia llamada a la API.
   // filas: FilaJuegos[] = [
-  //   { titulo: 'En riesgo crítico', color: 'warn', estado: 'en_riesgo', total: 0, juegos: [] },
-  //   { titulo: 'Perdidos', color: 'bad', estado: 'perdido', total: 0, juegos: [] },
+  //   { titulo: 'En riesgo crítico', color: 'warn', estado: 'en riesgo', total: 0, juegos: [] },
+  //   { titulo: 'Totalmente perdidos', color: 'bad', estado: 'totalmente perdido', total: 0, juegos: [] },
   //   { titulo: 'Restaurados con éxito', color: 'ok', estado: 'restaurado', total: 0, juegos: [] }
   // ];
   //
@@ -250,7 +250,7 @@ export class InicioComponent {
   //   this.contadores = [
   //     { etiqueta: 'Títulos catalogados', valor: resumen.totalTitulos, color: 'info' },
   //     { etiqueta: 'En riesgo', valor: resumen.totalEnRiesgo, color: 'warn' },
-  //     { etiqueta: 'Perdidos', valor: resumen.totalPerdidos, color: 'bad' },
+  //     { etiqueta: 'Totalmente perdidos', valor: resumen.totalPerdidos, color: 'bad' },
   //     { etiqueta: 'Con proyecto activo', valor: resumen.totalConProyectoActivo, color: 'ok' }
   //   ];
   //

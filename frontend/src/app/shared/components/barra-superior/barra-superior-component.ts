@@ -29,6 +29,20 @@ export class BarraSuperiorComponent {
     { etiqueta: 'Reportes', ruta: '/reportes' }
   ];
 
+  /* Enlace extra solo para curador y administrador. */
+  private enlaceAdministracion: EnlaceNavegacion = { etiqueta: 'Administración', ruta: '/administracion/estudios' };
+
+  /*
+   * Los enlaces que ve la persona: los de siempre, y "Administración" solo
+   * si su rol es curador o administrador.
+   */
+  get enlacesVisibles(): EnlaceNavegacion[] {
+    if (this.auth.tieneRol(['curador', 'administrador'])) {
+      return this.enlaces.concat([this.enlaceAdministracion]);
+    }
+    return this.enlaces;
+  }
+
   /*
    * Router cambia de pantalla; AuthService guarda quién tiene la sesión.
    * Angular entrega las dos solas (inyección de dependencias).

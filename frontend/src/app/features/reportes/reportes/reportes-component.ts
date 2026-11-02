@@ -62,9 +62,9 @@ export class ReportesComponent implements OnInit {
 
   /* Videojuegos de prueba. Solo el 1 y el 8 tienen datos de reporte. */
   private juegosPrueba: Videojuego[] = [
-    { idVideojuego: 1, titulo: 'Torre de Ámbar Online', plataformaOriginal: 'PC', anioLanzamiento: 2007, estadoConservacion: 'en_riesgo' },
-    { idVideojuego: 2, titulo: 'Sombras de Vellum', plataformaOriginal: 'PlayStation', anioLanzamiento: 1999, estadoConservacion: 'en_riesgo' },
-    { idVideojuego: 3, titulo: 'Códice Nómada', plataformaOriginal: 'Web', anioLanzamiento: 2011, estadoConservacion: 'en_riesgo' },
+    { idVideojuego: 1, titulo: 'Torre de Ámbar Online', plataformaOriginal: 'PC', anioLanzamiento: 2007, estadoConservacion: 'en riesgo' },
+    { idVideojuego: 2, titulo: 'Sombras de Vellum', plataformaOriginal: 'PlayStation', anioLanzamiento: 1999, estadoConservacion: 'en riesgo' },
+    { idVideojuego: 3, titulo: 'Códice Nómada', plataformaOriginal: 'Web', anioLanzamiento: 2011, estadoConservacion: 'en riesgo' },
     { idVideojuego: 8, titulo: 'Furia Quark', plataformaOriginal: 'Arcade', anioLanzamiento: 1994, estadoConservacion: 'restaurado' }
   ];
 

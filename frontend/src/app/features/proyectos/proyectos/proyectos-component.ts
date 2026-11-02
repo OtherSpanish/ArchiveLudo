@@ -53,7 +53,7 @@ export class ProyectosComponent implements OnInit {
   /* 4 proyectos de prueba: 3 activos y 1 finalizado. Solo los juegos 1 y 8 tienen ficha. */
   private proyectosPrueba: ProyectoConJuego[] = [
     {
-      videojuego: { idVideojuego: 1, titulo: 'Torre de Ámbar Online', plataformaOriginal: 'PC', anioLanzamiento: 2007, estadoConservacion: 'en_riesgo' },
+      videojuego: { idVideojuego: 1, titulo: 'Torre de Ámbar Online', plataformaOriginal: 'PC', anioLanzamiento: 2007, estadoConservacion: 'en riesgo' },
       detalle: {
         proyecto: { idProyecto: 1, estado: 'activo', fechaInicio: '2026-03-10', herramientaEmulador: 'Servidor privado + emulación de cliente' },
         expertos: [
@@ -63,7 +63,7 @@ export class ProyectosComponent implements OnInit {
       }
     },
     {
-      videojuego: { idVideojuego: 2, titulo: 'Sombras de Vellum', plataformaOriginal: 'PlayStation', anioLanzamiento: 1999, estadoConservacion: 'en_riesgo' },
+      videojuego: { idVideojuego: 2, titulo: 'Sombras de Vellum', plataformaOriginal: 'PlayStation', anioLanzamiento: 1999, estadoConservacion: 'en riesgo' },
       detalle: {
         proyecto: { idProyecto: 2, estado: 'activo', fechaInicio: '2026-06-15', herramientaEmulador: 'DuckStation' },
         expertos: [
@@ -82,7 +82,7 @@ export class ProyectosComponent implements OnInit {
       }
     },
     {
-      videojuego: { idVideojuego: 3, titulo: 'Códice Nómada', plataformaOriginal: 'Web', anioLanzamiento: 2011, estadoConservacion: 'en_riesgo' },
+      videojuego: { idVideojuego: 3, titulo: 'Códice Nómada', plataformaOriginal: 'Web', anioLanzamiento: 2011, estadoConservacion: 'en riesgo' },
       detalle: {
         proyecto: { idProyecto: 4, estado: 'activo', fechaInicio: '2026-09-01' },
         expertos: []
