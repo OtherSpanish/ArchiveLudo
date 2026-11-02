@@ -6,16 +6,21 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 /**
- * DTO comun a toda copia. Es abstracto como la entity Copia.
- * El campo "tipoCopia" del JSON decide que subtipo es:
+ * DTO con los datos comunes de toda copia. Sus subtipos son CopiaFisicaDTO y CopiaDigitalDTO.
+ * El campo "tipoCopia" del JSON decide que clase crea Jackson:
  * "fisica" -> CopiaFisicaDTO, "digital" -> CopiaDigitalDTO.
+ * Si "tipoCopia" falta o trae otro valor, Jackson crea un CopiaDTO (defaultImpl)
+ * y el service responde 400 con un mensaje claro.
+ * idInstitucionActual y nombreInstitucionActual no son columnas de COPIA: el service los completa
+ * con la custodia vigente. Son objetos (Long, String) para que se omitan si la copia no tiene custodia vigente.
  */
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.EXISTING_PROPERTY, property = "tipoCopia", visible = true)
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.EXISTING_PROPERTY, property = "tipoCopia",
+		visible = true, defaultImpl = CopiaDTO.class)
 @JsonSubTypes({
 		@JsonSubTypes.Type(value = CopiaFisicaDTO.class, name = "fisica"),
 		@JsonSubTypes.Type(value = CopiaDigitalDTO.class, name = "digital")
 })
-public abstract class CopiaDTO {
+public class CopiaDTO {
 
 	private long idCopia;
 	private long idVideojuego;
@@ -23,6 +28,8 @@ public abstract class CopiaDTO {
 	private String tipoCopia;
 	private String estadoIntegridad;
 	private LocalDate fechaRegistro;
+	private Long idInstitucionActual;
+	private String nombreInstitucionActual;
 
 	public CopiaDTO() {
 
@@ -43,7 +50,8 @@ public abstract class CopiaDTO {
 	public String toString() {
 		return "CopiaDTO [idCopia=" + idCopia + ", idVideojuego=" + idVideojuego + ", idUsuario=" + idUsuario
 				+ ", tipoCopia=" + tipoCopia + ", estadoIntegridad=" + estadoIntegridad + ", fechaRegistro="
-				+ fechaRegistro + "]";
+				+ fechaRegistro + ", idInstitucionActual=" + idInstitucionActual + ", nombreInstitucionActual="
+				+ nombreInstitucionActual + "]";
 	}
 
 	public long getIdCopia() {
@@ -92,6 +100,22 @@ public abstract class CopiaDTO {
 
 	public void setFechaRegistro(LocalDate fechaRegistro) {
 		this.fechaRegistro = fechaRegistro;
+	}
+
+	public Long getIdInstitucionActual() {
+		return idInstitucionActual;
+	}
+
+	public void setIdInstitucionActual(Long idInstitucionActual) {
+		this.idInstitucionActual = idInstitucionActual;
+	}
+
+	public String getNombreInstitucionActual() {
+		return nombreInstitucionActual;
+	}
+
+	public void setNombreInstitucionActual(String nombreInstitucionActual) {
+		this.nombreInstitucionActual = nombreInstitucionActual;
 	}
 
 }

@@ -12,6 +12,7 @@ import co.edu.unbosque.archiveludo.entity.InstTelefono;
 import co.edu.unbosque.archiveludo.entity.Institucion;
 import co.edu.unbosque.archiveludo.exceptions.LanzadorException;
 import co.edu.unbosque.archiveludo.model.TipoInstitucion;
+import co.edu.unbosque.archiveludo.repository.CustodiaRepository;
 import co.edu.unbosque.archiveludo.repository.InstCorreoRepository;
 import co.edu.unbosque.archiveludo.repository.InstTelefonoRepository;
 import co.edu.unbosque.archiveludo.repository.InstitucionRepository;
@@ -21,6 +22,7 @@ import co.edu.unbosque.archiveludo.repository.InstitucionRepository;
  * Une tres tablas: INSTITUCION, INST_TELEFONO e INST_CORREO, cada una con su propio repository.
  * Los telefonos y correos viajan como listas dentro de InstitucionDTO.
  * Toda institucion debe tener al menos un telefono y al menos un correo.
+ * Cada institucion que sale hacia el front lleva cuantas copias custodia hoy.
  */
 @Service
 public class InstitucionService {
@@ -28,16 +30,20 @@ public class InstitucionService {
 	private final InstitucionRepository institucionRepository;
 	private final InstTelefonoRepository instTelefonoRepository;
 	private final InstCorreoRepository instCorreoRepository;
+	private final CustodiaRepository custodiaRepository;
 
 	public InstitucionService(InstitucionRepository institucionRepository,
-			InstTelefonoRepository instTelefonoRepository, InstCorreoRepository instCorreoRepository) {
+			InstTelefonoRepository instTelefonoRepository, InstCorreoRepository instCorreoRepository,
+			CustodiaRepository custodiaRepository) {
 		this.institucionRepository = institucionRepository;
 		this.instTelefonoRepository = instTelefonoRepository;
 		this.instCorreoRepository = instCorreoRepository;
+		this.custodiaRepository = custodiaRepository;
 	}
 
+
 	/**
-	 * @return todas las instituciones, cada una con sus telefonos y correos
+	 * @return todas las instituciones, cada una con sus telefonos, correos y copias custodiadas
 	 */
 	public List<InstitucionDTO> buscarTodas() {
 		List<Institucion> instituciones = institucionRepository.buscarTodas();
@@ -51,7 +57,7 @@ public class InstitucionService {
 
 	/**
 	 * @param idTexto id tal como llego en la URL
-	 * @return la institucion con sus telefonos y correos
+	 * @return la institucion con sus telefonos, correos y copias custodiadas
 	 * @throws IdInvalidoException              si el id no es un numero mayor que cero
 	 * @throws InstitucionNoEncontradaException si no existe
 	 */
@@ -210,9 +216,6 @@ public class InstitucionService {
 		return false;
 	}
 
-	// ──────────────────────────────────────────────
-	// Utilidades
-	// ──────────────────────────────────────────────
 
 	/**
 	 * Inserta los telefonos y correos de la institucion, cada uno en su tabla.
@@ -227,8 +230,8 @@ public class InstitucionService {
 	}
 
 	/**
-	 * Arma el DTO con los datos de la institucion y sus listas de telefonos y correos.
-	 * El tipo se pasa a su texto legible ("Colección privada").
+	 * Arma el DTO con los datos de la institucion, sus listas de telefonos y correos
+	 * y la cantidad de copias que custodia hoy. El tipo se pasa a su texto legible ("Colección privada").
 	 */
 	private InstitucionDTO convertirADTO(Institucion institucion) {
 		long idInstitucion = institucion.getIdInstitucion();
@@ -252,6 +255,7 @@ public class InstitucionService {
 		institucionDTO.setPais(institucion.getPais());
 		institucionDTO.setTelefonos(telefonos);
 		institucionDTO.setCorreos(correos);
+		institucionDTO.setCantidadCopiasCustodiadas(custodiaRepository.contarVigentesPorInstitucion(idInstitucion));
 		return institucionDTO;
 	}
 

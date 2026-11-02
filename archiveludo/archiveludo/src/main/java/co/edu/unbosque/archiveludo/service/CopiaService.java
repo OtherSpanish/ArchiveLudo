@@ -14,18 +14,23 @@ import co.edu.unbosque.archiveludo.dto.CopiaFisicaDTO;
 import co.edu.unbosque.archiveludo.entity.Copia;
 import co.edu.unbosque.archiveludo.entity.CopiaDigital;
 import co.edu.unbosque.archiveludo.entity.CopiaFisica;
+import co.edu.unbosque.archiveludo.entity.Custodia;
+import co.edu.unbosque.archiveludo.entity.Institucion;
 import co.edu.unbosque.archiveludo.entity.Usuario;
 import co.edu.unbosque.archiveludo.entity.Videojuego;
 import co.edu.unbosque.archiveludo.exceptions.LanzadorException;
 import co.edu.unbosque.archiveludo.model.EstadoIntegridad;
 import co.edu.unbosque.archiveludo.model.TipoCopia;
 import co.edu.unbosque.archiveludo.repository.CopiaRepository;
+import co.edu.unbosque.archiveludo.repository.CustodiaRepository;
+import co.edu.unbosque.archiveludo.repository.InstitucionRepository;
 import co.edu.unbosque.archiveludo.repository.UsuarioRepository;
 import co.edu.unbosque.archiveludo.repository.VideojuegoRepository;
 
 /**
  * Logica de negocio de las copias (fisicas y digitales) de los videojuegos.
  * Una copia vive en dos tablas: COPIA (datos comunes) y su tabla hija (COPIA_FISICA o COPIA_DIGITAL).
+ * Cada copia que sale hacia el front lleva la institucion de su custodia vigente, si tiene.
  */
 @Service
 public class CopiaService {
@@ -33,13 +38,18 @@ public class CopiaService {
 	private final CopiaRepository copiaRepository;
 	private final VideojuegoRepository videojuegoRepository;
 	private final UsuarioRepository usuarioRepository;
+	private final CustodiaRepository custodiaRepository;
+	private final InstitucionRepository institucionRepository;
 	private final ModelMapper mapper;
 
 	public CopiaService(CopiaRepository copiaRepository, VideojuegoRepository videojuegoRepository,
-			UsuarioRepository usuarioRepository, ModelMapper mapper) {
+			UsuarioRepository usuarioRepository, CustodiaRepository custodiaRepository,
+			InstitucionRepository institucionRepository, ModelMapper mapper) {
 		this.copiaRepository = copiaRepository;
 		this.videojuegoRepository = videojuegoRepository;
 		this.usuarioRepository = usuarioRepository;
+		this.custodiaRepository = custodiaRepository;
+		this.institucionRepository = institucionRepository;
 		this.mapper = mapper;
 	}
 
@@ -82,7 +92,6 @@ public class CopiaService {
 		return convertirADTO(copia);
 	}
 
-
 	/**
 	 * Registra una copia nueva (fisica o digital) de un videojuego.
 	 * El videojuego sale de la URL, el usuario del token y la fecha de registro es hoy;
@@ -96,6 +105,7 @@ public class CopiaService {
 	 * @throws IdInvalidoException               si el id no es un numero mayor que cero
 	 * @throws VideojuegoNoEncontradoException   si no existe el videojuego
 	 * @throws CredencialInvalidaException       si el usuario del token ya no existe
+	 * @throws DatosCopiaInvalidosException      si falta "tipoCopia" o no es fisica ni digital
 	 * @throws EstadoIntegridadInvalidoException si el estado de integridad no es valido
 	 * @throws CampoObligatorioException         si falta un campo obligatorio del subtipo
 	 * @throws TamanioInvalidoException          si el tamanio de una copia digital no es mayor que cero
@@ -110,12 +120,15 @@ public class CopiaService {
 		Usuario usuario = usuarioRepository.buscarPorCorreo(correoUsuario);
 		LanzadorException.verificarCredencialesCorrectas(usuario != null);
 
+		TipoCopia tipoEnviado = obtenerTipoEnviado(copiaDTO);
+		LanzadorException.verificarTipoCopiaValido(tipoEnviado != null);
+
 		EstadoIntegridad estadoIntegridad = LanzadorException
 				.convertirEstadoIntegridad(copiaDTO.getEstadoIntegridad());
 		LocalDate fechaRegistro = LocalDate.now();
 
 		Copia copiaGuardada;
-		if (copiaDTO instanceof CopiaFisicaDTO) {
+		if (tipoEnviado == TipoCopia.FISICA) {
 			CopiaFisicaDTO copiaFisicaDTO = (CopiaFisicaDTO) copiaDTO;
 			verificarDatosFisicos(copiaFisicaDTO);
 
@@ -146,7 +159,7 @@ public class CopiaService {
 	 * @return la copia actualizada
 	 * @throws IdInvalidoException               si el id no es un numero mayor que cero
 	 * @throws CopiaNoEncontradaException        si no existe
-	 * @throws DatosCopiaInvalidosException      si se intenta cambiar el tipo de copia
+	 * @throws DatosCopiaInvalidosException      si falta "tipoCopia" o se intenta cambiar el tipo de copia
 	 * @throws EstadoIntegridadInvalidoException si el estado de integridad no es valido
 	 * @throws CampoObligatorioException         si falta un campo obligatorio del subtipo
 	 * @throws TamanioInvalidoException          si el tamanio de una copia digital no es mayor que cero
@@ -159,6 +172,7 @@ public class CopiaService {
 		LanzadorException.verificarCopiaExiste(copia, idCopia);
 
 		TipoCopia tipoEnviado = obtenerTipoEnviado(copiaDTO);
+		LanzadorException.verificarTipoCopiaValido(tipoEnviado != null);
 		LanzadorException.verificarMismoTipoCopia(copia.getTipoCopia(), tipoEnviado);
 
 		EstadoIntegridad estadoIntegridad = LanzadorException
@@ -228,16 +242,18 @@ public class CopiaService {
 		LanzadorException.verificarTamanioValido(copiaDigitalDTO.getTamanio());
 	}
 
-
 	/**
-	 * Jackson ya decidio el subtipo del DTO con el campo "tipoCopia";
-	 * aqui se traduce esa clase al enum para compararlo con el de la copia guardada.
+	 * Jackson ya decidio la clase del DTO con el campo "tipoCopia".
+	 * Aqui se traduce esa clase al enum. Si es un CopiaDTO simple (tipo ausente o desconocido), devuelve null.
 	 */
 	private TipoCopia obtenerTipoEnviado(CopiaDTO copiaDTO) {
 		if (copiaDTO instanceof CopiaFisicaDTO) {
 			return TipoCopia.FISICA;
 		}
-		return TipoCopia.DIGITAL;
+		if (copiaDTO instanceof CopiaDigitalDTO) {
+			return TipoCopia.DIGITAL;
+		}
+		return null;
 	}
 
 	/**
@@ -252,7 +268,8 @@ public class CopiaService {
 
 	/**
 	 * Convierte la entity al DTO de su mismo subtipo.
-	 * El tipo de copia y el estado de integridad se pasan a su texto ("fisica", "dañada").
+	 * El tipo de copia y el estado de integridad se pasan a su texto ("fisica", "dañada"),
+	 * y se completa la institucion de la custodia vigente.
 	 */
 	private CopiaDTO convertirADTO(Copia copia) {
 		CopiaDTO copiaDTO;
@@ -268,7 +285,27 @@ public class CopiaService {
 		if (copia.getEstadoIntegridad() != null) {
 			copiaDTO.setEstadoIntegridad(copia.getEstadoIntegridad().getValor());
 		}
+
+		completarInstitucionActual(copiaDTO, copia.getIdCopia());
 		return copiaDTO;
+	}
+
+	/**
+	 * Si la copia tiene custodia vigente, pone en el DTO el id y el nombre de esa institucion.
+	 * Si no tiene, los dos campos quedan en null y no salen en el JSON.
+	 */
+	private void completarInstitucionActual(CopiaDTO copiaDTO, long idCopia) {
+		Custodia custodiaVigente = custodiaRepository.buscarVigentePorIdCopia(idCopia);
+		if (custodiaVigente == null) {
+			return;
+		}
+
+		copiaDTO.setIdInstitucionActual(custodiaVigente.getIdInstitucion());
+
+		Institucion institucion = institucionRepository.buscarPorId(custodiaVigente.getIdInstitucion());
+		if (institucion != null) {
+			copiaDTO.setNombreInstitucionActual(institucion.getNombre());
+		}
 	}
 
 }

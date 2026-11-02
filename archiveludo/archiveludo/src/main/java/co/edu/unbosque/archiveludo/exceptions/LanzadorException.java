@@ -17,6 +17,7 @@ import co.edu.unbosque.archiveludo.model.TipoEstatusLegal;
 import co.edu.unbosque.archiveludo.model.TipoEventoRiesgo;
 import co.edu.unbosque.archiveludo.model.TipoInstitucion;
 import co.edu.unbosque.archiveludo.entity.Copia;
+import co.edu.unbosque.archiveludo.entity.Custodia;
 import co.edu.unbosque.archiveludo.model.TipoCopia;
 
 /**
@@ -44,6 +45,9 @@ public class LanzadorException {
 	/** Longitudes maximas de EVENTO_DE_RIESGO (descripcion VARCHAR(500), fuente VARCHAR(200)). */
 	private static final int LONGITUD_MAXIMA_DESCRIPCION_EVENTO = 500;
 	private static final int LONGITUD_MAXIMA_FUENTE_EVENTO = 200;
+	
+	/** Longitud maxima de CUSTODIA.condicion_almacenamiento (VARCHAR(200)). */
+	private static final int LONGITUD_MAXIMA_CONDICION_CUSTODIA = 200;
 
 	/**
 	 * Verifica que un id recibido por la URL sea valido.
@@ -756,6 +760,108 @@ public class LanzadorException {
 		if (tipoGuardado != tipoEnviado) {
 			throw new DatoCopiaInvalidoException("No se puede cambiar el tipo de una copia (es "
 					+ tipoGuardado.getValor() + "). Para cambiarlo, elimine la copia y registre una nueva");
+		}
+	}
+	
+	/**
+	 * Verifica que la custodia buscada exista.
+	 *
+	 * @param custodia   resultado de la busqueda en el repository
+	 * @param idCustodia id que se busco (para el mensaje)
+	 * @throws CustodiaNoEncontradaException si la custodia es null
+	 */
+	public static void verificarCustodiaExiste(Custodia custodia, long idCustodia) {
+		if (custodia == null) {
+			throw new CustodiaNoEncontradaException(idCustodia);
+		}
+	}
+
+	/**
+	 * Verifica las fechas de una custodia:
+	 * - la fecha de inicio es obligatoria y no puede ser futura;
+	 * - la fecha de fin es opcional (null = vigente), no puede ser anterior al inicio ni futura.
+	 *
+	 * @param fechaInicio fecha en que la institucion recibio la copia
+	 * @param fechaFin    fecha en que la dejo de custodiar (null si sigue vigente)
+	 * @throws DatosCustodiaInvalidosException si se incumple alguna regla
+	 */
+	public static void verificarFechasCustodia(LocalDate fechaInicio, LocalDate fechaFin) {
+		LocalDate hoy = LocalDate.now();
+
+		if (fechaInicio == null) {
+			throw new DatoCustodiaInvalidoException("La fecha de inicio es obligatoria (formato yyyy-MM-dd)");
+		}
+		if (fechaInicio.isAfter(hoy)) {
+			throw new DatoCustodiaInvalidoException("La fecha de inicio no puede ser futura");
+		}
+
+		if (fechaFin != null) {
+			if (fechaFin.isBefore(fechaInicio)) {
+				throw new DatoCustodiaInvalidoException("La fecha de fin no puede ser anterior a la de inicio");
+			}
+			if (fechaFin.isAfter(hoy)) {
+				throw new DatoCustodiaInvalidoException("La fecha de fin no puede ser futura");
+			}
+		}
+	}
+
+	/**
+	 * Verifica la condicion de almacenamiento: es obligatoria y cabe en la columna.
+	 *
+	 * @param condicion condicion a verificar
+	 * @throws DatosCustodiaInvalidosException si esta vacia o supera el maximo de caracteres
+	 */
+	public static void verificarCondicionAlmacenamiento(String condicion) {
+		if (condicion == null || condicion.trim().isEmpty()) {
+			throw new DatoCustodiaInvalidoException("La condicion de almacenamiento es obligatoria");
+		}
+		if (condicion.trim().length() > LONGITUD_MAXIMA_CONDICION_CUSTODIA) {
+			throw new DatoCustodiaInvalidoException("La condicion de almacenamiento no puede superar "
+					+ LONGITUD_MAXIMA_CONDICION_CUSTODIA + " caracteres");
+		}
+	}
+
+	/**
+	 * Verifica que una custodia nueva no empiece antes que la custodia vigente de la copia.
+	 * Al registrar la nueva, la vigente se cierra con fecha_fin = inicio de la nueva,
+	 * y una fecha de fin no puede ser anterior a su propia fecha de inicio.
+	 *
+	 * @param inicioNueva  fecha de inicio de la custodia nueva
+	 * @param inicioVigente fecha de inicio de la custodia vigente
+	 * @throws DatosCustodiaInvalidosException si la nueva empieza antes que la vigente
+	 */
+	public static void verificarInicioNoAnteriorAVigente(LocalDate inicioNueva, LocalDate inicioVigente) {
+		if (inicioNueva.isBefore(inicioVigente)) {
+			throw new DatoCustodiaInvalidoException("La nueva custodia no puede empezar antes del "
+					+ inicioVigente + ", fecha de inicio de la custodia vigente");
+		}
+	}
+
+	/**
+	 * Verifica que el periodo de una custodia no se cruce con el de otra custodia de la misma copia.
+	 *
+	 * @param seCruza            resultado de comparar los dos periodos
+	 * @param idCustodiaCruzada  id de la custodia con la que se cruza (para el mensaje)
+	 * @throws DatosCustodiaInvalidosException si los periodos se cruzan
+	 */
+	public static void verificarSinCruceDeCustodias(boolean seCruza, long idCustodiaCruzada) {
+		if (seCruza) {
+			throw new DatoCustodiaInvalidoException("El periodo se cruza con la custodia " + idCustodiaCruzada
+					+ " de la misma copia. Una copia solo puede estar en una institucion a la vez");
+		}
+	}
+	
+	/**
+	 * Verifica que el cuerpo de la peticion traiga un tipo de copia reconocido.
+	 * Jackson crea CopiaFisicaDTO o CopiaDigitalDTO segun "tipoCopia"; si el campo falta
+	 * o trae otro valor, crea un CopiaDTO simple y el service no sabe que subtipo es.
+	 *
+	 * @param tipoReconocido true si el DTO es de un subtipo (fisica o digital)
+	 * @throws DatosCopiaInvalidosException si no se reconocio el tipo de copia
+	 */
+	public static void verificarTipoCopiaValido(boolean tipoReconocido) {
+		if (!tipoReconocido) {
+			throw new DatoCopiaInvalidoException("El campo 'tipoCopia' es obligatorio y debe ser fisica o digital (en minuscula)");
 		}
 	}
 	

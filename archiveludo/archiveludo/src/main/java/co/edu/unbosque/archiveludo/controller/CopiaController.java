@@ -49,8 +49,8 @@ public class CopiaController {
 
 	/**
 	 * GET /api/videojuegos/{id}/copias
-	 * Respuesta: 200 con las copias del videojuego. Cada copia trae sus campos comunes
-	 *            y los de su subtipo (fisica o digital), segun "tipoCopia".
+	 * Respuesta: 200 con las copias del videojuego. Cada copia trae sus campos comunes,
+	 *            los de su subtipo (segun "tipoCopia") y, si tiene, la institucion de su custodia vigente.
 	 */
 	@GetMapping("/videojuegos/{id}/copias")
 	public ResponseEntity<?> buscarPorVideojuego(@PathVariable String id) {
@@ -85,6 +85,8 @@ public class CopiaController {
 			return crearRespuestaError(HttpStatus.BAD_REQUEST, e.getMessage());
 		} catch (VideojuegoNoEncontradoException e) {
 			return crearRespuestaError(HttpStatus.NOT_FOUND, e.getMessage());
+		} catch (DatoCopiaInvalidoException e) {
+			return crearRespuestaError(HttpStatus.BAD_REQUEST, e.getMessage());
 		} catch (EstadoIntegridadInvalidoException e) {
 			return crearRespuestaError(HttpStatus.BAD_REQUEST, e.getMessage());
 		} catch (CampoObligatorioException e) {
@@ -101,7 +103,7 @@ public class CopiaController {
 
 	/**
 	 * GET /api/copias/{id}
-	 * Respuesta: 200 con la copia y los campos de su subtipo.
+	 * Respuesta: 200 con la copia, los campos de su subtipo y su institucion actual (si tiene).
 	 */
 	@GetMapping("/copias/{id}")
 	public ResponseEntity<?> buscarPorId(@PathVariable String id) {
