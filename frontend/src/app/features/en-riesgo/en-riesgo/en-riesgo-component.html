@@ -17,12 +17,8 @@
 
 <!-- Cuadrícula de tarjetas. "let i = $index" rota el color de la portada. -->
 <section class="resultados" aria-label="Videojuegos en riesgo">
-  @for (item of juegos; track item.videojuego.idVideojuego; let i = $index) {
-    <app-juego-card
-      [videojuego]="item.videojuego"
-      [indice]="i"
-      [meta]="item.meta">
-    </app-juego-card>
+  @for (juego of juegos; track juego.idVideojuego; let i = $index) {
+    <app-juego-card [videojuego]="juego" [indice]="i"></app-juego-card>
   }
 </section>
 
@@ -40,7 +36,7 @@
 }
 
 <!-- "Ver más": solo aparece si faltan juegos por mostrar y no hay una carga en curso -->
-@if (!cargando && juegos.length < total) {
+@if (!cargando && !hayError && juegos.length < total) {
   <div class="zona-mas">
     <button type="button" class="boton-mas" (click)="verMas()">Ver más</button>
   </div>

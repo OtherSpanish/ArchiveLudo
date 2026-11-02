@@ -7,6 +7,13 @@
     lo anuncian sin interrumpir lo que estaban leyendo.
   -->
   <p class="resumen" aria-live="polite">{{ textoResumen }}</p>
+
+  <!-- Solo curador y administrador -->
+  <a class="boton-nuevo"
+     *appHasRole="['curador', 'administrador']"
+     routerLink="/videojuegos/nuevo">
+    Nuevo videojuego
+  </a>
 </header>
 
 <!--
@@ -41,12 +48,8 @@
 
 <!-- Cuadrícula de tarjetas. "let i = $index" es la posición, que rota el color de la portada. -->
 <section class="resultados" aria-label="Videojuegos">
-  @for (item of juegos; track item.videojuego.idVideojuego; let i = $index) {
-    <app-juego-card
-      [videojuego]="item.videojuego"
-      [indice]="i"
-      [meta]="item.meta">
-    </app-juego-card>
+  @for (juego of juegos; track juego.idVideojuego; let i = $index) {
+    <app-juego-card [videojuego]="juego" [indice]="i"></app-juego-card>
   }
 </section>
 
@@ -55,12 +58,16 @@
   <p class="mensaje">Cargando…</p>
 }
 
-@if (!cargando && juegos.length === 0) {
+@if (hayError) {
+  <p class="mensaje">No pudimos cargar el catálogo. Intenta de nuevo más tarde.</p>
+}
+
+@if (!cargando && !hayError && juegos.length === 0) {
   <p class="mensaje">No encontramos videojuegos con esos filtros.</p>
 }
 
 <!-- "Ver más": solo aparece si faltan juegos por mostrar y no hay una carga en curso -->
-@if (!cargando && juegos.length < total) {
+@if (!cargando && !hayError && juegos.length < total) {
   <div class="zona-mas">
     <button type="button" class="boton-mas" (click)="verMas()">Ver más</button>
   </div>

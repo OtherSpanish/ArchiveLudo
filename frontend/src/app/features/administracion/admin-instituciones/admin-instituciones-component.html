@@ -1,0 +1,181 @@
+<!-- Migas de pan: Inicio / Administración / Instituciones -->
+<nav class="migas" aria-label="Migas de pan">
+  <a routerLink="/">Inicio</a>
+  <span class="separador" aria-hidden="true">/</span>
+  <span>Administración</span>
+  <span class="separador" aria-hidden="true">/</span>
+  <span aria-current="page">Instituciones</span>
+</nav>
+
+<!-- Cambio entre las pantallas de administración -->
+<nav class="subnav" aria-label="Secciones de administración">
+  <a class="subenlace" routerLink="/administracion/estudios" routerLinkActive="activo">Estudios</a>
+  <a class="subenlace" routerLink="/administracion/editoras" routerLinkActive="activo">Editoras</a>
+  <a class="subenlace" routerLink="/administracion/instituciones" routerLinkActive="activo">Instituciones</a>
+  <a *appHasRole="['administrador']" class="subenlace" routerLink="/administracion/usuarios" routerLinkActive="activo">Usuarios</a>
+</nav>
+
+<header class="encabezado">
+  <h1 class="titulo">Instituciones</h1>
+
+  @if (!mostrarFormulario) {
+    <button type="button" class="boton-principal" (click)="abrirNueva()">Nueva institución</button>
+  }
+</header>
+
+<!-- Formulario (crear o editar) -->
+@if (mostrarFormulario) {
+  <form class="formulario" [formGroup]="formulario" (ngSubmit)="guardar()" novalidate>
+
+    <h2 class="titulo-formulario">{{ editando ? 'Editar institución' : 'Nueva institución' }}</h2>
+
+    <div class="grupo">
+      <label class="etiqueta" for="campo-nombre">Nombre</label>
+      <input id="campo-nombre" class="campo" type="text" formControlName="nombre"
+             [class.invalido]="mostrarError(formulario.controls['nombre'])">
+      @if (mostrarError(formulario.controls['nombre'])) {
+        <p class="error">{{ textoError(formulario.controls['nombre']) }}</p>
+      }
+    </div>
+
+    <div class="grupo">
+      <label class="etiqueta" for="campo-tipo">Tipo</label>
+      <select id="campo-tipo" class="campo" formControlName="tipo">
+        @for (tipo of tipos; track tipo) {
+          <option [value]="tipo">{{ tipo }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="grupo">
+      <label class="etiqueta" for="campo-pais">País</label>
+      <input id="campo-pais" class="campo" type="text" formControlName="pais"
+             [class.invalido]="mostrarError(formulario.controls['pais'])">
+      @if (mostrarError(formulario.controls['pais'])) {
+        <p class="error">{{ textoError(formulario.controls['pais']) }}</p>
+      }
+    </div>
+
+    <!-- Teléfonos: una casilla por teléfono, con "Agregar otro" -->
+    <fieldset class="grupo" formArrayName="telefonos">
+      <legend class="etiqueta">Teléfonos <span class="opcional">(al menos uno, solo dígitos)</span></legend>
+
+      @for (control of telefonos.controls; track $index; let i = $index) {
+        <div class="fila-lista">
+          <input class="campo" type="text" inputmode="numeric" [formControlName]="i"
+                 placeholder="Ej.: 6015551234"
+                 [attr.aria-label]="'Teléfono ' + (i + 1)"
+                 [class.invalido]="mostrarError(control)">
+
+          @if (telefonos.length > 1) {
+            <button type="button" class="boton-secundario boton-chico" (click)="quitarTelefono(i)">Quitar</button>
+          }
+        </div>
+
+        @if (mostrarError(control)) {
+          <p class="error">{{ textoError(control) }}</p>
+        }
+      }
+
+      <button type="button" class="boton-secundario boton-chico boton-agregar" (click)="agregarTelefono()">
+        + Agregar otro teléfono
+      </button>
+    </fieldset>
+
+    <!-- Correos: igual que los teléfonos -->
+    <fieldset class="grupo" formArrayName="correos">
+      <legend class="etiqueta">Correos <span class="opcional">(al menos uno)</span></legend>
+
+      @for (control of correos.controls; track $index; let i = $index) {
+        <div class="fila-lista">
+          <input class="campo" type="email" [formControlName]="i"
+                 placeholder="Ej.: archivo@museo.org"
+                 [attr.aria-label]="'Correo ' + (i + 1)"
+                 [class.invalido]="mostrarError(control)">
+
+          @if (correos.length > 1) {
+            <button type="button" class="boton-secundario boton-chico" (click)="quitarCorreo(i)">Quitar</button>
+          }
+        </div>
+
+        @if (mostrarError(control)) {
+          <p class="error">{{ textoError(control) }}</p>
+        }
+      }
+
+      <button type="button" class="boton-secundario boton-chico boton-agregar" (click)="agregarCorreo()">
+        + Agregar otro correo
+      </button>
+    </fieldset>
+
+    @if (errorMensaje) {
+      <p class="error-general" role="alert">{{ errorMensaje }}</p>
+    }
+
+    <div class="botones">
+      <button type="button" class="boton-secundario" (click)="cancelarFormulario()">Cancelar</button>
+      <button type="submit" class="boton-principal" [disabled]="guardando">
+        @if (guardando) {
+          Guardando…
+        } @else {
+          Guardar
+        }
+      </button>
+    </div>
+
+  </form>
+}
+
+<!-- Error fuera del formulario (por ejemplo, al eliminar) -->
+@if (errorMensaje && !mostrarFormulario) {
+  <p class="error-general" role="alert">{{ errorMensaje }}</p>
+}
+
+<!-- Lista de instituciones -->
+@if (cargando) {
+
+  <p class="mensaje">Cargando instituciones…</p>
+
+} @else if (hayError) {
+
+  <p class="mensaje">No pudimos cargar las instituciones. Intenta de nuevo más tarde.</p>
+
+} @else {
+
+  <ul class="lista-registros">
+    @for (institucion of instituciones; track institucion.idInstitucion) {
+      <li class="registro">
+
+        <div class="datos-registro">
+          <span class="nombre-registro">{{ institucion.nombre }}</span>
+          <span class="detalle-registro">
+            {{ institucion.tipo }} · {{ institucion.pais }} ·
+            {{ institucion.telefonos.length }} tel. · {{ institucion.correos.length }} correo(s)
+          </span>
+        </div>
+
+        <div class="acciones-registro">
+          @if (idConfirmandoEliminar === institucion.idInstitucion) {
+            <span class="texto-confirmacion">¿Eliminar?</span>
+            <button type="button" class="boton-secundario boton-chico" (click)="cancelarEliminar()">No</button>
+            <button type="button" class="boton-peligro boton-chico" (click)="confirmarEliminar(institucion)">Sí, eliminar</button>
+          } @else {
+            <button type="button" class="boton-secundario boton-chico" (click)="abrirEditar(institucion)">Editar</button>
+
+            <!-- Solo administrador -->
+            <button type="button"
+                    class="boton-eliminar boton-chico"
+                    *appHasRole="['administrador']"
+                    (click)="pedirEliminar(institucion)">
+              Eliminar
+            </button>
+          }
+        </div>
+
+      </li>
+    } @empty {
+      <li class="mensaje">Todavía no hay instituciones registradas.</li>
+    }
+  </ul>
+
+}

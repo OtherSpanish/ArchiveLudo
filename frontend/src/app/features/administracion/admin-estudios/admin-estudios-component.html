@@ -1,0 +1,150 @@
+<!-- Migas de pan: Inicio / Administración / Estudios -->
+<nav class="migas" aria-label="Migas de pan">
+  <a routerLink="/">Inicio</a>
+  <span class="separador" aria-hidden="true">/</span>
+  <span>Administración</span>
+  <span class="separador" aria-hidden="true">/</span>
+  <span aria-current="page">Estudios</span>
+</nav>
+
+<!-- Cambio entre las pantallas de administración -->
+<nav class="subnav" aria-label="Secciones de administración">
+  <a class="subenlace" routerLink="/administracion/estudios" routerLinkActive="activo">Estudios</a>
+  <a class="subenlace" routerLink="/administracion/editoras" routerLinkActive="activo">Editoras</a>
+  <a class="subenlace" routerLink="/administracion/instituciones" routerLinkActive="activo">Instituciones</a>
+  <a *appHasRole="['administrador']" class="subenlace" routerLink="/administracion/usuarios" routerLinkActive="activo">Usuarios</a>
+</nav>
+
+<header class="encabezado">
+  <h1 class="titulo">Estudios</h1>
+
+  @if (!mostrarFormulario) {
+    <button type="button" class="boton-principal" (click)="abrirNuevo()">Nuevo estudio</button>
+  }
+</header>
+
+<!-- Formulario (crear o editar) -->
+@if (mostrarFormulario) {
+  <form class="formulario" [formGroup]="formulario" (ngSubmit)="guardar()" novalidate>
+
+    <h2 class="titulo-formulario">{{ editando ? 'Editar estudio' : 'Nuevo estudio' }}</h2>
+
+    <div class="grupo">
+      <label class="etiqueta" for="campo-nombre">Nombre</label>
+      <input id="campo-nombre" class="campo" type="text" formControlName="nombre"
+             [class.invalido]="mostrarError('nombre')" [attr.aria-invalid]="mostrarError('nombre')">
+      @if (mostrarError('nombre')) {
+        <p class="error">{{ textoError('nombre') }}</p>
+      }
+    </div>
+
+    <div class="grupo">
+      <label class="etiqueta" for="campo-pais">País</label>
+      <input id="campo-pais" class="campo" type="text" formControlName="pais"
+             [class.invalido]="mostrarError('pais')" [attr.aria-invalid]="mostrarError('pais')">
+      @if (mostrarError('pais')) {
+        <p class="error">{{ textoError('pais') }}</p>
+      }
+    </div>
+
+    <div class="grupo">
+      <label class="etiqueta" for="campo-estado">Estado actual</label>
+      <select id="campo-estado" class="campo" formControlName="estadoActual">
+        <option value="activo">Activo</option>
+        <option value="desaparecido">Desaparecido</option>
+      </select>
+    </div>
+
+    <div class="grupo">
+      <label class="etiqueta" for="campo-fundacion">Año de fundación</label>
+      <input id="campo-fundacion" class="campo" type="number" formControlName="anioFundacion"
+             [min]="anioMinimo" [max]="anioMaximo"
+             [class.invalido]="mostrarError('anioFundacion')" [attr.aria-invalid]="mostrarError('anioFundacion')">
+      @if (mostrarError('anioFundacion')) {
+        <p class="error">{{ textoError('anioFundacion') }}</p>
+      }
+    </div>
+
+    <!-- El año de cierre solo aparece si el estudio está desaparecido -->
+    @if (esDesaparecido) {
+      <div class="grupo">
+        <label class="etiqueta" for="campo-cierre">Año de cierre</label>
+        <input id="campo-cierre" class="campo" type="number" formControlName="anioCierre"
+               [min]="anioMinimo" [max]="anioMaximo"
+               [class.invalido]="mostrarError('anioCierre')" [attr.aria-invalid]="mostrarError('anioCierre')">
+        @if (mostrarError('anioCierre')) {
+          <p class="error">{{ textoError('anioCierre') }}</p>
+        }
+      </div>
+    }
+
+    @if (errorMensaje) {
+      <p class="error-general" role="alert">{{ errorMensaje }}</p>
+    }
+
+    <div class="botones">
+      <button type="button" class="boton-secundario" (click)="cancelarFormulario()">Cancelar</button>
+      <button type="submit" class="boton-principal" [disabled]="guardando">
+        @if (guardando) {
+          Guardando…
+        } @else {
+          Guardar
+        }
+      </button>
+    </div>
+
+  </form>
+}
+
+<!-- Error fuera del formulario (por ejemplo, al eliminar) -->
+@if (errorMensaje && !mostrarFormulario) {
+  <p class="error-general" role="alert">{{ errorMensaje }}</p>
+}
+
+<!-- Lista de estudios -->
+@if (cargando) {
+
+  <p class="mensaje">Cargando estudios…</p>
+
+} @else if (hayError) {
+
+  <p class="mensaje">No pudimos cargar los estudios. Intenta de nuevo más tarde.</p>
+
+} @else {
+
+  <ul class="lista-registros">
+    @for (estudio of estudios; track estudio.idEstudio) {
+      <li class="registro">
+
+        <div class="datos-registro">
+          <span class="nombre-registro">{{ estudio.nombre }}</span>
+          <span class="detalle-registro">
+            {{ estudio.pais }} · {{ textoAnios(estudio) }} · {{ estudio.estadoActual === 'activo' ? 'Activo' : 'Desaparecido' }}
+          </span>
+        </div>
+
+        <div class="acciones-registro">
+          @if (idConfirmandoEliminar === estudio.idEstudio) {
+            <span class="texto-confirmacion">¿Eliminar?</span>
+            <button type="button" class="boton-secundario boton-chico" (click)="cancelarEliminar()">No</button>
+            <button type="button" class="boton-peligro boton-chico" (click)="confirmarEliminar(estudio)">Sí, eliminar</button>
+          } @else {
+            <button type="button" class="boton-secundario boton-chico" (click)="abrirEditar(estudio)">Editar</button>
+
+            <!-- Solo administrador -->
+            <button type="button"
+                    class="boton-eliminar boton-chico"
+                    *appHasRole="['administrador']"
+                    (click)="pedirEliminar(estudio)">
+              Eliminar
+            </button>
+          }
+        </div>
+
+      </li>
+    } @empty {
+      <li class="mensaje">Todavía no hay estudios registrados.</li>
+    }
+  </ul>
+
+}

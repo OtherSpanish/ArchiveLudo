@@ -34,10 +34,16 @@
       <!-- "Arcade · 1994 · Estudio: Quark Interactive (desaparecido)" -->
       <p class="linea-datos">
         {{ plataformaYAnio }}
+        @if (videojuego.genero) {
+          · {{ videojuego.genero }}
+        }
         @if (textoEstudio) {
           · {{ textoEstudio }}
         }
       </p>
+
+      <!-- Editoras (nombres cruzados con idsEditoras) -->
+      <p class="linea-datos">{{ textoEditoras }}</p>
 
       <!-- Fila con la píldora de estado y el estatus legal vigente -->
       <div class="fila-estado">
@@ -48,7 +54,44 @@
 
         <span class="estatus-legal">Estatus legal: {{ estatusLegal }}</span>
 
+        <!-- Solo curador y administrador -->
+        <a class="boton-editar"
+           *appHasRole="['curador', 'administrador']"
+           [routerLink]="['/videojuegos', videojuego.idVideojuego, 'editar']">
+          Editar
+        </a>
+
+        <!-- Solo administrador. Pide confirmación en la misma pantalla. -->
+        @if (!confirmandoEliminar) {
+          <button type="button"
+                  class="boton-eliminar"
+                  *appHasRole="['administrador']"
+                  (click)="pedirConfirmacionEliminar()">
+            Eliminar
+          </button>
+        }
+
       </div>
+
+      @if (confirmandoEliminar) {
+        <div class="confirmacion" role="alertdialog" aria-label="Confirmar eliminación">
+          <p class="texto-confirmacion">¿Eliminar «{{ videojuego.titulo }}»? Esta acción no se puede deshacer.</p>
+          <div class="botones-confirmacion">
+            <button type="button" class="boton-secundario" (click)="cancelarEliminar()">Cancelar</button>
+            <button type="button" class="boton-peligro" [disabled]="eliminando" (click)="confirmarEliminar()">
+              @if (eliminando) {
+                Eliminando…
+              } @else {
+                Sí, eliminar
+              }
+            </button>
+          </div>
+        </div>
+      }
+
+      @if (errorEliminar) {
+        <p class="error-general" role="alert">{{ errorEliminar }}</p>
+      }
 
     </div>
 
@@ -214,17 +257,90 @@
 
         <div class="encabezado-seccion">
           <h2 class="titulo-seccion">Historial de estatus legal</h2>
+
+          <!-- Solo curador y administrador; el formulario se despliega debajo -->
+          @if (!mostrarFormularioEstatus) {
+            <button type="button"
+                    class="boton-registrar"
+                    *appHasRole="['curador', 'administrador']"
+                    (click)="abrirFormularioEstatus()">
+              Agregar estatus
+            </button>
+          }
         </div>
+
+        @if (mostrarFormularioEstatus) {
+          <form class="formulario-estatus" [formGroup]="formularioEstatus" (ngSubmit)="guardarEstatus()" novalidate>
+
+            <h3 class="titulo-formulario-estatus">{{ editandoEstatus ? 'Editar estatus legal' : 'Agregar estatus legal' }}</h3>
+
+            <div class="grupo">
+              <label class="etiqueta" for="campo-estatus">Estatus</label>
+              <select id="campo-estatus" class="campo" formControlName="estatus">
+                @for (opcion of opcionesEstatus; track opcion) {
+                  <option [value]="opcion">{{ opcion }}</option>
+                }
+              </select>
+            </div>
+
+            <div class="grupo">
+              <label class="etiqueta" for="campo-fecha-estatus">Fecha de determinación</label>
+              <input id="campo-fecha-estatus"
+                     class="campo"
+                     type="date"
+                     formControlName="fechaDeterminacion"
+                     [max]="hoy"
+                     [class.invalido]="mostrarErrorEstatus('fechaDeterminacion')"
+                     [attr.aria-invalid]="mostrarErrorEstatus('fechaDeterminacion')">
+              @if (mostrarErrorEstatus('fechaDeterminacion')) {
+                <p class="error">{{ textoErrorEstatus('fechaDeterminacion') }}</p>
+              }
+            </div>
+
+            <div class="grupo">
+              <label class="etiqueta" for="campo-observacion">Observación <span class="opcional">(opcional)</span></label>
+              <input id="campo-observacion"
+                     class="campo"
+                     type="text"
+                     formControlName="observacion"
+                     placeholder="Ej.: El titular de derechos desapareció"
+                     [class.invalido]="mostrarErrorEstatus('observacion')">
+              @if (mostrarErrorEstatus('observacion')) {
+                <p class="error">{{ textoErrorEstatus('observacion') }}</p>
+              }
+            </div>
+
+            @if (errorEstatus) {
+              <p class="error-general" role="alert">{{ errorEstatus }}</p>
+            }
+
+            <div class="botones">
+              <button type="button" class="boton-secundario" (click)="cancelarFormularioEstatus()">Cancelar</button>
+              <button type="submit" class="boton-principal" [disabled]="guardandoEstatus">
+                @if (guardandoEstatus) {
+                  Guardando…
+                } @else {
+                  Guardar estatus
+                }
+              </button>
+            </div>
+
+          </form>
+        }
 
         <!--
           Línea de tiempo, del registro más reciente al más antiguo.
           "let primero = $first" guarda en "primero" si este es el primer
           elemento de la lista: ese es el estatus vigente.
         -->
-        <ul class="linea-tiempo">
-          @for (registro of historialLegal; track registro.idEstatusLegal; let primero = $first) {
+        @if (errorEstatus && !mostrarFormularioEstatus) {
+          <p class="error-general" role="alert">{{ errorEstatus }}</p>
+        }
 
-            <li class="registro" [class.vigente]="primero">
+        <ul class="linea-tiempo">
+          @for (registro of historialLegal; track registro.idEstatus) {
+
+            <li class="registro" [class.vigente]="registro.vigente">
 
               <time class="fecha" [attr.datetime]="registro.fechaDeterminacion">
                 {{ formatearFecha(registro.fechaDeterminacion) }}
@@ -233,8 +349,28 @@
               <div class="fila-titulo">
                 <span class="nombre-registro">{{ registro.estatus }}</span>
 
-                @if (primero) {
+                @if (registro.vigente) {
                   <span class="etiqueta-vigente">Vigente</span>
+                }
+              </div>
+
+              @if (registro.observacion) {
+                <p class="observacion-estatus">{{ registro.observacion }}</p>
+              }
+
+              <!-- Editar: curador y administrador. Eliminar: solo administrador. -->
+              <div class="acciones-estatus">
+                @if (idConfirmandoEliminarEstatus === registro.idEstatus) {
+                  <span class="texto-confirmacion">¿Eliminar este registro?</span>
+                  <button type="button" class="boton-secundario boton-chico" (click)="cancelarEliminarEstatus()">No</button>
+                  <button type="button" class="boton-peligro boton-chico" (click)="confirmarEliminarEstatus(registro)">Sí, eliminar</button>
+                } @else {
+                  <button type="button" class="boton-editar boton-chico"
+                          *appHasRole="['curador', 'administrador']"
+                          (click)="abrirEditarEstatus(registro)">Editar</button>
+                  <button type="button" class="boton-eliminar boton-chico"
+                          *appHasRole="['administrador']"
+                          (click)="pedirEliminarEstatus(registro)">Eliminar</button>
                 }
               </div>
 
@@ -263,8 +399,8 @@
 
             <li class="registro evento">
 
-              <time class="fecha" [attr.datetime]="evento.fecha">
-                {{ formatearFecha(evento.fecha) }}
+              <time class="fecha" [attr.datetime]="evento.fechaEvento">
+                {{ formatearFecha(evento.fechaEvento) }}
               </time>
 
               <div class="fila-titulo">
@@ -275,7 +411,14 @@
 
               <!-- La fuente es opcional: solo se muestra si viene -->
               @if (evento.fuente) {
-                <p class="fuente">Fuente: {{ evento.fuente }}</p>
+                <p class="fuente">
+                  Fuente:
+                  @if (esEnlace(evento.fuente)) {
+                    <a [href]="evento.fuente" target="_blank" rel="noopener noreferrer">{{ evento.fuente }}</a>
+                  } @else {
+                    {{ evento.fuente }}
+                  }
+                </p>
               }
 
             </li>

@@ -6,6 +6,7 @@ import { roleGuard } from './core/role-guard';
 import { InicioComponent } from './features/inicio/inicio-component';
 import { FichaVideojuegoComponent } from './features/videojuego/ficha-videojuego/ficha-videojuego-component';
 import { RegistrarCopiaComponent } from './features/videojuego/registrar-copia/registrar-copia-component';
+import { FormularioVideojuegoComponent } from './features/videojuego/formulario-videojuego/formulario-videojuego-component';
 
 /*
  * Rutas principales de la app. Catálogo, Instituciones y Login declaran las
@@ -17,6 +18,8 @@ import { RegistrarCopiaComponent } from './features/videojuego/registrar-copia/r
  *
  *  - /                              -> Inicio
  *  - /videojuegos/:id               -> ficha del videojuego
+ *  - /videojuegos/nuevo             -> formulario para crear un videojuego (curador y administrador)
+ *  - /videojuegos/:id/editar        -> formulario para editar un videojuego (curador y administrador)
  *  - /videojuegos/:id/copias/nueva  -> formulario para registrar una copia
  *                                      (solo curador y administrador)
  */
@@ -25,6 +28,20 @@ const routes: Routes = [
     path: '',
     component: InicioComponent,
     canActivate: [authGuard]
+  },
+  {
+    // OJO: 'videojuegos/nuevo' va ANTES de 'videojuegos/:id'; si no, Angular
+    // tomaría la palabra "nuevo" como si fuera un id.
+    path: 'videojuegos/nuevo',
+    component: FormularioVideojuegoComponent,
+    canActivate: [authGuard, roleGuard],
+    data: { roles: ['curador', 'administrador'] }
+  },
+  {
+    path: 'videojuegos/:id/editar',
+    component: FormularioVideojuegoComponent,
+    canActivate: [authGuard, roleGuard],
+    data: { roles: ['curador', 'administrador'] }
   },
   {
     path: 'videojuegos/:id',

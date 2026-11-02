@@ -1,0 +1,149 @@
+<!--
+  Tres casos posibles:
+   1. cargando: se esperan los estudios, las editoras y (al editar) el juego
+   2. hubo un error de carga (por ejemplo, el id no existe)
+   3. todo listo: se dibuja el formulario
+-->
+@if (cargando) {
+
+  <p class="mensaje">Cargando…</p>
+
+} @else if (hayErrorCarga) {
+
+  <p class="mensaje">
+    No pudimos cargar los datos del formulario.
+    <a routerLink="/catalogo">Volver al catálogo</a>
+  </p>
+
+} @else {
+
+  <!-- Migas de pan: Inicio / Catálogo / (juego) / acción -->
+  <nav class="migas" aria-label="Migas de pan">
+    <a routerLink="/">Inicio</a>
+    <span class="separador" aria-hidden="true">/</span>
+    <a routerLink="/catalogo">Catálogo</a>
+    <span class="separador" aria-hidden="true">/</span>
+    @if (modoEdicion) {
+      <a [routerLink]="['/videojuegos', idVideojuego]">{{ tituloOriginal }}</a>
+      <span class="separador" aria-hidden="true">/</span>
+    }
+    <span aria-current="page">{{ modoEdicion ? 'Editar' : 'Nuevo videojuego' }}</span>
+  </nav>
+
+  <header class="encabezado">
+    <h1 class="titulo">{{ titulo }}</h1>
+    @if (modoEdicion) {
+      <p class="subtitulo">Videojuego: {{ tituloOriginal }}</p>
+    }
+  </header>
+
+  <form class="formulario" [formGroup]="formulario" (ngSubmit)="guardar()" novalidate>
+
+    <div class="grupo">
+      <label class="etiqueta" for="campo-titulo">Título</label>
+      <input id="campo-titulo" class="campo" type="text" formControlName="titulo"
+             [class.invalido]="mostrarError('titulo')" [attr.aria-invalid]="mostrarError('titulo')">
+      @if (mostrarError('titulo')) {
+        <p class="error">{{ textoError('titulo') }}</p>
+      }
+    </div>
+
+    <div class="grupo">
+      <label class="etiqueta" for="campo-genero">Género</label>
+      <input id="campo-genero" class="campo" type="text" formControlName="genero"
+             placeholder="Ej.: Aventura"
+             [class.invalido]="mostrarError('genero')" [attr.aria-invalid]="mostrarError('genero')">
+      @if (mostrarError('genero')) {
+        <p class="error">{{ textoError('genero') }}</p>
+      }
+    </div>
+
+    <div class="grupo">
+      <label class="etiqueta" for="campo-plataforma">Plataforma original</label>
+      <input id="campo-plataforma" class="campo" type="text" formControlName="plataformaOriginal"
+             placeholder="Ej.: Nintendo 64"
+             [class.invalido]="mostrarError('plataformaOriginal')" [attr.aria-invalid]="mostrarError('plataformaOriginal')">
+      @if (mostrarError('plataformaOriginal')) {
+        <p class="error">{{ textoError('plataformaOriginal') }}</p>
+      }
+    </div>
+
+    <div class="grupo">
+      <label class="etiqueta" for="campo-anio">Año de lanzamiento</label>
+      <input id="campo-anio" class="campo" type="number" formControlName="anioLanzamiento"
+             [min]="anioMinimo" [max]="anioMaximo"
+             [class.invalido]="mostrarError('anioLanzamiento')" [attr.aria-invalid]="mostrarError('anioLanzamiento')">
+      @if (mostrarError('anioLanzamiento')) {
+        <p class="error">{{ textoError('anioLanzamiento') }}</p>
+      }
+    </div>
+
+    <div class="grupo">
+      <label class="etiqueta" for="campo-estado">Estado de conservación</label>
+      <select id="campo-estado" class="campo" formControlName="estadoConservacion">
+        @for (opcion of opcionesEstado; track opcion.valor) {
+          <option [value]="opcion.valor">{{ opcion.etiqueta }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="grupo">
+      <label class="etiqueta" for="campo-estudio">Estudio</label>
+      <select id="campo-estudio" class="campo" formControlName="idEstudio"
+              [class.invalido]="mostrarError('idEstudio')" [attr.aria-invalid]="mostrarError('idEstudio')">
+        <option value="" disabled>Elige un estudio</option>
+        @for (estudio of estudios; track estudio.idEstudio) {
+          <option [ngValue]="estudio.idEstudio">{{ estudio.nombre }} ({{ estudio.pais }})</option>
+        }
+      </select>
+      @if (mostrarError('idEstudio')) {
+        <p class="error">{{ textoError('idEstudio') }}</p>
+      }
+    </div>
+
+    <!-- Editoras: casillas; se pueden marcar varias o ninguna -->
+    <fieldset class="grupo">
+      <legend class="etiqueta">Editoras <span class="opcional">(opcional)</span></legend>
+
+      <div class="lista-casillas">
+        @for (editora of editoras; track editora.idEditora) {
+          <label class="casilla">
+            <input type="checkbox"
+                   [checked]="estaSeleccionada(editora.idEditora)"
+                   (change)="alternarEditora(editora.idEditora)">
+            <span>{{ editora.nombre }} ({{ editora.pais }})</span>
+          </label>
+        } @empty {
+          <p class="ayuda">No hay editoras registradas.</p>
+        }
+      </div>
+    </fieldset>
+
+    <div class="grupo">
+      <label class="etiqueta" for="campo-descripcion">Descripción <span class="opcional">(opcional)</span></label>
+      <textarea id="campo-descripcion" class="campo area" rows="4" formControlName="descripcion"
+                [class.invalido]="mostrarError('descripcion')"></textarea>
+      @if (mostrarError('descripcion')) {
+        <p class="error">{{ textoError('descripcion') }}</p>
+      }
+    </div>
+
+    @if (errorEnvio) {
+      <p class="error-general" role="alert">{{ errorEnvio }}</p>
+    }
+
+    <div class="botones">
+      <button type="button" class="boton-secundario" (click)="cancelar()">Cancelar</button>
+
+      <button type="submit" class="boton-principal" [disabled]="guardando">
+        @if (guardando) {
+          Guardando…
+        } @else {
+          Guardar
+        }
+      </button>
+    </div>
+
+  </form>
+
+}

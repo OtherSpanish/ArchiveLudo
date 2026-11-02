@@ -4,8 +4,15 @@ import { ActivatedRoute, ParamMap, Router } from '@angular/router';
 import { Videojuego } from '../../../shared/models/videojuego-model';
 import { CopiaNueva, EstadoIntegridad, TipoCopia } from '../../../shared/models/copia-model';
 
-// ===== BACK: descomentar esta línea al conectar =====
-// import { ArchiveludoApiService } from '../../../core/archiveludo-api-service';
+import { HttpErrorResponse } from '@angular/common/http';
+import { ArchiveludoApiService } from '../../../core/archiveludo-api-service';
+
+/* Unidad en la que el usuario escribe el tamaño; "factor" la convierte a bytes. */
+interface UnidadTamanio {
+  valor: string;
+  etiqueta: string;
+  factor: number;
+}
 
 /* Una opción de los botones de selección: el valor que se guarda y el texto que se ve. */
 interface Opcion<T> {
@@ -54,8 +61,15 @@ export class RegistrarCopiaComponent implements OnInit {
   /* Mensaje si el back responde un error al guardar. Vacío si no hay error. */
   errorEnvio: string = '';
 
-  /* Fecha máxima del campo de fecha: hoy. No se puede registrar una copia en el futuro. */
-  hoy: string = this.fechaHoy();
+  /*
+   * Unidades del tamaño. El usuario escribe "700" y elige "MB"; al enviar,
+   * se convierte a bytes (700 x 1024 x 1024), que es lo que pide el back.
+   */
+  unidadesTamanio: UnidadTamanio[] = [
+    { valor: 'KB', etiqueta: 'KB', factor: 1024 },
+    { valor: 'MB', etiqueta: 'MB', factor: 1024 * 1024 },
+    { valor: 'GB', etiqueta: 'GB', factor: 1024 * 1024 * 1024 }
+  ];
 
   /* Opciones del tipo de copia, en el orden en que se muestran. */
   opcionesTipo: Opcion<TipoCopia>[] = [
@@ -79,131 +93,76 @@ export class RegistrarCopiaComponent implements OnInit {
   private camposDigital: string[] = ['formatoArchivo', 'tamanio', 'hashVerificacion'];
   private obligatoriosDigital: string[] = ['formatoArchivo', 'tamanio', 'hashVerificacion'];
 
-  // ==================================================================
-  // ===== HARDCODE: borrar este bloque al conectar el back =====
-  // (incluye titulosPrueba, el constructor y las funciones
-  //  cargarJuego y enviarCopia)
-  // ==================================================================
-
-  /*
-   * Juegos de prueba. La llave es el id del videojuego. Solo existen los
-   * mismos dos que tienen ficha de prueba (1 y 8); con otro id se ve
-   * "No encontramos ese videojuego".
-   */
-  private titulosPrueba: Record<number, Videojuego> = {
-    1: {
-      idVideojuego: 1,
-      titulo: 'Torre de Ámbar Online',
-      plataformaOriginal: 'PC',
-      anioLanzamiento: 2007,
-      estadoConservacion: 'en_riesgo'
-    },
-    8: {
-      idVideojuego: 8,
-      titulo: 'Furia Quark',
-      plataformaOriginal: 'Arcade',
-      anioLanzamiento: 1994,
-      estadoConservacion: 'restaurado'
-    }
-  };
-
   /*
    * ActivatedRoute lee datos de la URL; Router cambia de pantalla;
-   * FormBuilder arma el formulario; ChangeDetectorRef avisa a Angular que
-   * hay que redibujar. Angular entrega las cuatro solas (inyección).
+   * FormBuilder arma el formulario; ArchiveludoApiService habla con el back;
+   * ChangeDetectorRef avisa a Angular que hay que redibujar.
    */
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private constructorFormulario: FormBuilder,
+    private api: ArchiveludoApiService,
     private cambios: ChangeDetectorRef
   ) { }
 
-  /* Busca el juego en los datos de prueba. Si el id no existe, se queda sin valor. */
+  /* Pide el videojuego para mostrar su título: GET /api/videojuegos/{id} */
   private cargarJuego(id: number): void {
-    this.videojuego = this.titulosPrueba[id];
+    this.api.obtenerVideojuego(id).subscribe({
+      next: (videojuego) => this.alRecibirJuego(videojuego),
+      error: () => this.alFallarJuego()
+    });
+  }
+
+  private alRecibirJuego(videojuego: Videojuego): void {
+    this.videojuego = videojuego;
     this.cargando = false;
+
     this.cambios.markForCheck();
   }
 
-  /*
-   * Simula lo que haría el back: acepta la copia y vuelve a la ficha.
-   * OJO: la copia no se guarda en ningún lado, así que no aparecerá en la
-   * lista de la ficha hasta que se conecte el back.
-   */
+  /* Si el back responde error (por ejemplo 404), el HTML muestra "No encontramos ese videojuego". */
+  private alFallarJuego(): void {
+    this.videojuego = undefined;
+    this.cargando = false;
+
+    this.cambios.markForCheck();
+  }
+
+  /* Envía la copia: POST /api/videojuegos/{id}/copias */
   private enviarCopia(copia: CopiaNueva): void {
+    this.api.crearCopia(this.idVideojuego, copia).subscribe({
+      next: () => this.alGuardar(),
+      error: (error) => this.alFallarGuardado(error)
+    });
+  }
+
+  private alGuardar(): void {
     this.guardando = false;
     this.volverALaFicha();
   }
 
-  // ==================================================================
-  // ===== FIN DEL HARDCODE =====
-  // ==================================================================
+  /*
+   * Si falla, el formulario se queda como estaba y se muestra un mensaje:
+   *  - 400: el back explica qué dato está mal (viene en error.error.mensaje)
+   *  - 403: el rol de consulta no puede registrar copias
+   *  - otro: mensaje general
+   */
+  private alFallarGuardado(error: HttpErrorResponse): void {
+    console.error('No se pudo registrar la copia', error);
+    this.guardando = false;
 
+    if (error.status === 400 && error.error && error.error.mensaje) {
+      this.errorEnvio = error.error.mensaje;
+    } else if (error.status === 403) {
+      this.errorEnvio = 'Tu rol no permite registrar copias.';
+    } else {
+      this.errorEnvio = 'No se pudo registrar la copia. Revisa los datos e inténtalo de nuevo.';
+    }
 
-  // ==================================================================
-  // ===== BACK: descomentar todo este bloque al conectar =====
-  // (en WebStorm: seleccionarlo y Ctrl + /)
-  // ==================================================================
+    this.cambios.markForCheck();
+  }
 
-  // // ArchiveludoApiService habla con el back. ChangeDetectorRef ya está
-  // // importado arriba, porque la pantalla lo necesita siempre.
-  // constructor(
-  //   private route: ActivatedRoute,
-  //   private router: Router,
-  //   private constructorFormulario: FormBuilder,
-  //   private api: ArchiveludoApiService,
-  //   private cambios: ChangeDetectorRef
-  // ) { }
-  //
-  // // Pide el videojuego para mostrar su título: GET /api/videojuegos/{id}
-  // private cargarJuego(id: number): void {
-  //   this.api.obtenerFicha(id).subscribe({
-  //     next: (datos) => this.alRecibirJuego(datos.videojuego),
-  //     error: () => this.alFallarJuego()
-  //   });
-  // }
-  //
-  // private alRecibirJuego(videojuego: Videojuego): void {
-  //   this.videojuego = videojuego;
-  //   this.cargando = false;
-  //
-  //   this.cambios.markForCheck();
-  // }
-  //
-  // // Si el back responde error (por ejemplo 404), el juego se queda sin valor
-  // // y el HTML muestra "No encontramos ese videojuego".
-  // private alFallarJuego(): void {
-  //   this.cargando = false;
-  //
-  //   this.cambios.markForCheck();
-  // }
-  //
-  // // Envía la copia: POST /api/videojuegos/{id}/copias
-  // private enviarCopia(copia: CopiaNueva): void {
-  //   this.api.crearCopia(this.idVideojuego, copia).subscribe({
-  //     next: () => this.alGuardar(),
-  //     error: (error) => this.alFallarGuardado(error)
-  //   });
-  // }
-  //
-  // private alGuardar(): void {
-  //   this.guardando = false;
-  //   this.volverALaFicha();
-  // }
-  //
-  // // Si falla, el formulario se queda como estaba y se muestra un mensaje.
-  // private alFallarGuardado(error: unknown): void {
-  //   console.error('No se pudo registrar la copia', error);
-  //   this.guardando = false;
-  //   this.errorEnvio = 'No se pudo registrar la copia. Revisa los datos e inténtalo de nuevo.';
-  //
-  //   this.cambios.markForCheck();
-  // }
-
-  // ==================================================================
-  // ===== FIN DEL BLOQUE BACK =====
-  // ==================================================================
 
 
   /*
@@ -237,12 +196,12 @@ export class RegistrarCopiaComponent implements OnInit {
     this.formulario = this.constructorFormulario.group({
       tipoCopia: ['digital', Validators.required],
       estadoIntegridad: ['buena', Validators.required],
-      fechaRegistro: [this.hoy, Validators.required],
       tipoSoporte: [''],
       numeroSerie: [''],
       ubicacionFisica: [''],
       formatoArchivo: [''],
       tamanio: [''],
+      unidadTamanio: ['MB'],
       hashVerificacion: ['']
     });
 
@@ -274,7 +233,10 @@ export class RegistrarCopiaComponent implements OnInit {
     for (const nombre of activos) {
       const control = this.formulario.controls[nombre];
 
-      if (obligatorios.includes(nombre)) {
+      if (nombre === 'tamanio') {
+        // El tamaño debe ser un número mayor que 0
+        control.setValidators([Validators.required, Validators.min(0.000001)]);
+      } else if (obligatorios.includes(nombre)) {
         control.setValidators([Validators.required, Validators.maxLength(255)]);
       } else {
         control.setValidators([Validators.maxLength(255)]);
@@ -317,6 +279,9 @@ export class RegistrarCopiaComponent implements OnInit {
     if (control.hasError('required')) {
       return 'Este campo es obligatorio.';
     }
+    if (control.hasError('min')) {
+      return 'Debe ser un número mayor que 0.';
+    }
     if (control.hasError('maxlength')) {
       return 'Máximo 255 caracteres.';
     }
@@ -343,15 +308,15 @@ export class RegistrarCopiaComponent implements OnInit {
   /*
    * Arma el cuerpo que se envía al back (CopiaNueva). Solo incluye los campos
    * del tipo elegido, sin espacios sobrantes; el número de serie, que es
-   * opcional, se omite si está vacío.
+   * opcional, se omite si está vacío. La fecha y el usuario NO se envían:
+   * los pone el back.
    */
   private armarCopia(): CopiaNueva {
     const datos = this.formulario.getRawValue();
 
     const copia: CopiaNueva = {
       tipoCopia: datos.tipoCopia,
-      estadoIntegridad: datos.estadoIntegridad,
-      fechaRegistro: datos.fechaRegistro
+      estadoIntegridad: datos.estadoIntegridad
     };
 
     if (datos.tipoCopia === 'fisica') {
@@ -364,7 +329,7 @@ export class RegistrarCopiaComponent implements OnInit {
       }
     } else {
       copia.formatoArchivo = datos.formatoArchivo.trim();
-      copia.tamanio = datos.tamanio.trim();
+      copia.tamanio = this.convertirABytes(Number(datos.tamanio), datos.unidadTamanio);
       copia.hashVerificacion = datos.hashVerificacion.trim();
     }
 
@@ -382,16 +347,19 @@ export class RegistrarCopiaComponent implements OnInit {
   }
 
   /*
-   * Fecha de hoy como texto 'yyyy-MM-dd', en la hora local del usuario.
-   * No se usa toISOString() porque devuelve la fecha en UTC, y de noche en
-   * Colombia ya sería "mañana". getMonth() empieza en 0, por eso el + 1.
+   * Convierte el tamaño escrito por el usuario a bytes.
+   * Busca la unidad elegida (KB, MB o GB) y multiplica por su factor.
+   * Ejemplo: 700 MB -> 700 x 1048576 = 734003200.
    */
-  private fechaHoy(): string {
-    const ahora = new Date();
-    const anio = ahora.getFullYear();
-    const mes = String(ahora.getMonth() + 1).padStart(2, '0');
-    const dia = String(ahora.getDate()).padStart(2, '0');
+  private convertirABytes(valor: number, unidad: string): number {
+    let factor = 1;
 
-    return anio + '-' + mes + '-' + dia;
+    for (const opcion of this.unidadesTamanio) {
+      if (opcion.valor === unidad) {
+        factor = opcion.factor;
+      }
+    }
+
+    return Math.round(valor * factor);
   }
 }

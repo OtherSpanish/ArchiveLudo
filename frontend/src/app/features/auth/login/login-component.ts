@@ -1,10 +1,11 @@
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../../../core/auth-service';
 import { CredencialesLogin } from '../../../shared/models/sesion-model';
 
-/* Una cuenta de prueba que se muestra como ayuda en la pantalla (solo hardcode). */
+/* Una cuenta de prueba que se muestra como ayuda en la pantalla (el HTML la dibuja solo si la lista tiene elementos). */
 interface CuentaPrueba {
   nombreUsuario: string;
   rol: string;
@@ -12,9 +13,8 @@ interface CuentaPrueba {
 
 /*
  * Pantalla de inicio de sesión (/login). Es la única ruta pública.
- * El login lo hace AuthService: con el hardcode busca en cuentas de prueba
- * y con el back llama a POST /api/auth/login. Esta pantalla no cambia entre
- * las dos versiones.
+ * El login lo hace AuthService, que llama a POST /api/auth/login.
+ * Se entra con el CORREO y la contraseña.
  */
 @Component({
   selector: 'app-login',
@@ -24,7 +24,7 @@ interface CuentaPrueba {
 })
 export class LoginComponent implements OnInit {
 
-  /* El formulario con usuario y contraseña. Se arma en ngOnInit. */
+  /* El formulario con correo y contraseña. Se arma en ngOnInit. */
   formulario!: FormGroup;
 
   /*
@@ -45,34 +45,11 @@ export class LoginComponent implements OnInit {
    */
   private destino: string = '/';
 
-  // ==================================================================
-  // ===== HARDCODE: borrar este bloque al conectar el back =====
-  // (incluye cuentasPrueba; el HTML muestra la ayuda solo si la lista
-  //  tiene elementos, así que no hay que tocarlo)
-  // ==================================================================
-
-  /* Cuentas de prueba que existen en AuthService. Todas con la contraseña 1234. */
-  cuentasPrueba: CuentaPrueba[] = [
-    { nombreUsuario: 'consulta', rol: 'Consulta' },
-    { nombreUsuario: 'curador', rol: 'Curador' },
-    { nombreUsuario: 'admin', rol: 'Administrador' }
-  ];
-
-  // ==================================================================
-  // ===== FIN DEL HARDCODE =====
-  // ==================================================================
-
-
-  // ==================================================================
-  // ===== BACK: descomentar esta línea al conectar =====
-  // (con el back no hay cuentas de prueba, así que la lista queda vacía)
-  // ==================================================================
-
-  // cuentasPrueba: CuentaPrueba[] = [];
-
-  // ==================================================================
-  // ===== FIN DEL BLOQUE BACK =====
-  // ==================================================================
+  /*
+   * Cuentas de prueba para mostrar como ayuda. Con el back no hay: la lista
+   * queda vacía y el HTML no dibuja el recuadro.
+   */
+  cuentasPrueba: CuentaPrueba[] = [];
 
   /*
    * Angular entrega estas cuatro herramientas solas (inyección de dependencias):
@@ -94,7 +71,7 @@ export class LoginComponent implements OnInit {
    */
   ngOnInit(): void {
     this.formulario = this.constructorFormulario.group({
-      nombreUsuario: ['', Validators.required],
+      correo: ['', Validators.required],
       contrasenia: ['', Validators.required]
     });
 
@@ -157,9 +134,32 @@ export class LoginComponent implements OnInit {
     console.error('No se pudo iniciar sesión', error);
 
     this.iniciando = false;
-    this.errorLogin = 'Usuario o contraseña incorrectos.';
+    this.errorLogin = this.textoDelError(error);
     this.formulario.controls['contrasenia'].setValue('');
 
     this.cambios.markForCheck();
+  }
+
+  /*
+   * Elige el mensaje según lo que respondió el back:
+   *  - estado 0: la petición ni llegó (back apagado, o la app abierta en
+   *    127.0.0.1 en vez de localhost y el navegador la bloqueó por CORS)
+   *  - 400: el back explica qué falta, en el campo "mensaje"
+   *  - 500 o más: falla del servidor
+   *  - cualquier otro caso (el 401 normal): credenciales incorrectas
+   */
+  private textoDelError(error: unknown): string {
+    if (error instanceof HttpErrorResponse) {
+      if (error.status === 0) {
+        return 'No se pudo conectar con el servidor. Revisa que el back esté encendido y que abras la app en localhost:4200.';
+      }
+      if (error.status === 400 && error.error && error.error.mensaje) {
+        return error.error.mensaje;
+      }
+      if (error.status >= 500) {
+        return 'El servidor tuvo un problema. Inténtalo más tarde.';
+      }
+    }
+    return 'Correo o contraseña incorrectos.';
   }
 }

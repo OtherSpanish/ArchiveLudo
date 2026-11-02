@@ -1,0 +1,166 @@
+<!-- Migas de pan: Inicio / Administración / Usuarios -->
+<nav class="migas" aria-label="Migas de pan">
+  <a routerLink="/">Inicio</a>
+  <span class="separador" aria-hidden="true">/</span>
+  <span>Administración</span>
+  <span class="separador" aria-hidden="true">/</span>
+  <span aria-current="page">Usuarios</span>
+</nav>
+
+<!-- Cambio entre las pantallas de administración -->
+<nav class="subnav" aria-label="Secciones de administración">
+  <a class="subenlace" routerLink="/administracion/estudios" routerLinkActive="activo">Estudios</a>
+  <a class="subenlace" routerLink="/administracion/editoras" routerLinkActive="activo">Editoras</a>
+  <a class="subenlace" routerLink="/administracion/instituciones" routerLinkActive="activo">Instituciones</a>
+  <a class="subenlace" routerLink="/administracion/usuarios" routerLinkActive="activo">Usuarios</a>
+</nav>
+
+<header class="encabezado">
+  <h1 class="titulo">Usuarios</h1>
+
+  @if (!mostrarFormulario) {
+    <button type="button" class="boton-principal" (click)="abrirNuevo()">Nuevo usuario</button>
+  }
+</header>
+
+<!-- Formulario (crear o editar) -->
+@if (mostrarFormulario) {
+  <form class="formulario" [formGroup]="formulario" (ngSubmit)="guardar()" novalidate>
+
+    <h2 class="titulo-formulario">{{ editando ? 'Editar usuario' : 'Nuevo usuario' }}</h2>
+
+    <div class="grupo">
+      <label class="etiqueta" for="campo-primer-nombre">Primer nombre</label>
+      <input id="campo-primer-nombre" class="campo" type="text" formControlName="primerNombre"
+             [class.invalido]="mostrarError('primerNombre')">
+      @if (mostrarError('primerNombre')) {
+        <p class="error">{{ textoError('primerNombre') }}</p>
+      }
+    </div>
+
+    <div class="grupo">
+      <label class="etiqueta" for="campo-segundo-nombre">Segundo nombre <span class="opcional">(opcional)</span></label>
+      <input id="campo-segundo-nombre" class="campo" type="text" formControlName="segundoNombre"
+             [class.invalido]="mostrarError('segundoNombre')">
+      @if (mostrarError('segundoNombre')) {
+        <p class="error">{{ textoError('segundoNombre') }}</p>
+      }
+    </div>
+
+    <div class="grupo">
+      <label class="etiqueta" for="campo-primer-apellido">Primer apellido</label>
+      <input id="campo-primer-apellido" class="campo" type="text" formControlName="primerApellido"
+             [class.invalido]="mostrarError('primerApellido')">
+      @if (mostrarError('primerApellido')) {
+        <p class="error">{{ textoError('primerApellido') }}</p>
+      }
+    </div>
+
+    <div class="grupo">
+      <label class="etiqueta" for="campo-segundo-apellido">Segundo apellido <span class="opcional">(opcional)</span></label>
+      <input id="campo-segundo-apellido" class="campo" type="text" formControlName="segundoApellido"
+             [class.invalido]="mostrarError('segundoApellido')">
+      @if (mostrarError('segundoApellido')) {
+        <p class="error">{{ textoError('segundoApellido') }}</p>
+      }
+    </div>
+
+    <div class="grupo">
+      <label class="etiqueta" for="campo-correo">Correo</label>
+      <input id="campo-correo" class="campo" type="email" formControlName="correo"
+             placeholder="nombre@gmail.com"
+             [class.invalido]="mostrarError('correo')">
+      @if (mostrarError('correo')) {
+        <p class="error">{{ textoError('correo') }}</p>
+      }
+    </div>
+
+    <div class="grupo">
+      <label class="etiqueta" for="campo-contrasenia">
+        Contraseña
+        @if (esEdicion) {
+          <span class="opcional">(déjala vacía para no cambiarla)</span>
+        }
+      </label>
+      <input id="campo-contrasenia" class="campo" type="password" formControlName="contrasenia"
+             autocomplete="new-password"
+             [class.invalido]="mostrarError('contrasenia')">
+      @if (mostrarError('contrasenia')) {
+        <p class="error">{{ textoError('contrasenia') }}</p>
+      }
+    </div>
+
+    <div class="grupo">
+      <label class="etiqueta" for="campo-rol">Rol</label>
+      <select id="campo-rol" class="campo" formControlName="rol">
+        @for (opcion of opcionesRol; track opcion.valor) {
+          <option [value]="opcion.valor">{{ opcion.etiqueta }}</option>
+        }
+      </select>
+    </div>
+
+    @if (errorMensaje) {
+      <p class="error-general" role="alert">{{ errorMensaje }}</p>
+    }
+
+    <div class="botones">
+      <button type="button" class="boton-secundario" (click)="cancelarFormulario()">Cancelar</button>
+      <button type="submit" class="boton-principal" [disabled]="guardando">
+        @if (guardando) {
+          Guardando…
+        } @else {
+          Guardar
+        }
+      </button>
+    </div>
+
+  </form>
+}
+
+<!-- Error fuera del formulario (por ejemplo, al eliminar) -->
+@if (errorMensaje && !mostrarFormulario) {
+  <p class="error-general" role="alert">{{ errorMensaje }}</p>
+}
+
+<!-- Lista de usuarios -->
+@if (cargando) {
+
+  <p class="mensaje">Cargando usuarios…</p>
+
+} @else if (hayError) {
+
+  <p class="mensaje">No pudimos cargar los usuarios. Intenta de nuevo más tarde.</p>
+
+} @else {
+
+  <ul class="lista-registros">
+    @for (usuario of usuarios; track usuario.idUsuario) {
+      <li class="registro">
+
+        <div class="datos-registro">
+          <span class="nombre-registro">{{ nombreCompleto(usuario) }}</span>
+          <span class="detalle-registro">{{ usuario.correo }} · {{ textoRol(usuario.rol) }}</span>
+        </div>
+
+        <div class="acciones-registro">
+          @if (idConfirmandoEliminar === usuario.idUsuario) {
+            <span class="texto-confirmacion">¿Eliminar?</span>
+            <button type="button" class="boton-secundario boton-chico" (click)="cancelarEliminar()">No</button>
+            <button type="button" class="boton-peligro boton-chico" (click)="confirmarEliminar(usuario)">Sí, eliminar</button>
+          } @else {
+            <button type="button" class="boton-secundario boton-chico" (click)="abrirEditar(usuario)">Editar</button>
+
+            <!-- No se puede eliminar la cuenta con la que se está usando el sistema -->
+            @if (!esUsuarioActual(usuario)) {
+              <button type="button" class="boton-eliminar boton-chico" (click)="pedirEliminar(usuario)">Eliminar</button>
+            }
+          }
+        </div>
+
+      </li>
+    } @empty {
+      <li class="mensaje">Todavía no hay usuarios registrados.</li>
+    }
+  </ul>
+
+}

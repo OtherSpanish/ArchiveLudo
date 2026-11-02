@@ -85,7 +85,7 @@ export class CopiaCardComponent {
         etiqueta: 'Formato de archivo',
         valor: this.valorOGuion(this.copia.formatoArchivo),
       });
-      lista.push({ etiqueta: 'Tamaño', valor: this.valorOGuion(this.copia.tamanio) });
+      lista.push({ etiqueta: 'Tamaño', valor: this.formatearTamano(this.copia.tamanio) });
       lista.push({
         etiqueta: 'Hash de verificación',
         valor: this.valorOGuion(this.copia.hashVerificacion),
@@ -112,6 +112,31 @@ export class CopiaCardComponent {
       ' · Registrada el ' +
       this.formatearFecha(this.copia.fechaRegistro)
     );
+  }
+
+  /*
+   * El back manda el tamaño en BYTES (por ejemplo 734003200).
+   * Lo convierte a un texto legible: "700 MB". Divide entre 1024 mientras
+   * el número sea grande, y avanza por las unidades B, KB, MB, GB.
+   */
+  private formatearTamano(bytes?: number): string {
+    if (bytes === undefined || bytes === null) {
+      return '—';
+    }
+
+    const unidades: string[] = ['B', 'KB', 'MB', 'GB', 'TB'];
+    let valor = bytes;
+    let posicion = 0;
+
+    while (valor >= 1024 && posicion < unidades.length - 1) {
+      valor = valor / 1024;
+      posicion++;
+    }
+
+    // Hasta 1 decimal, sin ".0" sobrante: 700 -> "700", 1.5 -> "1.5"
+    const texto = String(Math.round(valor * 10) / 10);
+
+    return texto + ' ' + unidades[posicion];
   }
 
   /* Si el valor viene vacío, devuelve un guion largo en su lugar. */
