@@ -2,10 +2,18 @@ package co.edu.unbosque.archiveludo.exceptions;
 
 import java.time.LocalDate;
 
+import co.edu.unbosque.archiveludo.entity.CompaniaEditora;
+import co.edu.unbosque.archiveludo.entity.EstatusLegal;
+import co.edu.unbosque.archiveludo.entity.Estudio;
+import co.edu.unbosque.archiveludo.entity.Institucion;
+import co.edu.unbosque.archiveludo.entity.Usuario;
 import co.edu.unbosque.archiveludo.entity.Videojuego;
 import co.edu.unbosque.archiveludo.model.EstadoConservacion;
+import co.edu.unbosque.archiveludo.model.EstadoEstudio;
 import co.edu.unbosque.archiveludo.model.EstadoIntegridad;
 import co.edu.unbosque.archiveludo.model.Rol;
+import co.edu.unbosque.archiveludo.model.TipoEstatusLegal;
+import co.edu.unbosque.archiveludo.model.TipoInstitucion;
 
 /**
  * Lanzador de las excepciones propias de ArchiveLudo.
@@ -17,11 +25,18 @@ public class LanzadorException {
 	/** Anio minimo aceptado como anio de lanzamiento de un videojuego. */
 	private static final int ANIO_MINIMO_LANZAMIENTO = 1950;
 
+	/** Anio minimo aceptado como anio de fundacion de un estudio. */
+	private static final int ANIO_MINIMO_FUNDACION = 1800;
+
 	/** Cantidad de elementos por pagina cuando no se envia el parametro limite. */
 	private static final int LIMITE_POR_DEFECTO = 10;
 
 	/** Cantidad maxima de elementos que se pueden pedir en una pagina. */
 	private static final int LIMITE_MAXIMO = 50;
+
+	/** Rango de digitos de un telefono (la columna es NUMERIC(15, 0)). */
+	private static final int DIGITOS_MINIMOS_TELEFONO = 7;
+	private static final int DIGITOS_MAXIMOS_TELEFONO = 15;
 
 	/**
 	 * Verifica que un id recibido por la URL sea valido.
@@ -238,10 +253,23 @@ public class LanzadorException {
 			throw new AnioInvalidoException(ANIO_MINIMO_LANZAMIENTO, anioMaximo);
 		}
 
-		if (anio < ANIO_MINIMO_LANZAMIENTO || anio > anioMaximo) {
+		verificarAnioLanzamiento(anio);
+		return anio;
+	}
+
+	/**
+	 * Verifica que el anio de lanzamiento (que llega en el cuerpo de la peticion) este entre 1950
+	 * y el anio actual. Si no se envio, llega en 0 y tambien es invalido.
+	 *
+	 * @param anioLanzamiento anio a verificar
+	 * @throws AnioInvalidoException si esta fuera del rango
+	 */
+	public static void verificarAnioLanzamiento(int anioLanzamiento) {
+		int anioMaximo = LocalDate.now().getYear();
+
+		if (anioLanzamiento < ANIO_MINIMO_LANZAMIENTO || anioLanzamiento > anioMaximo) {
 			throw new AnioInvalidoException(ANIO_MINIMO_LANZAMIENTO, anioMaximo);
 		}
-		return anio;
 	}
 
 	/**
@@ -346,6 +374,269 @@ public class LanzadorException {
 	public static void verificarTamanioValido(long tamanio) {
 		if (tamanio <= 0) {
 			throw new TamanioInvalidoException();
+		}
+	}
+
+	/**
+	 * Verifica que el usuario buscado exista.
+	 *
+	 * @param usuario   resultado de la busqueda en el repository
+	 * @param idUsuario id que se busco (para el mensaje)
+	 * @throws UsuarioNoEncontradoException si el usuario es null
+	 */
+	public static void verificarUsuarioExiste(Usuario usuario, long idUsuario) {
+		if (usuario == null) {
+			throw new UsuarioNoEncontradoException(idUsuario);
+		}
+	}
+
+	/**
+	 * Verifica que nada dependa del registro antes de eliminarlo.
+	 * La usan todos los DELETE.
+	 *
+	 * @param tieneRegistrosAsociados resultado de contar los registros que dependen de el
+	 * @param recursoConArticulo      por ejemplo "el usuario" o "la copia" (para el mensaje)
+	 * @param id                      id del registro que se quiere eliminar
+	 * @throws RegistroAsociadoException si tiene registros asociados
+	 */
+	public static void verificarSinRegistrosAsociados(boolean tieneRegistrosAsociados, String recursoConArticulo,
+			long id) {
+		if (tieneRegistrosAsociados) {
+			throw new RegistroAsociadoException(recursoConArticulo, id);
+		}
+	}
+
+	/**
+	 * Verifica que el estudio buscado exista.
+	 *
+	 * @param estudio   resultado de la busqueda en el repository
+	 * @param idEstudio id que se busco (para el mensaje)
+	 * @throws EstudioNoEncontradoException si el estudio es null
+	 */
+	public static void verificarEstudioExiste(Estudio estudio, long idEstudio) {
+		if (estudio == null) {
+			throw new EstudioNoEncontradoException(idEstudio);
+		}
+	}
+
+	/**
+	 * Convierte el texto del estado de un estudio ("activo" o "desaparecido") al enum EstadoEstudio.
+	 *
+	 * @param textoEstado estado tal como llego en el cuerpo de la peticion
+	 * @return el estado correspondiente
+	 * @throws DatosEstudioInvalidosException si viene vacio o no es activo ni desaparecido
+	 */
+	public static EstadoEstudio convertirEstadoEstudio(String textoEstado) {
+		String mensaje = "El estado actual del estudio debe ser activo o desaparecido";
+
+		if (textoEstado == null || textoEstado.trim().isEmpty()) {
+			throw new DatoEstudioInvalidoException(mensaje);
+		}
+
+		EstadoEstudio estado = EstadoEstudio.buscarPorValor(textoEstado.trim().toLowerCase());
+		if (estado == null) {
+			throw new DatoEstudioInvalidoException(mensaje);
+		}
+		return estado;
+	}
+
+	/**
+	 * Verifica los anios de un estudio. Son las mismas reglas de los CHECK de la tabla ESTUDIO:
+	 * - el anio de fundacion es obligatorio y esta entre 1800 y el anio actual;
+	 * - un estudio activo NO tiene anio de cierre;
+	 * - un estudio desaparecido SI tiene anio de cierre;
+	 * - el anio de cierre no es anterior al de fundacion ni posterior al anio actual.
+	 *
+	 * @param estado        estado actual del estudio
+	 * @param anioFundacion anio de fundacion
+	 * @param anioCierre    anio de cierre (null si no tiene)
+	 * @throws DatoEstudioInvalidoException si se incumple alguna regla
+	 */
+	public static void verificarAniosEstudio(EstadoEstudio estado, Integer anioFundacion, Integer anioCierre) {
+		int anioActual = LocalDate.now().getYear();
+
+		if (anioFundacion == null) {
+			throw new DatoEstudioInvalidoException("El año de fundacion es obligatorio");
+		}
+		if (anioFundacion < ANIO_MINIMO_FUNDACION || anioFundacion > anioActual) {
+			throw new DatoEstudioInvalidoException(
+					"El año de fundacion debe estar entre " + ANIO_MINIMO_FUNDACION + " y " + anioActual);
+		}
+
+		if (estado == EstadoEstudio.ACTIVO && anioCierre != null) {
+			throw new DatoEstudioInvalidoException("Un estudio activo no puede tener año de cierre");
+		}
+		if (estado == EstadoEstudio.DESAPARECIDO && anioCierre == null) {
+			throw new DatoEstudioInvalidoException("Un estudio desaparecido debe tener año de cierre");
+		}
+
+		if (anioCierre != null) {
+			if (anioCierre < anioFundacion) {
+				throw new DatoEstudioInvalidoException(
+						"El año de cierre no puede ser anterior al año de fundacion");
+			}
+			if (anioCierre > anioActual) {
+				throw new DatoEstudioInvalidoException("El año de cierre no puede ser posterior a " + anioActual);
+			}
+		}
+	}
+
+	/**
+	 * Verifica que la compania editora buscada exista.
+	 *
+	 * @param companiaEditora resultado de la busqueda en el repository
+	 * @param idEditora       id que se busco (para el mensaje)
+	 * @throws CompaniaEditoraNoEncontradaException si la editora es null
+	 */
+	public static void verificarCompaniaEditoraExiste(CompaniaEditora companiaEditora, long idEditora) {
+		if (companiaEditora == null) {
+			throw new CompaniaEditoraNoEncontradaException(idEditora);
+		}
+	}
+
+	/**
+	 * Verifica que la institucion buscada exista.
+	 *
+	 * @param institucion   resultado de la busqueda en el repository
+	 * @param idInstitucion id que se busco (para el mensaje)
+	 * @throws InstitucionNoEncontradaException si la institucion es null
+	 */
+	public static void verificarInstitucionExiste(Institucion institucion, long idInstitucion) {
+		if (institucion == null) {
+			throw new InstitucionNoEncontradaException(idInstitucion);
+		}
+	}
+
+	/**
+	 * Convierte el tipo de institucion al enum TipoInstitucion.
+	 * Acepta el valor de la BD ("coleccion privada") o el texto legible ("Colección privada").
+	 *
+	 * @param textoTipo tipo tal como llego en el cuerpo de la peticion
+	 * @return el tipo correspondiente
+	 * @throws DatoInstitucionInvalidoException si viene vacio o no es uno de los 4 tipos
+	 */
+	public static TipoInstitucion convertirTipoInstitucion(String textoTipo) {
+		String mensaje = "El tipo de institucion debe ser: museo, universidad, archivo o coleccion privada";
+
+		if (textoTipo == null || textoTipo.trim().isEmpty()) {
+			throw new DatoInstitucionInvalidoException(mensaje);
+		}
+
+		TipoInstitucion tipo = TipoInstitucion.buscarPorValor(textoTipo.trim().toLowerCase());
+		if (tipo == null) {
+			tipo = TipoInstitucion.buscarPorTextoLegible(textoTipo.trim());
+		}
+		if (tipo == null) {
+			throw new DatoInstitucionInvalidoException(mensaje);
+		}
+		return tipo;
+	}
+
+	/**
+	 * Verifica que un telefono tenga entre 7 y 15 digitos (la columna es NUMERIC(15, 0)).
+	 *
+	 * @param telefono telefono a verificar
+	 * @throws DatoInstitucionInvalidoException si es nulo, negativo o no tiene entre 7 y 15 digitos
+	 */
+	public static void verificarTelefonoValido(Integer telefono) {
+		String mensaje = "Cada telefono debe ser un numero de entre " + DIGITOS_MINIMOS_TELEFONO + " y "
+				+ DIGITOS_MAXIMOS_TELEFONO + " digitos, sin el signo +";
+
+		if (telefono == null || telefono <= 0) {
+			throw new DatoInstitucionInvalidoException(mensaje);
+		}
+
+		int cantidadDigitos = String.valueOf(telefono).length();
+		if (cantidadDigitos < DIGITOS_MINIMOS_TELEFONO || cantidadDigitos > DIGITOS_MAXIMOS_TELEFONO) {
+			throw new DatoInstitucionInvalidoException(mensaje);
+		}
+	}
+
+	/**
+	 * Verifica el formato de un correo de institucion. A diferencia de verificarCorreoValido
+	 * (usuarios), aqui se acepta cualquier dominio: contacto@museo.org es valido.
+	 *
+	 * @param correo correo a verificar
+	 * @throws DatoInstitucionInvalidoException si esta vacio o no tiene formato de correo
+	 */
+	public static void verificarCorreoInstitucionValido(String correo) {
+		String patronDelCorreo = "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.(?:[A-Za-z]{2,})$";
+
+		if (correo == null || !correo.trim().matches(patronDelCorreo)) {
+			throw new DatoInstitucionInvalidoException("El correo '" + correo + "' no tiene un formato valido");
+		}
+	}
+
+	/**
+	 * Verifica que la institucion tenga al menos un telefono y al menos un correo
+	 * (atributos multivaluados obligatorios). La BD no puede exigirlo con una restriccion,
+	 * por eso se valida aqui.
+	 *
+	 * @param cantidadTelefonos cantidad de telefonos validos (sin repetidos)
+	 * @param cantidadCorreos   cantidad de correos validos (sin repetidos)
+	 * @throws DatoInstitucionInvalidoException si no tiene telefonos o no tiene correos
+	 */
+	public static void verificarInstitucionConContacto(int cantidadTelefonos, int cantidadCorreos) {
+		if (cantidadTelefonos == 0) {
+			throw new DatoInstitucionInvalidoException("La institucion debe tener al menos un telefono");
+		}
+		if (cantidadCorreos == 0) {
+			throw new DatoInstitucionInvalidoException("La institucion debe tener al menos un correo");
+		}
+	}
+	
+
+	/**
+	 * Verifica que el estatus legal buscado exista.
+	 *
+	 * @param estatusLegal resultado de la busqueda en el repository
+	 * @param idEstatus    id que se busco (para el mensaje)
+	 * @throws EstatusLegalNoEncontradoException si el estatus es null
+	 */
+	public static void verificarEstatusLegalExiste(EstatusLegal estatusLegal, long idEstatus) {
+		if (estatusLegal == null) {
+			throw new EstatusLegalNoEncontradoException(idEstatus);
+		}
+	}
+
+	/**
+	 * Convierte el texto del estatus legal al enum TipoEstatusLegal.
+	 * Acepta el valor de la BD ("dominio publico") o el texto legible ("Dominio público").
+	 *
+	 * @param textoEstatus estatus tal como llego en el cuerpo de la peticion
+	 * @return el tipo correspondiente
+	 * @throws DatosEstatusLegalInvalidosException si viene vacio o no es uno de los 4 estatus
+	 */
+	public static TipoEstatusLegal convertirTipoEstatusLegal(String textoEstatus) {
+		String mensaje = "El estatus legal debe ser: protegido, dominio publico, huerfano o abandonware";
+
+		if (textoEstatus == null || textoEstatus.trim().isEmpty()) {
+			throw new DatoEstatusLegalInvalidoException(mensaje);
+		}
+
+		TipoEstatusLegal tipo = TipoEstatusLegal.buscarPorValor(textoEstatus.trim().toLowerCase());
+		if (tipo == null) {
+			tipo = TipoEstatusLegal.buscarPorValor(textoEstatus.trim());
+		}
+		if (tipo == null) {
+			throw new DatoEstatusLegalInvalidoException(mensaje);
+		}
+		return tipo;
+	}
+
+	/**
+	 * Verifica la fecha de determinacion de un estatus legal: es obligatoria y no puede ser futura.
+	 *
+	 * @param fechaDeterminacion fecha a verificar
+	 * @throws DatoEstatusLegalInvalidoException si es nula o posterior a hoy
+	 */
+	public static void verificarFechaDeterminacion(LocalDate fechaDeterminacion) {
+		if (fechaDeterminacion == null) {
+			throw new DatoEstatusLegalInvalidoException(
+					"La fecha de determinacion es obligatoria (formato yyyy-MM-dd)");
+		}
+		if (fechaDeterminacion.isAfter(LocalDate.now())) {
+			throw new DatoEstatusLegalInvalidoException("La fecha de determinacion no puede ser futura");
 		}
 	}
 

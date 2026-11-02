@@ -2,6 +2,8 @@ package co.edu.unbosque.archiveludo.entity;
 
 import java.util.Objects;
 
+import co.edu.unbosque.archiveludo.model.EstadoEstudio;
+
 /**
  * Entity de Estudio (tabla ESTUDIO).
  * anioCierre es Integer porque un estudio activo no tiene anio de cierre (NULL en la BD).
@@ -11,7 +13,7 @@ public class Estudio {
 	private long idEstudio;
 	private String nombre;
 	private String pais;
-	private String estadoActual;
+	private EstadoEstudio estadoActual;
 	private Integer anioFundacion;
 	private Integer anioCierre;
 
@@ -19,7 +21,7 @@ public class Estudio {
 
 	}
 
-	public Estudio(String nombre, String pais, String estadoActual, Integer anioFundacion, Integer anioCierre) {
+	public Estudio(String nombre, String pais, EstadoEstudio estadoActual, Integer anioFundacion, Integer anioCierre) {
 		super();
 		this.nombre = nombre;
 		this.pais = pais;
@@ -28,7 +30,7 @@ public class Estudio {
 		this.anioCierre = anioCierre;
 	}
 
-	public Estudio(long idEstudio, String nombre, String pais, String estadoActual, Integer anioFundacion,
+	public Estudio(long idEstudio, String nombre, String pais, EstadoEstudio estadoActual, Integer anioFundacion,
 			Integer anioCierre) {
 		super();
 		this.idEstudio = idEstudio;
@@ -86,12 +88,12 @@ public class Estudio {
 		this.pais = pais;
 	}
 
-	public String getEstadoActual() {
+	public EstadoEstudio getEstadoActual() {
 		return estadoActual;
 	}
 
-	public void setEstadoActual(String estadoActual) {
-		this.estadoActual = estadoActual;
+	public void setEstadoActual(EstadoEstudio estadoEstudio) {
+		this.estadoActual = estadoEstudio;
 	}
 
 	public Integer getAnioFundacion() {

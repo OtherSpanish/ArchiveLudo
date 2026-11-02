@@ -42,16 +42,18 @@ public class SecurityConfig {
 						.requestMatchers("/error").permitAll()
 						.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-						// Gestion de usuarios: solo administrador
+						// Gestion de usuarios (todo el CRUD): solo administrador
 						.requestMatchers("/api/usuarios/**").hasRole("ADMINISTRADOR")
 
 						// Lectura: cualquier rol
 						.requestMatchers(HttpMethod.GET, "/api/**").hasAnyRole("CONSULTA", "CURADOR", "ADMINISTRADOR")
 
-						// Escritura: curador o administrador (consulta recibe 403)
+						// Crear y actualizar: curador o administrador (consulta recibe 403)
 						.requestMatchers(HttpMethod.POST, "/api/**").hasAnyRole("CURADOR", "ADMINISTRADOR")
 						.requestMatchers(HttpMethod.PUT, "/api/**").hasAnyRole("CURADOR", "ADMINISTRADOR")
-						.requestMatchers(HttpMethod.DELETE, "/api/**").hasAnyRole("CURADOR", "ADMINISTRADOR")
+
+						// Eliminar: solo administrador (curador y consulta reciben 403)
+						.requestMatchers(HttpMethod.DELETE, "/api/**").hasRole("ADMINISTRADOR")
 
 						.anyRequest().authenticated())
 				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

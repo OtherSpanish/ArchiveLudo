@@ -1,5 +1,8 @@
 package co.edu.unbosque.archiveludo.dto;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class VideojuegoDTO {
 
 	private long idVideojuego;
@@ -9,13 +12,17 @@ public class VideojuegoDTO {
 	private String descripcion;
 	private int anioLanzamiento;
 	private String estadoConservacion;
+	private long idEstudio;
+	private long idUsuario;
+	private List<Long> idsEditoras;
 
 	public VideojuegoDTO() {
-		// TODO Auto-generated constructor stub
+		this.idsEditoras = new ArrayList<Long>();
 	}
 
-	public VideojuegoDTO(long idVideojuego, String titulo, String genero, String plataformaOriginal, String descripcion,
-			int anioLanzamiento, String estadoConservacion) {
+	public VideojuegoDTO(long idVideojuego, String titulo, String genero, String plataformaOriginal,
+			String descripcion, int anioLanzamiento, String estadoConservacion, long idEstudio, long idUsuario,
+			List<Long> idsEditoras) {
 		super();
 		this.idVideojuego = idVideojuego;
 		this.titulo = titulo;
@@ -24,13 +31,17 @@ public class VideojuegoDTO {
 		this.descripcion = descripcion;
 		this.anioLanzamiento = anioLanzamiento;
 		this.estadoConservacion = estadoConservacion;
+		this.idEstudio = idEstudio;
+		this.idUsuario = idUsuario;
+		this.idsEditoras = idsEditoras;
 	}
 
 	@Override
 	public String toString() {
 		return "VideojuegoDTO [idVideojuego=" + idVideojuego + ", titulo=" + titulo + ", genero=" + genero
-				+ ", plataformaOriginal=" + plataformaOriginal + ", descripcion=" + descripcion + ", anioLanzamiento="
-				+ anioLanzamiento + ", estadoConservacion=" + estadoConservacion + "]";
+				+ ", plataformaOriginal=" + plataformaOriginal + ", descripcion=" + descripcion
+				+ ", anioLanzamiento=" + anioLanzamiento + ", estadoConservacion=" + estadoConservacion
+				+ ", idEstudio=" + idEstudio + ", idUsuario=" + idUsuario + ", idsEditoras=" + idsEditoras + "]";
 	}
 
 	public long getIdVideojuego() {
@@ -88,5 +99,29 @@ public class VideojuegoDTO {
 	public void setEstadoConservacion(String estadoConservacion) {
 		this.estadoConservacion = estadoConservacion;
 	}
-	
+
+	public long getIdEstudio() {
+		return idEstudio;
+	}
+
+	public void setIdEstudio(long idEstudio) {
+		this.idEstudio = idEstudio;
+	}
+
+	public long getIdUsuario() {
+		return idUsuario;
+	}
+
+	public void setIdUsuario(long idUsuario) {
+		this.idUsuario = idUsuario;
+	}
+
+	public List<Long> getIdsEditoras() {
+		return idsEditoras;
+	}
+
+	public void setIdsEditoras(List<Long> idsEditoras) {
+		this.idsEditoras = idsEditoras;
+	}
+
 }

@@ -13,7 +13,7 @@ import co.edu.unbosque.archiveludo.entity.EventoDeRiesgo;
 import co.edu.unbosque.archiveludo.model.TipoEventoRiesgo;
 
 /**
- * Acceso a datos de la tabla EVENTO_DE_RIESGO con SQL escrito a mano (Spring JDBC).
+ * Acceso a datos de la tabla EVENTO_DE_RIESGO con SQL(Spring JDBC).
  */
 @Repository
 public class EventoDeRiesgoRepository {
