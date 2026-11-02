@@ -8,11 +8,14 @@ import co.edu.unbosque.archiveludo.entity.Estudio;
 import co.edu.unbosque.archiveludo.entity.EventoDeRiesgo;
 import co.edu.unbosque.archiveludo.entity.Experto;
 import co.edu.unbosque.archiveludo.entity.Institucion;
+import co.edu.unbosque.archiveludo.entity.Participacion;
+import co.edu.unbosque.archiveludo.entity.ProyectoDeRestauracion;
 import co.edu.unbosque.archiveludo.entity.Usuario;
 import co.edu.unbosque.archiveludo.entity.Videojuego;
 import co.edu.unbosque.archiveludo.model.EstadoConservacion;
 import co.edu.unbosque.archiveludo.model.EstadoEstudio;
 import co.edu.unbosque.archiveludo.model.EstadoIntegridad;
+import co.edu.unbosque.archiveludo.model.EstadoProyecto;
 import co.edu.unbosque.archiveludo.model.Rol;
 import co.edu.unbosque.archiveludo.model.TipoEstatusLegal;
 import co.edu.unbosque.archiveludo.model.TipoEventoRiesgo;
@@ -55,6 +58,12 @@ public class LanzadorException {
 	public static final int LONGITUD_MAXIMA_ESPECIALIDAD_EXPERTO = 100;
 	public static final int LONGITUD_MAXIMA_AFILIACION_EXPERTO = 150;
 	private static final int LONGITUD_MAXIMA_CORREO_EXPERTO = 150;
+	
+	/** Longitudes maximas de PROYECTO_DE_RESTAURACION y PARTICIPACION. */
+	public static final int LONGITUD_MAXIMA_NOMBRE_PROYECTO = 150;
+	public static final int LONGITUD_MAXIMA_DESCRIPCION_PROYECTO = 500;
+	public static final int LONGITUD_MAXIMA_HERRAMIENTA_PROYECTO = 100;
+	public static final int LONGITUD_MAXIMA_ROL_EXPERTO = 80;
 	
 	/**
 	 * Verifica que un id recibido por la URL sea valido.
@@ -940,6 +949,195 @@ public class LanzadorException {
 	public static void verificarCorreoExpertoNoRegistrado(boolean correoYaExiste, String correo) {
 		if (correoYaExiste) {
 			throw new DatoExpertoInvalidoException("Ya existe un experto con el correo " + correo);
+		}
+	}
+	/**
+	 * Verifica que el proyecto buscado exista.
+	 *
+	 * @param proyecto   resultado de la busqueda en el repository
+	 * @param idProyecto id que se busco (para el mensaje)
+	 * @throws ProyectoNoEncontradoException si el proyecto es null
+	 */
+	public static void verificarProyectoExiste(ProyectoDeRestauracion proyecto, long idProyecto) {
+		if (proyecto == null) {
+			throw new ProyectoNoEncontradoException(idProyecto);
+		}
+	}
+
+	/**
+	 * Convierte el texto del estado de un proyecto ("activo", "pausado" o "finalizado") al enum EstadoProyecto.
+	 *
+	 * @param textoEstado estado tal como llego en el cuerpo de la peticion
+	 * @return el estado correspondiente
+	 * @throws DatosProyectoInvalidosException si viene vacio o no es uno de los 3 estados
+	 */
+	public static EstadoProyecto convertirEstadoProyecto(String textoEstado) {
+		String mensaje = "El estado del proyecto debe ser activo, pausado o finalizado";
+
+		if (textoEstado == null || textoEstado.trim().isEmpty()) {
+			throw new DatoProyectoInvalidoException(mensaje);
+		}
+
+		EstadoProyecto estado = EstadoProyecto.buscarPorValor(textoEstado.trim().toLowerCase());
+		if (estado == null) {
+			throw new DatoProyectoInvalidoException(mensaje);
+		}
+		return estado;
+	}
+
+	/**
+	 * Verifica las fechas de un proyecto. Son las mismas reglas de los CHECK de la tabla:
+	 * - la fecha de inicio es obligatoria y no puede ser futura;
+	 * - un proyecto activo o pausado NO tiene fecha de fin (todavia no termina);
+	 * - un proyecto finalizado SI tiene fecha de fin, que no es anterior al inicio ni futura.
+	 *
+	 * @param estado      estado del proyecto
+	 * @param fechaInicio fecha de inicio
+	 * @param fechaFin    fecha de fin (null si no tiene)
+	 * @throws DatosProyectoInvalidosException si se incumple alguna regla
+	 */
+	public static void verificarFechasProyecto(EstadoProyecto estado, LocalDate fechaInicio, LocalDate fechaFin) {
+		LocalDate hoy = LocalDate.now();
+
+		if (fechaInicio == null) {
+			throw new DatoProyectoInvalidoException("La fecha de inicio es obligatoria (formato yyyy-MM-dd)");
+		}
+		if (fechaInicio.isAfter(hoy)) {
+			throw new DatoProyectoInvalidoException("La fecha de inicio del proyecto no puede ser futura");
+		}
+
+		if (estado != EstadoProyecto.FINALIZADO && fechaFin != null) {
+			throw new DatoProyectoInvalidoException(
+					"Un proyecto " + estado.getValor() + " no puede tener fecha de fin");
+		}
+		if (estado == EstadoProyecto.FINALIZADO && fechaFin == null) {
+			throw new DatoProyectoInvalidoException("Un proyecto finalizado debe tener fecha de fin");
+		}
+
+		if (fechaFin != null) {
+			if (fechaFin.isBefore(fechaInicio)) {
+				throw new DatoProyectoInvalidoException(
+						"La fecha de fin del proyecto no puede ser anterior a la de inicio");
+			}
+			if (fechaFin.isAfter(hoy)) {
+				throw new DatoProyectoInvalidoException("La fecha de fin del proyecto no puede ser futura");
+			}
+		}
+	}
+
+	/**
+	 * Verifica un campo de texto de un proyecto o de una participacion: si es obligatorio,
+	 * que venga con contenido, y en todo caso, que quepa en su columna.
+	 *
+	 * @param valor          texto recibido (puede ser null si el campo es opcional)
+	 * @param nombreCampo    nombre del campo para el mensaje (por ejemplo "nombre")
+	 * @param longitudMaxima cantidad maxima de caracteres de la columna
+	 * @param esObligatorio  true si el campo no puede venir vacio
+	 * @throws DatosProyectoInvalidosException si falta un campo obligatorio o el texto es demasiado largo
+	 */
+	public static void verificarTextoProyecto(String valor, String nombreCampo, int longitudMaxima,
+			boolean esObligatorio) {
+		boolean estaVacio = (valor == null || valor.trim().isEmpty());
+
+		if (esObligatorio && estaVacio) {
+			throw new DatoProyectoInvalidoException("El campo '" + nombreCampo + "' es obligatorio");
+		}
+		if (!estaVacio && valor.trim().length() > longitudMaxima) {
+			throw new DatoProyectoInvalidoException(
+					"El campo '" + nombreCampo + "' no puede superar " + longitudMaxima + " caracteres");
+		}
+	}
+
+	
+
+	/**
+	 * Verifica que el proyecto tenga al menos un experto (regla del negocio: todo proyecto
+	 * de restauracion necesita por lo menos una participacion).
+	 *
+	 * @param cantidadParticipaciones cantidad de participaciones que trae el proyecto
+	 * @throws DatosProyectoInvalidosException si no trae ninguna
+	 */
+	public static void verificarProyectoConExpertos(int cantidadParticipaciones) {
+		if (cantidadParticipaciones == 0) {
+			throw new DatoProyectoInvalidoException("El proyecto debe tener al menos un experto en 'participaciones'");
+		}
+	}
+
+	/**
+	 * Verifica que un experto no aparezca dos veces en el mismo proyecto
+	 * (la tabla PARTICIPACION tiene UNIQUE (id_proyecto, id_experto)).
+	 *
+	 * @param estaRepetido true si el experto ya esta en el proyecto
+	 * @param idExperto    id del experto (para el mensaje)
+	 * @throws DatosProyectoInvalidosException si esta repetido
+	 */
+	public static void verificarExpertoNoRepetido(boolean estaRepetido, long idExperto) {
+		if (estaRepetido) {
+			throw new DatoProyectoInvalidoException(
+					"El experto " + idExperto + " ya participa en este proyecto");
+		}
+	}
+
+	/**
+	 * Verifica las fechas de una participacion:
+	 * - la incorporacion es obligatoria, no puede ser futura ni anterior al inicio del proyecto;
+	 * - la salida es opcional (null = sigue en el proyecto), no puede ser anterior a la incorporacion ni futura.
+	 *
+	 * @param fechaIncorporacion fecha en que el experto entro al proyecto
+	 * @param fechaSalida        fecha en que salio (null si sigue)
+	 * @param inicioProyecto     fecha de inicio del proyecto
+	 * @throws DatosProyectoInvalidosException si se incumple alguna regla
+	 */
+	public static void verificarFechasParticipacion(LocalDate fechaIncorporacion, LocalDate fechaSalida,
+			LocalDate inicioProyecto) {
+		LocalDate hoy = LocalDate.now();
+
+		if (fechaIncorporacion == null) {
+			throw new DatoProyectoInvalidoException(
+					"La fecha de incorporacion del experto es obligatoria (formato yyyy-MM-dd)");
+		}
+		if (fechaIncorporacion.isAfter(hoy)) {
+			throw new DatoProyectoInvalidoException("La fecha de incorporacion no puede ser futura");
+		}
+		if (fechaIncorporacion.isBefore(inicioProyecto)) {
+			throw new DatoProyectoInvalidoException("La fecha de incorporacion (" + fechaIncorporacion
+					+ ") no puede ser anterior al inicio del proyecto (" + inicioProyecto + ")");
+		}
+
+		if (fechaSalida != null) {
+			if (fechaSalida.isBefore(fechaIncorporacion)) {
+				throw new DatoProyectoInvalidoException(
+						"La fecha de salida no puede ser anterior a la de incorporacion");
+			}
+			if (fechaSalida.isAfter(hoy)) {
+				throw new DatoProyectoInvalidoException("La fecha de salida no puede ser futura");
+			}
+		}
+	}
+	
+	/**
+	 * Verifica que la participacion buscada exista.
+	 *
+	 * @param participacion   resultado de la busqueda en el repository
+	 * @param idParticipacion id que se busco (para el mensaje)
+	 * @throws ParticipacionNoEncontradaException si la participacion es null
+	 */
+	public static void verificarParticipacionExiste(Participacion participacion, long idParticipacion) {
+		if (participacion == null) {
+			throw new ParticipacionNoEncontradaException(idParticipacion);
+		}
+	}
+
+	/**
+	 * Verifica que la participacion que se quiere quitar no sea la unica del proyecto.
+	 *
+	 * @param cantidadParticipaciones cantidad de participaciones que tiene hoy el proyecto
+	 * @param idProyecto              id del proyecto (para el mensaje)
+	 * @throws UltimaParticipacionException si el proyecto tiene solo una participacion
+	 */
+	public static void verificarNoEsUltimaParticipacion(long cantidadParticipaciones, long idProyecto) {
+		if (cantidadParticipaciones <= 1) {
+			throw new UltimaParticipacionException(idProyecto);
 		}
 	}
 	

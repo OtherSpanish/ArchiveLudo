@@ -80,11 +80,15 @@ public class VideojuegoRepository {
 
 	private static final String SQL_ELIMINAR = "DELETE FROM VIDEOJUEGO WHERE id_videojuego = ?";
 
-	/** Suma lo que depende del videojuego: copias, estatus legales y eventos de riesgo. */
+	/**
+	 * Suma lo que depende del videojuego: copias, estatus legales, eventos de riesgo
+	 * y proyectos de restauracion. Si da mas de cero, el videojuego no se puede eliminar.
+	 */
 	private static final String SQL_CONTAR_REGISTROS_ASOCIADOS = "SELECT "
 			+ "(SELECT COUNT(*) FROM COPIA WHERE id_videojuego = ?) + "
 			+ "(SELECT COUNT(*) FROM ESTATUS_LEGAL WHERE id_videojuego = ?) + "
-			+ "(SELECT COUNT(*) FROM EVENTO_DE_RIESGO WHERE id_videojuego = ?)";
+			+ "(SELECT COUNT(*) FROM EVENTO_DE_RIESGO WHERE id_videojuego = ?) + "
+			+ "(SELECT COUNT(*) FROM PROYECTO_DE_RESTAURACION WHERE id_videojuego = ?)";
 
 	private final JdbcTemplate jdbcTemplate;
 
@@ -169,17 +173,17 @@ public class VideojuegoRepository {
 	}
 
 	/**
-	 * Cuenta cuantas copias, estatus legales y eventos de riesgo tiene el videojuego.
+	 * Cuenta cuantas copias, estatus legales, eventos de riesgo y proyectos de restauracion
+	 * tiene el videojuego. El mismo id va en los 4 parametros de la consulta.
 	 */
 	public long contarRegistrosAsociados(long idVideojuego) {
 		Long cantidad = jdbcTemplate.queryForObject(SQL_CONTAR_REGISTROS_ASOCIADOS, Long.class, idVideojuego,
-				idVideojuego, idVideojuego);
+				idVideojuego, idVideojuego, idVideojuego);
 		if (cantidad == null) {
 			return 0;
 		}
 		return cantidad;
 	}
-
 
 	/**
 	 * Inserta el videojuego en VIDEOJUEGO y una fila en COMPED_VID por cada editora.
