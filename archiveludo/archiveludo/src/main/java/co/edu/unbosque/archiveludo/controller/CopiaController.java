@@ -9,13 +9,21 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import co.edu.unbosque.archiveludo.dto.CopiaDTO;
+import co.edu.unbosque.archiveludo.exceptions.CampoObligatorioException;
+import co.edu.unbosque.archiveludo.exceptions.CredencialInvalidaException;
+import co.edu.unbosque.archiveludo.exceptions.EstadoIntegridadInvalidoException;
 import co.edu.unbosque.archiveludo.exceptions.IdInvalidoException;
+import co.edu.unbosque.archiveludo.exceptions.TamanioInvalidoException;
 import co.edu.unbosque.archiveludo.exceptions.VideojuegoNoEncontradoException;
 import co.edu.unbosque.archiveludo.service.CopiaService;
 
@@ -45,6 +53,40 @@ public class CopiaController {
 			return crearRespuestaError(HttpStatus.NOT_FOUND, e.getMessage());
 		} catch (Exception e) {
 			log.error("Error inesperado al buscar las copias del videojuego " + id, e);
+			return crearRespuestaError(HttpStatus.INTERNAL_SERVER_ERROR, "Ocurrio un error interno en el servidor");
+		}
+	}
+
+	/**
+	 * POST /api/videojuegos/{id}/copias
+	 * Cuerpo (fisica):  { "tipoCopia": "fisica", "estadoIntegridad": "buena", "numeroSerie": "SN-7781",
+	 *                     "ubicacionFisica": "Bodega A, estante 2", "tipoSoporte": "cartucho" }
+	 * Cuerpo (digital): { "tipoCopia": "digital", "estadoIntegridad": "buena", "formatoArchivo": "iso",
+	 *                     "tamanio": 734003200, "hashVerificacion": "9b1f0c3d..." }
+	 * Respuesta: 201 con la copia creada.
+	 * Solo curador o administrador (consulta recibe 403 desde SecurityConfig).
+	 * El usuario que registra la copia se toma del token, no del cuerpo.
+	 */
+	@PostMapping("/videojuegos/{id}/copias")
+	public ResponseEntity<?> crear(@PathVariable String id, @RequestBody CopiaDTO copiaDTO,
+			@AuthenticationPrincipal UserDetails usuarioAutenticado) {
+		try {
+			CopiaDTO copiaCreada = copiaService.crear(id, copiaDTO, usuarioAutenticado.getUsername());
+			return new ResponseEntity<CopiaDTO>(copiaCreada, HttpStatus.CREATED);
+		} catch (IdInvalidoException e) {
+			return crearRespuestaError(HttpStatus.BAD_REQUEST, e.getMessage());
+		} catch (VideojuegoNoEncontradoException e) {
+			return crearRespuestaError(HttpStatus.NOT_FOUND, e.getMessage());
+		} catch (EstadoIntegridadInvalidoException e) {
+			return crearRespuestaError(HttpStatus.BAD_REQUEST, e.getMessage());
+		} catch (CampoObligatorioException e) {
+			return crearRespuestaError(HttpStatus.BAD_REQUEST, e.getMessage());
+		} catch (TamanioInvalidoException e) {
+			return crearRespuestaError(HttpStatus.BAD_REQUEST, e.getMessage());
+		} catch (CredencialInvalidaException e) {
+			return crearRespuestaError(HttpStatus.UNAUTHORIZED, e.getMessage());
+		} catch (Exception e) {
+			log.error("Error inesperado al registrar la copia del videojuego " + id, e);
 			return crearRespuestaError(HttpStatus.INTERNAL_SERVER_ERROR, "Ocurrio un error interno en el servidor");
 		}
 	}
