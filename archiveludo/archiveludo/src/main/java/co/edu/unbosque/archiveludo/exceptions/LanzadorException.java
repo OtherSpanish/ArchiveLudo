@@ -245,10 +245,23 @@ public class LanzadorException {
 			throw new AnioInvalidoException(ANIO_MINIMO_LANZAMIENTO, anioMaximo);
 		}
 
-		if (anio < ANIO_MINIMO_LANZAMIENTO || anio > anioMaximo) {
+		verificarAnioLanzamiento(anio);
+		return anio;
+	}
+
+	/**
+	 * Verifica que el anio de lanzamiento (que llega en el cuerpo de la peticion) este entre 1950
+	 * y el anio actual. Si no se envio, llega en 0 y tambien es invalido.
+	 *
+	 * @param anioLanzamiento anio a verificar
+	 * @throws AnioInvalidoException si esta fuera del rango
+	 */
+	public static void verificarAnioLanzamiento(int anioLanzamiento) {
+		int anioMaximo = LocalDate.now().getYear();
+
+		if (anioLanzamiento < ANIO_MINIMO_LANZAMIENTO || anioLanzamiento > anioMaximo) {
 			throw new AnioInvalidoException(ANIO_MINIMO_LANZAMIENTO, anioMaximo);
 		}
-		return anio;
 	}
 
 	/**
@@ -403,7 +416,7 @@ public class LanzadorException {
 	 *
 	 * @param textoEstado estado tal como llego en el cuerpo de la peticion
 	 * @return el estado correspondiente
-	 * @throws DatoEstudioInvalidoException si viene vacio o no es activo ni desaparecido
+	 * @throws DatosEstudioInvalidosException si viene vacio o no es activo ni desaparecido
 	 */
 	public static EstadoEstudio convertirEstadoEstudio(String textoEstado) {
 		String mensaje = "El estado actual del estudio debe ser activo o desaparecido";
@@ -429,7 +442,7 @@ public class LanzadorException {
 	 * @param estado        estado actual del estudio
 	 * @param anioFundacion anio de fundacion
 	 * @param anioCierre    anio de cierre (null si no tiene)
-	 * @throws DatoEstudioInvalidoException si se incumple alguna regla
+	 * @throws DatosEstudioInvalidosException si se incumple alguna regla
 	 */
 	public static void verificarAniosEstudio(EstadoEstudio estado, Integer anioFundacion, Integer anioCierre) {
 		int anioActual = LocalDate.now().getYear();
@@ -459,7 +472,7 @@ public class LanzadorException {
 			}
 		}
 	}
-	
+
 	/**
 	 * Verifica que la compania editora buscada exista.
 	 *
