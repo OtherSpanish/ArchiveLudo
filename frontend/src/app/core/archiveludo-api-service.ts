@@ -4,22 +4,22 @@ import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
 import { Copia, CopiaNueva } from '../shared/models/copia-model';
-import { Custodia, Institucion, InstitucionNueva } from '../shared/models/custodia-model';
+import { Custodia, CustodiaNueva, Institucion, InstitucionNueva } from '../shared/models/custodia-model';
+import { Experto, ExpertoNuevo } from '../shared/models/experto-model';
+import { Participacion, ParticipacionEditada, ParticipacionNueva } from '../shared/models/participacion-model';
+import { ProyectoDeRestauracion, ProyectoEditado, ProyectoNuevo } from '../shared/models/proyecto-model';
 import { EstatusLegal, EstatusLegalNuevo } from '../shared/models/estatus-legal-model';
 import { EventoRiesgo } from '../shared/models/evento-riesgo-model';
-import { ProyectoConJuego } from '../shared/models/proyecto-con-juego-model';
 import { CompaniaEditora, EditoraNueva } from '../shared/models/compania-editora-model';
 import { Estudio, EstudioNuevo, Videojuego, VideojuegoNuevo } from '../shared/models/videojuego-model';
 import { ReporteTabla, TipoReporte } from '../shared/models/reporte-model';
 import { CredencialesLogin, UsuarioLogin } from '../shared/models/sesion-model';
 import { Usuario, UsuarioNuevo } from '../shared/models/usuario-model';
 import {
-  CopiaConCustodia,
   DatosFicha,
   DatosInstitucion,
   InstitucionConCopias,
   PaginaVideojuegos,
-  ProyectoConDetalle,
   ResumenInicio
 } from '../shared/models/api-model';
 
@@ -199,18 +199,19 @@ export class ArchiveludoApiService {
   }
 
   /* GET /api/videojuegos/{id}/proyectos: proyectos de restauración con sus expertos. */
-  obtenerProyectos(idVideojuego: number): Observable<ProyectoConDetalle[]> {
-    return this.http.get<ProyectoConDetalle[]>(this.urlBase + '/videojuegos/' + idVideojuego + '/proyectos');
+  obtenerProyectos(idVideojuego: number): Observable<ProyectoDeRestauracion[]> {
+    return this.http.get<ProyectoDeRestauracion[]>(this.urlBase + '/videojuegos/' + idVideojuego + '/proyectos');
   }
 
   /*
    * GET /api/proyectos: TODOS los proyectos de restauración, de cualquier
-   * videojuego, cada uno con sus expertos y el videojuego al que pertenece.
-   * Del más reciente al más antiguo (por fechaInicio). Es para la pantalla
-   * global de Proyectos; el filtro por estado se hace en el front.
+   * videojuego, cada uno con sus participaciones y su idVideojuego (el título
+   * del juego se busca aparte). Del más reciente al más antiguo (por
+   * fechaInicio). Es para la pantalla global de Proyectos; el filtro por
+   * estado se hace en el front.
    */
-  obtenerTodosLosProyectos(): Observable<ProyectoConJuego[]> {
-    return this.http.get<ProyectoConJuego[]>(this.urlBase + '/proyectos');
+  obtenerTodosLosProyectos(): Observable<ProyectoDeRestauracion[]> {
+    return this.http.get<ProyectoDeRestauracion[]>(this.urlBase + '/proyectos');
   }
 
   /*
@@ -316,5 +317,111 @@ export class ArchiveludoApiService {
     }
 
     return this.http.get<ReporteTabla>(this.urlBase + '/reportes/' + tipo, { params: parametros });
+  }
+
+  // ---------- Copias (por id) ----------
+
+  /* GET /api/copias/{id} */
+  obtenerCopia(idCopia: number): Observable<Copia> {
+    return this.http.get<Copia>(this.urlBase + '/copias/' + idCopia);
+  }
+
+  /*
+   * PUT /api/copias/{id}
+   * El tipoCopia debe ser el mismo que tiene guardado la copia; si no, el back da 400.
+   */
+  actualizarCopia(idCopia: number, copia: CopiaNueva): Observable<Copia> {
+    return this.http.put<Copia>(this.urlBase + '/copias/' + idCopia, copia);
+  }
+
+  /* DELETE /api/copias/{id}. Solo administrador. 409 si la copia tiene custodias. */
+  eliminarCopia(idCopia: number): Observable<void> {
+    return this.http.delete<void>(this.urlBase + '/copias/' + idCopia);
+  }
+
+  // ---------- Custodias ----------
+
+  /*
+   * POST /api/copias/{id}/custodias
+   * Siempre crea la custodia vigente y cierra la anterior con la fechaInicio de la nueva.
+   */
+  crearCustodia(idCopia: number, custodia: CustodiaNueva): Observable<Custodia> {
+    return this.http.post<Custodia>(this.urlBase + '/copias/' + idCopia + '/custodias', custodia);
+  }
+
+  /* PUT /api/custodias/{id}. Aquí sí se puede enviar fechaFin. */
+  actualizarCustodia(idCustodia: number, custodia: CustodiaNueva): Observable<Custodia> {
+    return this.http.put<Custodia>(this.urlBase + '/custodias/' + idCustodia, custodia);
+  }
+
+  /* DELETE /api/custodias/{id}. Solo administrador. */
+  eliminarCustodia(idCustodia: number): Observable<void> {
+    return this.http.delete<void>(this.urlBase + '/custodias/' + idCustodia);
+  }
+
+  // ---------- Expertos ----------
+
+  /* GET /api/expertos (ya ordenados por apellido y nombre) */
+  obtenerExpertos(): Observable<Experto[]> {
+    return this.http.get<Experto[]>(this.urlBase + '/expertos');
+  }
+
+  /* POST /api/expertos. El correo acepta cualquier dominio y no se puede repetir. */
+  crearExperto(experto: ExpertoNuevo): Observable<Experto> {
+    return this.http.post<Experto>(this.urlBase + '/expertos', experto);
+  }
+
+  /* PUT /api/expertos/{id} */
+  actualizarExperto(idExperto: number, experto: ExpertoNuevo): Observable<Experto> {
+    return this.http.put<Experto>(this.urlBase + '/expertos/' + idExperto, experto);
+  }
+
+  /* DELETE /api/expertos/{id}. Solo administrador. 409 si participa en proyectos. */
+  eliminarExperto(idExperto: number): Observable<void> {
+    return this.http.delete<void>(this.urlBase + '/expertos/' + idExperto);
+  }
+
+  // ---------- Proyectos de restauración (contrato nuevo) ----------
+
+  /* GET /api/proyectos/{id} */
+  obtenerProyecto(idProyecto: number): Observable<ProyectoDeRestauracion> {
+    return this.http.get<ProyectoDeRestauracion>(this.urlBase + '/proyectos/' + idProyecto);
+  }
+
+  /* POST /api/videojuegos/{id}/proyectos. Debe traer al menos una participación. */
+  crearProyecto(idVideojuego: number, proyecto: ProyectoNuevo): Observable<ProyectoDeRestauracion> {
+    return this.http.post<ProyectoDeRestauracion>(this.urlBase + '/videojuegos/' + idVideojuego + '/proyectos', proyecto);
+  }
+
+  /* PUT /api/proyectos/{id}. Solo los datos del proyecto; las participaciones van aparte. */
+  actualizarProyecto(idProyecto: number, proyecto: ProyectoEditado): Observable<ProyectoDeRestauracion> {
+    return this.http.put<ProyectoDeRestauracion>(this.urlBase + '/proyectos/' + idProyecto, proyecto);
+  }
+
+  /* DELETE /api/proyectos/{id}. Solo administrador. Borra también sus participaciones. */
+  eliminarProyecto(idProyecto: number): Observable<void> {
+    return this.http.delete<void>(this.urlBase + '/proyectos/' + idProyecto);
+  }
+
+  // ---------- Participaciones ----------
+
+  /* GET /api/proyectos/{id}/participaciones */
+  obtenerParticipaciones(idProyecto: number): Observable<Participacion[]> {
+    return this.http.get<Participacion[]>(this.urlBase + '/proyectos/' + idProyecto + '/participaciones');
+  }
+
+  /* POST /api/proyectos/{id}/participaciones. Un experto solo puede estar una vez por proyecto. */
+  crearParticipacion(idProyecto: number, participacion: ParticipacionNueva): Observable<Participacion> {
+    return this.http.post<Participacion>(this.urlBase + '/proyectos/' + idProyecto + '/participaciones', participacion);
+  }
+
+  /* PUT /api/participaciones/{id}. No cambia ni el experto ni el proyecto. */
+  actualizarParticipacion(idParticipacion: number, participacion: ParticipacionEditada): Observable<Participacion> {
+    return this.http.put<Participacion>(this.urlBase + '/participaciones/' + idParticipacion, participacion);
+  }
+
+  /* DELETE /api/participaciones/{id}. Solo administrador. 409 si es la única del proyecto. */
+  eliminarParticipacion(idParticipacion: number): Observable<void> {
+    return this.http.delete<void>(this.urlBase + '/participaciones/' + idParticipacion);
   }
 }

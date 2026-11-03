@@ -41,4 +41,25 @@
   <!-- Pie separado por una línea: custodia actual y fecha de registro -->
   <p class="pie">{{ textoPie }}</p>
 
+  <!-- Pide al padre que muestre el historial de custodia de esta copia -->
+  <button type="button" class="boton-historial" (click)="pedirHistorial()">
+    Ver historial de custodia
+  </button>
+
+  <!-- Curador y administrador editan; solo el administrador elimina -->
+  <div class="acciones">
+    <button type="button"
+            class="boton-accion"
+            *appHasRole="['curador', 'administrador']"
+            (click)="pedirEditar()">
+      Editar
+    </button>
+    <button type="button"
+            class="boton-accion boton-accion-peligro"
+            *appHasRole="['administrador']"
+            (click)="pedirEliminar()">
+      Eliminar
+    </button>
+  </div>
+
 </article>

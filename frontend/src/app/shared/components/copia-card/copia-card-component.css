@@ -122,3 +122,51 @@
   font-size: 14px;
   color: var(--text-soft);
 }
+
+/* Botón de texto discreto para abrir el historial de custodia */
+.boton-historial {
+  margin-top: 10px;
+  padding: 0;
+  background: none;
+  border: none;
+  color: var(--accent);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.boton-historial:hover {
+  text-decoration: underline;
+}
+
+/* Botones de editar y eliminar al pie de la tarjeta */
+.acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.boton-accion {
+  min-height: 32px;
+  padding: 0 12px;
+  background: transparent;
+  color: var(--text-soft);
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.boton-accion:hover {
+  color: var(--text-strong);
+  border-color: var(--border-hover);
+}
+
+.boton-accion-peligro {
+  color: var(--state-bad-label);
+  border-color: var(--state-bad);
+}

@@ -1,34 +1,55 @@
 /*
- * Modelos de la pestaña Proyectos.
- * Los nombres de los campos coinciden con el MER y con el JSON del back.
+ * Modelos de los proyectos de restauración.
+ * Los nombres de los campos coinciden con el JSON del back.
  */
+
+import { Participacion, ParticipacionNueva } from './participacion-model';
 
 /*
  * Estado de un proyecto de restauración (PROYECTO_DE_RESTAURACION.estado).
- * OJO: por ahora solo se conocen estos dos; confirmar con el script SQL.
+ * Solo 'finalizado' lleva fechaFin.
  */
-export type EstadoProyecto = 'activo' | 'finalizado';
+export type EstadoProyecto = 'activo' | 'pausado' | 'finalizado';
 
 /*
- * Un experto asignado a un proyecto (tabla EXP_PROY_REST + datos de EXPERTO).
- * La fecha viene como texto 'yyyy-MM-dd'.
+ * Un proyecto de restauración (GET /api/proyectos y GET /api/videojuegos/{id}/proyectos).
+ * Llega plano, con sus participaciones adentro.
+ *  - fechaFin: solo si el estado es 'finalizado'.
+ *  - descripcion y herramientaEmulador: opcionales.
  */
-export interface ExpertoEnProyecto {
-  idExperto: number;
-  nombre: string;
-  rolEnProyecto: string;
-  fechaIncorporacion: string;
-}
-
-/*
- * Un proyecto de restauración (PROYECTO_DE_RESTAURACION).
- *  - fechaFin: opcional, un proyecto activo no la tiene.
- *  - herramientaEmulador: opcional, el emulador o herramienta usada.
- */
-export interface ProyectoRestauracion {
+export interface ProyectoDeRestauracion {
   idProyecto: number;
+  idVideojuego: number;
+  idUsuario: number;
+  nombre: string;
+  descripcion?: string;
+  herramientaEmulador?: string;
   estado: EstadoProyecto;
   fechaInicio: string;
   fechaFin?: string;
+  participaciones: Participacion[];
+}
+
+/*
+ * Cuerpo de POST /api/videojuegos/{id}/proyectos: el proyecto con al menos
+ * una participación. Con 'activo' o 'pausado' NO se envía fechaFin.
+ */
+export interface ProyectoNuevo {
+  nombre: string;
+  descripcion?: string;
   herramientaEmulador?: string;
+  estado: EstadoProyecto;
+  fechaInicio: string;
+  fechaFin?: string;
+  participaciones: ParticipacionNueva[];
+}
+
+/* Cuerpo de PUT /api/proyectos/{id}: solo los datos del proyecto. */
+export interface ProyectoEditado {
+  nombre: string;
+  descripcion?: string;
+  herramientaEmulador?: string;
+  estado: EstadoProyecto;
+  fechaInicio: string;
+  fechaFin?: string;
 }
