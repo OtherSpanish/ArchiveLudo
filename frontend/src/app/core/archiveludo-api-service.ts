@@ -9,7 +9,7 @@ import { Experto, ExpertoNuevo } from '../shared/models/experto-model';
 import { Participacion, ParticipacionEditada, ParticipacionNueva } from '../shared/models/participacion-model';
 import { ProyectoDeRestauracion, ProyectoEditado, ProyectoNuevo } from '../shared/models/proyecto-model';
 import { EstatusLegal, EstatusLegalNuevo } from '../shared/models/estatus-legal-model';
-import { EventoRiesgo } from '../shared/models/evento-riesgo-model';
+import { EventoRiesgo, EventoRiesgoNuevo } from '../shared/models/evento-riesgo-model';
 import { CompaniaEditora, EditoraNueva } from '../shared/models/compania-editora-model';
 import { Estudio, EstudioNuevo, Videojuego, VideojuegoNuevo } from '../shared/models/videojuego-model';
 import { ReporteTabla, TipoReporte } from '../shared/models/reporte-model';
@@ -317,6 +317,23 @@ export class ArchiveludoApiService {
     }
 
     return this.http.get<ReporteTabla>(this.urlBase + '/reportes/' + tipo, { params: parametros });
+  }
+
+  // ---------- Eventos de riesgo (crear, editar, eliminar) ----------
+
+  /* POST /api/videojuegos/{id}/eventos-riesgo */
+  crearEventoRiesgo(idVideojuego: number, evento: EventoRiesgoNuevo): Observable<EventoRiesgo> {
+    return this.http.post<EventoRiesgo>(this.urlBase + '/videojuegos/' + idVideojuego + '/eventos-riesgo', evento);
+  }
+
+  /* PUT /api/eventos-riesgo/{id}. No cambian ni el videojuego ni el usuario. */
+  actualizarEventoRiesgo(idEvento: number, evento: EventoRiesgoNuevo): Observable<EventoRiesgo> {
+    return this.http.put<EventoRiesgo>(this.urlBase + '/eventos-riesgo/' + idEvento, evento);
+  }
+
+  /* DELETE /api/eventos-riesgo/{id}. Solo administrador. Nunca da 409. */
+  eliminarEventoRiesgo(idEvento: number): Observable<void> {
+    return this.http.delete<void>(this.urlBase + '/eventos-riesgo/' + idEvento);
   }
 
   // ---------- Copias (por id) ----------

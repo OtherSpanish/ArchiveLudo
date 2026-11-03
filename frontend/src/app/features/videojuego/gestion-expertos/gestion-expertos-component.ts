@@ -167,12 +167,8 @@ export class GestionExpertosComponent {
       return;
     }
 
+    // Las reglas de fechas las valida el back y responde 400 con el motivo.
     const datos = this.formulario.getRawValue();
-
-    this.errorGeneral = this.validarFechas(datos.fechaIncorporacion, datos.fechaSalida);
-    if (this.errorGeneral !== '') {
-      return;
-    }
 
     this.guardando = true;
 
@@ -204,23 +200,6 @@ export class GestionExpertosComponent {
         error: (error) => this.alFallar(error)
       });
     }
-  }
-
-  /* Incorporación: ni futura ni anterior al inicio del proyecto. Salida: ni futura ni anterior a la incorporación. */
-  private validarFechas(incorporacion: string, salida: string): string {
-    if (incorporacion > this.hoy) {
-      return 'La incorporación no puede ser futura.';
-    }
-    if (incorporacion < this.proyecto.fechaInicio) {
-      return 'La incorporación no puede ser anterior al inicio del proyecto.';
-    }
-    if (salida && salida < incorporacion) {
-      return 'La salida no puede ser anterior a la incorporación.';
-    }
-    if (salida && salida > this.hoy) {
-      return 'La salida no puede ser futura.';
-    }
-    return '';
   }
 
   private alGuardar(): void {

@@ -90,6 +90,20 @@ export class FichaVideojuegoComponent implements OnInit {
   /* Bitácora de eventos de riesgo (pestaña Eventos de riesgo), del más reciente al más antiguo. */
   eventos: EventoRiesgo[] = [];
 
+  // ---- Eventos de riesgo: agregar, editar y eliminar ----
+
+  /* true cuando el formulario de evento está desplegado. */
+  mostrarFormularioEvento: boolean = false;
+
+  /* Evento que se edita. Undefined cuando el formulario agrega uno nuevo. */
+  eventoEditando?: EventoRiesgo;
+
+  /* Id del evento que pide confirmación para eliminarse (0 = ninguno). */
+  idConfirmandoEliminarEvento: number = 0;
+
+  /* Mensaje si el back rechaza eliminar un evento. */
+  errorEvento: string = '';
+
   // ---- Copias: eliminar (editar lleva a otra pantalla) ----
 
   /* Id de la copia que pide confirmación para eliminarse (0 = ninguna). */
@@ -396,6 +410,83 @@ export class FichaVideojuegoComponent implements OnInit {
     return false;
   }
 
+  /* Abre el formulario vacío para agregar un evento. */
+  abrirNuevoEvento(): void {
+    this.eventoEditando = undefined;
+    this.idConfirmandoEliminarEvento = 0;
+    this.errorEvento = '';
+    this.mostrarFormularioEvento = true;
+  }
+
+  /* Abre el formulario con los datos de un evento (editar). */
+  abrirEditarEvento(evento: EventoRiesgo): void {
+    this.eventoEditando = evento;
+    this.idConfirmandoEliminarEvento = 0;
+    this.errorEvento = '';
+    this.mostrarFormularioEvento = true;
+  }
+
+  cerrarFormularioEvento(): void {
+    this.mostrarFormularioEvento = false;
+    this.eventoEditando = undefined;
+  }
+
+  /* El formulario guardó: se cierra y se vuelve a pedir la bitácora. */
+  alGuardarEvento(): void {
+    this.cerrarFormularioEvento();
+    this.recargarEventos();
+  }
+
+  /* Vuelve a pedir los eventos del juego. */
+  recargarEventos(): void {
+    if (!this.videojuego) {
+      return;
+    }
+
+    this.api.obtenerEventosRiesgo(this.videojuego.idVideojuego).subscribe({
+      next: (eventos) => this.alRecibirEventos(eventos),
+      error: (error) => console.error('No se pudieron recargar los eventos', error)
+    });
+  }
+
+  /* Primer paso de eliminar un evento: confirmación en la misma tarjeta. */
+  pedirEliminarEvento(evento: EventoRiesgo): void {
+    this.errorEvento = '';
+    this.idConfirmandoEliminarEvento = evento.idEvento;
+  }
+
+  cancelarEliminarEvento(): void {
+    this.idConfirmandoEliminarEvento = 0;
+  }
+
+  /* Segundo paso: DELETE /api/eventos-riesgo/{id}. */
+  confirmarEliminarEvento(evento: EventoRiesgo): void {
+    this.api.eliminarEventoRiesgo(evento.idEvento).subscribe({
+      next: () => this.alEliminarEvento(),
+      error: (error) => this.alFallarEliminarEvento(error)
+    });
+  }
+
+  private alEliminarEvento(): void {
+    this.idConfirmandoEliminarEvento = 0;
+    this.recargarEventos();
+  }
+
+  private alFallarEliminarEvento(error: HttpErrorResponse): void {
+    console.error('No se pudo eliminar el evento', error);
+    this.idConfirmandoEliminarEvento = 0;
+
+    if (error.status === 403) {
+      this.errorEvento = 'Solo un administrador puede eliminar eventos de riesgo.';
+    } else if (error.status === 404) {
+      this.errorEvento = 'Ese evento ya no existe.';
+    } else {
+      this.errorEvento = 'No se pudo eliminar el evento. Inténtalo de nuevo.';
+    }
+
+    this.cambios.markForCheck();
+  }
+
   /* Editar una copia: lleva a /copias/:id/editar. */
   editarCopia(idCopia: number): void {
     this.router.navigate(['/copias', idCopia, 'editar']);
@@ -449,16 +540,6 @@ export class FichaVideojuegoComponent implements OnInit {
       next: (copias) => this.alRecibirCopias(copias),
       error: (error) => this.mostrarError(error)
     });
-  }
-
-  /* Fecha de inicio de la custodia vigente del historial mostrado (la que no tiene fechaFin). */
-  get inicioCustodiaVigente(): string | undefined {
-    for (const custodia of this.custodiasHistorial) {
-      if (!custodia.fechaFin) {
-        return custodia.fechaInicio;
-      }
-    }
-    return undefined;
   }
 
   /* Abre el formulario vacío para registrar (trasladar) una custodia. */
@@ -670,6 +751,10 @@ export class FichaVideojuegoComponent implements OnInit {
     this.custodiasHistorial = [];
     this.proyectos = [];
     this.catalogoInstituciones = [];
+    this.mostrarFormularioEvento = false;
+    this.eventoEditando = undefined;
+    this.idConfirmandoEliminarEvento = 0;
+    this.errorEvento = '';
     this.idConfirmandoEliminarCopia = 0;
     this.errorCopia = '';
     this.mostrarFormularioCustodia = false;
@@ -848,7 +933,7 @@ export class FichaVideojuegoComponent implements OnInit {
   }
 
   /*
-   * Guarda el estatus: valida, valida que la fecha no sea futura y envía
+   * Guarda el estatus: valida lo básico y envía
    * POST /api/videojuegos/{id}/estatus-legal.
    */
   guardarEstatus(): void {
@@ -860,12 +945,8 @@ export class FichaVideojuegoComponent implements OnInit {
       return;
     }
 
+    // La regla de la fecha (no futura) la valida el back y responde 400 con el motivo.
     const datos = this.formularioEstatus.getRawValue();
-
-    if (datos.fechaDeterminacion > this.hoy) {
-      this.errorEstatus = 'La fecha no puede ser futura.';
-      return;
-    }
 
     const nuevo: EstatusLegalNuevo = {
       estatus: datos.estatus,

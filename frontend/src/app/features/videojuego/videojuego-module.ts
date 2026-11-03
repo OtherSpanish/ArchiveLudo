@@ -6,6 +6,7 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { SharedModule } from '../../shared/shared-module';
 import { FichaVideojuegoComponent } from './ficha-videojuego/ficha-videojuego-component';
 import { FormularioVideojuegoComponent } from './formulario-videojuego/formulario-videojuego-component';
+import { FormularioEventoComponent } from './formulario-evento/formulario-evento-component';
 import { FormularioCustodiaComponent } from './formulario-custodia/formulario-custodia-component';
 import { FormularioProyectoComponent } from './formulario-proyecto/formulario-proyecto-component';
 import { GestionExpertosComponent } from './gestion-expertos/gestion-expertos-component';
@@ -23,6 +24,7 @@ import { RegistrarCopiaComponent } from './registrar-copia/registrar-copia-compo
     FormularioVideojuegoComponent,
     FormularioProyectoComponent,
     FormularioCustodiaComponent,
+    FormularioEventoComponent,
     GestionExpertosComponent
   ],
   imports: [CommonModule, RouterModule, ReactiveFormsModule, SharedModule],

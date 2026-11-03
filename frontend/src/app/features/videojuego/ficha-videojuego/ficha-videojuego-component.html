@@ -256,7 +256,6 @@
               [idCopia]="idCopiaHistorial"
               [custodia]="custodiaEditando"
               [instituciones]="catalogoInstituciones"
-              [inicioVigente]="inicioCustodiaVigente"
               (guardado)="alGuardarCustodia()"
               (cancelado)="cerrarFormularioCustodia()">
             </app-formulario-custodia>
@@ -424,7 +423,6 @@
                      class="campo"
                      type="date"
                      formControlName="fechaDeterminacion"
-                     [max]="hoy"
                      [class.invalido]="mostrarErrorEstatus('fechaDeterminacion')"
                      [attr.aria-invalid]="mostrarErrorEstatus('fechaDeterminacion')">
               @if (mostrarErrorEstatus('fechaDeterminacion')) {
@@ -526,7 +524,31 @@
 
         <div class="encabezado-seccion">
           <h2 class="titulo-seccion">Bitácora de eventos de riesgo</h2>
+
+          <!-- Solo curador y administrador -->
+          @if (!mostrarFormularioEvento) {
+            <button type="button"
+                    class="boton-registrar"
+                    *appHasRole="['curador', 'administrador']"
+                    (click)="abrirNuevoEvento()">
+              Agregar evento
+            </button>
+          }
         </div>
+
+        <!-- Agregar (sin [evento]) o editar (con [evento]) -->
+        @if (mostrarFormularioEvento && videojuego) {
+          <app-formulario-evento
+            [idVideojuego]="videojuego.idVideojuego"
+            [evento]="eventoEditando"
+            (guardado)="alGuardarEvento()"
+            (cancelado)="cerrarFormularioEvento()">
+          </app-formulario-evento>
+        }
+
+        @if (errorEvento) {
+          <p class="error-general" role="alert">{{ errorEvento }}</p>
+        }
 
         <!-- Línea de tiempo, del evento más reciente al más antiguo -->
         <ul class="linea-tiempo">
@@ -554,6 +576,32 @@
                     {{ evento.fuente }}
                   }
                 </p>
+              }
+
+              <!-- Curador y administrador editan; solo el administrador elimina -->
+              <div class="acciones-estatus">
+                <button type="button"
+                        class="boton-editar"
+                        *appHasRole="['curador', 'administrador']"
+                        (click)="abrirEditarEvento(evento)">
+                  Editar
+                </button>
+                <button type="button"
+                        class="boton-eliminar"
+                        *appHasRole="['administrador']"
+                        (click)="pedirEliminarEvento(evento)">
+                  Eliminar
+                </button>
+              </div>
+
+              @if (idConfirmandoEliminarEvento === evento.idEvento) {
+                <div class="confirmacion">
+                  <p class="texto-confirmacion">¿Eliminar este evento de la bitácora?</p>
+                  <div class="botones-confirmacion">
+                    <button type="button" class="boton-secundario" (click)="cancelarEliminarEvento()">Cancelar</button>
+                    <button type="button" class="boton-peligro" (click)="confirmarEliminarEvento(evento)">Sí, eliminar</button>
+                  </div>
+                </div>
               }
 
             </li>

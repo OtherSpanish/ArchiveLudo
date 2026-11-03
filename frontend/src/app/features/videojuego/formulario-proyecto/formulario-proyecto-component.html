@@ -56,7 +56,6 @@
            class="campo"
            type="date"
            formControlName="fechaInicio"
-           [max]="hoy"
            [class.invalido]="hayError('fechaInicio')">
     @if (hayError('fechaInicio')) {
       <p class="error">{{ textoError('fechaInicio') }}</p>
@@ -70,8 +69,7 @@
       <input id="campo-fin-proyecto"
              class="campo"
              type="date"
-             formControlName="fechaFin"
-             [max]="hoy">
+             formControlName="fechaFin">
     </div>
   }
 
@@ -119,7 +117,6 @@
                      class="campo"
                      type="date"
                      formControlName="fechaIncorporacion"
-                     [max]="hoy"
                      [class.invalido]="hayErrorFila(i, 'fechaIncorporacion')">
             </div>
 
@@ -128,8 +125,7 @@
               <input [id]="'salida-' + i"
                      class="campo"
                      type="date"
-                     formControlName="fechaSalida"
-                     [max]="hoy">
+                     formControlName="fechaSalida">
             </div>
 
             <!-- Se puede quitar mientras quede más de una fila -->

@@ -1,0 +1,68 @@
+<!-- Formulario de evento de riesgo (agregar o editar) -->
+<form class="formulario" [formGroup]="formulario" (ngSubmit)="guardar()" novalidate>
+
+  <h3 class="titulo-formulario">{{ esEdicion ? 'Editar evento de riesgo' : 'Agregar evento de riesgo' }}</h3>
+
+  <div class="grupo">
+    <label class="etiqueta" for="campo-tipo-evento">Tipo de evento</label>
+    <select id="campo-tipo-evento" class="campo" formControlName="tipoEvento">
+      @for (tipo of tipos; track tipo) {
+        <option [value]="tipo">{{ tipo }}</option>
+      }
+    </select>
+  </div>
+
+  <div class="grupo">
+    <label class="etiqueta" for="campo-fecha-evento">Fecha del evento</label>
+    <input id="campo-fecha-evento"
+           class="campo"
+           type="date"
+           formControlName="fechaEvento"
+           [class.invalido]="hayError('fechaEvento')">
+    @if (hayError('fechaEvento')) {
+      <p class="error">{{ textoError('fechaEvento') }}</p>
+    }
+  </div>
+
+  <div class="grupo">
+    <label class="etiqueta" for="campo-descripcion-evento">Descripción</label>
+    <input id="campo-descripcion-evento"
+           class="campo"
+           type="text"
+           formControlName="descripcion"
+           placeholder="Ej.: La editora apagó los servidores en línea"
+           [class.invalido]="hayError('descripcion')">
+    @if (hayError('descripcion')) {
+      <p class="error">{{ textoError('descripcion') }}</p>
+    }
+  </div>
+
+  <div class="grupo">
+    <label class="etiqueta" for="campo-fuente-evento">Fuente <span class="opcional">(opcional)</span></label>
+    <input id="campo-fuente-evento"
+           class="campo"
+           type="text"
+           formControlName="fuente"
+           placeholder="Ej.: Comunicado oficial o un enlace"
+           [class.invalido]="hayError('fuente')">
+    @if (hayError('fuente')) {
+      <p class="error">{{ textoError('fuente') }}</p>
+    }
+  </div>
+
+  @if (errorGeneral) {
+    <p class="error-general" role="alert">{{ errorGeneral }}</p>
+  }
+
+  <div class="botones">
+    <button type="button" class="boton-secundario" (click)="cancelar()">Cancelar</button>
+    <button type="submit" class="boton-principal" [disabled]="guardando">
+      @if (guardando) {
+        Guardando…
+      } @else {
+        Guardar evento
+      }
+    </button>
+  </div>
+
+</form>

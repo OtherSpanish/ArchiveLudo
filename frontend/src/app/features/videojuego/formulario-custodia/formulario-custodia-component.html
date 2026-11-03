@@ -34,7 +34,6 @@
            class="campo"
            type="date"
            formControlName="fechaInicio"
-           [max]="hoy"
            [class.invalido]="hayError('fechaInicio')">
     @if (hayError('fechaInicio')) {
       <p class="error">{{ textoError('fechaInicio') }}</p>
@@ -48,8 +47,7 @@
       <input id="campo-fin-custodia"
              class="campo"
              type="date"
-             formControlName="fechaFin"
-             [max]="hoy">
+             formControlName="fechaFin">
     </div>
   }
 

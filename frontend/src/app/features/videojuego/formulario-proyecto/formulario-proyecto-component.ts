@@ -184,15 +184,9 @@ export class FormularioProyectoComponent implements OnInit {
       return;
     }
 
+    // Las reglas de negocio (fechas, expertos repetidos, etc.) las valida el back
+    // y responde 400 con el motivo, que se muestra en alFallar.
     const datos = this.formulario.getRawValue();
-
-    this.errorGeneral = this.validarFechas(datos);
-    if (this.errorGeneral === '' && !this.esEdicion) {
-      this.errorGeneral = this.validarExpertos(datos.participaciones, datos.fechaInicio);
-    }
-    if (this.errorGeneral !== '') {
-      return;
-    }
 
     this.guardando = true;
 
@@ -207,54 +201,6 @@ export class FormularioProyectoComponent implements OnInit {
         error: (error) => this.alFallar(error)
       });
     }
-  }
-
-  /* Fechas del proyecto: ninguna futura y la de fin, si hay, no anterior al inicio. */
-  private validarFechas(datos: { fechaInicio: string; fechaFin: string; estado: string }): string {
-    if (datos.fechaInicio > this.hoy) {
-      return 'La fecha de inicio no puede ser futura.';
-    }
-
-    if (datos.estado === 'finalizado') {
-      if (!datos.fechaFin) {
-        return 'Un proyecto finalizado necesita fecha de fin.';
-      }
-      if (datos.fechaFin < datos.fechaInicio) {
-        return 'La fecha de fin no puede ser anterior al inicio.';
-      }
-      if (datos.fechaFin > this.hoy) {
-        return 'La fecha de fin no puede ser futura.';
-      }
-    }
-
-    return '';
-  }
-
-  /* Expertos: sin repetir, con incorporación entre el inicio del proyecto y hoy. */
-  private validarExpertos(filas: ParticipacionNueva[], fechaInicio: string): string {
-    const usados: number[] = [];
-
-    for (const fila of filas) {
-      if (usados.includes(fila.idExperto)) {
-        return 'No puedes repetir un experto en el mismo proyecto.';
-      }
-      usados.push(fila.idExperto);
-
-      if (fila.fechaIncorporacion < fechaInicio) {
-        return 'La incorporación de un experto no puede ser anterior al inicio del proyecto.';
-      }
-      if (fila.fechaIncorporacion > this.hoy) {
-        return 'La incorporación de un experto no puede ser futura.';
-      }
-      if (fila.fechaSalida && fila.fechaSalida < fila.fechaIncorporacion) {
-        return 'La salida de un experto no puede ser anterior a su incorporación.';
-      }
-      if (fila.fechaSalida && fila.fechaSalida > this.hoy) {
-        return 'La salida de un experto no puede ser futura.';
-      }
-    }
-
-    return '';
   }
 
   /* Cuerpo del PUT: los campos vacíos se omiten y fechaFin solo va si es finalizado. */

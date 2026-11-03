@@ -102,7 +102,6 @@
                class="campo"
                type="date"
                formControlName="fechaIncorporacion"
-               [max]="hoy"
                [class.invalido]="hayError('fechaIncorporacion')">
       </div>
 
@@ -111,8 +110,7 @@
         <input id="campo-salida"
                class="campo"
                type="date"
-               formControlName="fechaSalida"
-               [max]="hoy">
+               formControlName="fechaSalida">
       </div>
 
       @if (errorGeneral) {

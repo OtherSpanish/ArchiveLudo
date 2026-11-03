@@ -8,16 +8,14 @@ import { Custodia, CustodiaNueva, Institucion } from '../../../shared/models/cus
  * Formulario para registrar una custodia nueva (traslado) o editar una.
  *
  * Uso (registrar): <app-formulario-custodia [idCopia]="11" [instituciones]="lista"
- *                     [inicioVigente]="'2025-06-30'"
  *                     (guardado)="..." (cancelado)="..."></app-formulario-custodia>
  * Uso (editar):    igual, más [custodia]="custodiaAEditar".
  *
  * Reglas del back:
  *  - Registrar SIEMPRE crea la custodia vigente y cierra la anterior con la
  *    fecha de inicio de la nueva, por eso aquí no hay fecha de fin.
- *  - La custodia nueva no puede empezar antes que la vigente (inicioVigente).
- *  - Al editar sí se puede poner fecha de fin; los periodos no pueden cruzarse
- *    (si se cruzan, el back responde 400 con el motivo).
+ *  - Al editar sí se puede poner fecha de fin.
+ *  - Las reglas de fechas y de periodos las valida el back (400 con el motivo).
  */
 @Component({
   selector: 'app-formulario-custodia',
@@ -35,9 +33,6 @@ export class FormularioCustodiaComponent implements OnInit {
 
   /* Catálogo de instituciones para el selector. */
   @Input() instituciones: Institucion[] = [];
-
-  /* Fecha de inicio de la custodia vigente actual (si la copia tiene una). Sirve para validar. */
-  @Input() inicioVigente?: string;
 
   /* Se emite cuando el back guardó la custodia. */
   @Output() guardado = new EventEmitter<void>();
@@ -111,12 +106,8 @@ export class FormularioCustodiaComponent implements OnInit {
       return;
     }
 
+    // Las reglas de fechas y de periodos las valida el back y responde 400 con el motivo.
     const datos = this.formulario.getRawValue();
-
-    this.errorGeneral = this.validarFechas(datos.fechaInicio, datos.fechaFin);
-    if (this.errorGeneral !== '') {
-      return;
-    }
 
     const cuerpo: CustodiaNueva = {
       idInstitucion: Number(datos.idInstitucion),
@@ -144,32 +135,6 @@ export class FormularioCustodiaComponent implements OnInit {
     }
   }
 
-  /*
-   * Fechas: la de inicio no puede ser futura; al registrar tampoco puede ser
-   * anterior al inicio de la vigente; la de fin (solo al editar) no puede ser
-   * anterior al inicio ni futura.
-   */
-  private validarFechas(inicio: string, fin: string): string {
-    if (inicio > this.hoy) {
-      return 'La fecha de inicio no puede ser futura.';
-    }
-
-    if (!this.esEdicion && this.inicioVigente && inicio < this.inicioVigente) {
-      return 'La custodia nueva no puede empezar antes que la vigente (' + this.formatearFecha(this.inicioVigente) + ').';
-    }
-
-    if (this.esEdicion && fin) {
-      if (fin < inicio) {
-        return 'La fecha de fin no puede ser anterior al inicio.';
-      }
-      if (fin > this.hoy) {
-        return 'La fecha de fin no puede ser futura.';
-      }
-    }
-
-    return '';
-  }
-
   private alGuardar(): void {
     this.guardando = false;
     this.guardado.emit();
@@ -193,15 +158,6 @@ export class FormularioCustodiaComponent implements OnInit {
 
   cancelar(): void {
     this.cancelado.emit();
-  }
-
-  /* '2026-09-01' -> '01/09/2026' */
-  private formatearFecha(fecha: string): string {
-    const partes = fecha.split('-');
-    if (partes.length !== 3) {
-      return fecha;
-    }
-    return partes[2] + '/' + partes[1] + '/' + partes[0];
   }
 
   /* Fecha de hoy 'yyyy-MM-dd' en hora local. */

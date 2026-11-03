@@ -46,6 +46,9 @@
 
       <!-- "Museo · Colombia" -->
       <p class="linea-datos">{{ tipoYPais }}</p>
+
+      <!-- "Custodia 4 copias": el total lo calcula el back -->
+      <p class="linea-datos">{{ textoCopias }}</p>
     </div>
 
   </header>
@@ -91,7 +94,10 @@
           </article>
 
         } @empty {
-          <p class="mensaje">El detalle de las copias en custodia estará disponible cuando se registren las custodias.</p>
+          <p class="mensaje">
+            El detalle de cada copia aún no está disponible en el servidor.
+            Puedes ver sus custodias desde la ficha de cada videojuego.
+          </p>
         }
       </div>
 
