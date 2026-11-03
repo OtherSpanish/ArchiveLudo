@@ -120,6 +120,23 @@ export class FichaInstitucionComponent implements OnInit {
     return this.institucion.tipo + ' · ' + this.institucion.pais;
   }
 
+  /* "Custodia 4 copias" a partir de cantidadCopiasCustodiadas (la calcula el back). */
+  get textoCopias(): string {
+    if (!this.institucion) {
+      return '';
+    }
+
+    const total = this.institucion.cantidadCopiasCustodiadas;
+
+    if (total === 0) {
+      return 'No custodia copias por ahora';
+    }
+    if (total === 1) {
+      return 'Custodia 1 copia';
+    }
+    return 'Custodia ' + total + ' copias';
+  }
+
   /* Código de la copia en el formato de copia-card: la copia 1 es "C-001". */
   codigo(idCopia: number): string {
     return 'C-' + String(idCopia).padStart(3, '0');

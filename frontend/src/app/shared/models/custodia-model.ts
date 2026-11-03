@@ -14,6 +14,8 @@ export interface Institucion {
   pais: string;
   telefonos: number[];
   correos: string[];
+  /* Cuántas copias guarda hoy (custodias vigentes). La calcula el back; siempre llega. */
+  cantidadCopiasCustodiadas: number;
 }
 
 /*
@@ -39,8 +41,20 @@ export interface InstitucionNueva {
 export interface Custodia {
   idCustodia: number;
   idCopia: number;
-  institucion: Institucion;
+  idInstitucion: number;
+  nombreInstitucion?: string;
   fechaInicio: string;
   fechaFin?: string;
-  condicionAlmacenamiento?: string;
+  condicionAlmacenamiento: string;
+}
+
+/*
+ * Cuerpo de POST /api/copias/{id}/custodias y PUT /api/custodias/{id}.
+ * En el POST no va fechaFin: el back siempre crea la vigente y cierra la anterior.
+ */
+export interface CustodiaNueva {
+  idInstitucion: number;
+  fechaInicio: string;
+  fechaFin?: string;
+  condicionAlmacenamiento: string;
 }

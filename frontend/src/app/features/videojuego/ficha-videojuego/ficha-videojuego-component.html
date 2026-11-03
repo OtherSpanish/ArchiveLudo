@@ -173,14 +173,33 @@
           </div>
 
           <div class="lista">
+            <!-- Confirmación para eliminar una copia -->
+            @if (idConfirmandoEliminarCopia > 0) {
+              <div class="confirmacion">
+                <p class="texto-confirmacion">
+                  ¿Eliminar la copia C-{{ idConfirmandoEliminarCopia }}? Si tiene custodias, el servidor no lo permitirá.
+                </p>
+                <div class="botones-confirmacion">
+                  <button type="button" class="boton-secundario" (click)="cancelarEliminarCopia()">Cancelar</button>
+                  <button type="button" class="boton-peligro" (click)="confirmarEliminarCopia()">Sí, eliminar</button>
+                </div>
+              </div>
+            }
+
+            @if (errorCopia) {
+              <p class="error-general" role="alert">{{ errorCopia }}</p>
+            }
+
             <!--
               Una tarjeta por copia. @empty se muestra solo si la lista viene vacía.
-              "item.copia" es la copia y "item.custodiaActual" su custodia vigente.
+              Cada copia trae su institución actual; (verHistorial) carga su historial.
             -->
-            @for (item of copias; track item.copia.idCopia) {
+            @for (item of copias; track item.idCopia) {
               <app-copia-card
-                [copia]="item.copia"
-                [custodiaActual]="item.custodiaActual">
+                [copia]="item"
+                (verHistorial)="verHistorialCustodia($event)"
+                (editar)="editarCopia($event)"
+                (eliminar)="pedirEliminarCopia($event)">
               </app-copia-card>
             } @empty {
               <p class="provisional">Este videojuego no tiene copias registradas.</p>
@@ -218,9 +237,52 @@
       -->
       @if (idCopiaHistorial > 0) {
         <div class="zona-historial">
+
+          <!-- Registrar (trasladar) una custodia: curador y administrador -->
+          @if (!mostrarFormularioCustodia) {
+            <div class="acciones-historial">
+              <button type="button"
+                      class="boton-registrar"
+                      *appHasRole="['curador', 'administrador']"
+                      (click)="abrirNuevaCustodia()">
+                Registrar custodia
+              </button>
+            </div>
+          }
+
+          <!-- Registrar (sin [custodia]) o editar (con [custodia]) -->
+          @if (mostrarFormularioCustodia) {
+            <app-formulario-custodia
+              [idCopia]="idCopiaHistorial"
+              [custodia]="custodiaEditando"
+              [instituciones]="catalogoInstituciones"
+              (guardado)="alGuardarCustodia()"
+              (cancelado)="cerrarFormularioCustodia()">
+            </app-formulario-custodia>
+          }
+
+          <!-- Confirmación para eliminar una custodia -->
+          @if (idConfirmandoEliminarCustodia > 0) {
+            <div class="confirmacion">
+              <p class="texto-confirmacion">
+                ¿Eliminar esta custodia? Si es la vigente, la copia queda sin custodia y la anterior no se reabre sola.
+              </p>
+              <div class="botones-confirmacion">
+                <button type="button" class="boton-secundario" (click)="cancelarEliminarCustodia()">Cancelar</button>
+                <button type="button" class="boton-peligro" (click)="confirmarEliminarCustodia()">Sí, eliminar</button>
+              </div>
+            </div>
+          }
+
+          @if (errorCustodia) {
+            <p class="error-general" role="alert">{{ errorCustodia }}</p>
+          }
+
           <app-timeline-custodia
             [idCopia]="idCopiaHistorial"
-            [custodias]="custodiasHistorial">
+            [custodias]="custodiasHistorial"
+            (editar)="abrirEditarCustodia($event)"
+            (eliminar)="pedirEliminarCustodia($event)">
           </app-timeline-custodia>
         </div>
       }
@@ -233,15 +295,87 @@
 
         <div class="encabezado-seccion">
           <h2 class="titulo-seccion">Proyectos de restauración</h2>
+
+          <!-- Solo curador y administrador -->
+          @if (!mostrarFormularioProyecto) {
+            <button type="button"
+                    class="boton-registrar"
+                    *appHasRole="['curador', 'administrador']"
+                    (click)="abrirNuevoProyecto()">
+              Nuevo proyecto
+            </button>
+          }
         </div>
+
+        <!-- Crear (sin [proyecto]) o editar (con [proyecto]) -->
+        @if (mostrarFormularioProyecto && videojuego) {
+          <app-formulario-proyecto
+            [idVideojuego]="videojuego.idVideojuego"
+            [proyecto]="proyectoEditando"
+            [expertos]="expertos"
+            (guardado)="alGuardarProyecto()"
+            (cancelado)="cerrarFormularioProyecto()">
+          </app-formulario-proyecto>
+        }
+
+        <!-- Panel de expertos del proyecto elegido -->
+        @if (proyectoGestionando) {
+          <app-gestion-expertos
+            [proyecto]="proyectoGestionando"
+            [expertos]="expertos"
+            (cambio)="recargarProyectos()"
+            (cerrado)="cerrarGestionExpertos()">
+          </app-gestion-expertos>
+        }
+
+        @if (errorProyecto) {
+          <p class="error-general" role="alert">{{ errorProyecto }}</p>
+        }
 
         <!--
           Una tarjeta por proyecto, en una cuadrícula que se adapta al ancho.
+          Debajo de cada tarjeta: editar y gestionar expertos (curador y
+          administrador) y eliminar (solo administrador).
           @empty se muestra solo si el juego no tiene proyectos.
         -->
         <div class="cuadricula-proyectos">
-          @for (item of proyectos; track item.proyecto.idProyecto) {
-            <app-proyecto-card [detalle]="item"></app-proyecto-card>
+          @for (item of proyectos; track item.idProyecto) {
+            <div class="proyecto-con-acciones">
+              <app-proyecto-card [proyecto]="item" [expertos]="expertos"></app-proyecto-card>
+
+              <div class="acciones-proyecto">
+                <button type="button"
+                        class="boton-editar"
+                        *appHasRole="['curador', 'administrador']"
+                        (click)="abrirEditarProyecto(item)">
+                  Editar
+                </button>
+                <button type="button"
+                        class="boton-editar"
+                        *appHasRole="['curador', 'administrador']"
+                        (click)="gestionarExpertos(item)">
+                  Gestionar expertos
+                </button>
+                <button type="button"
+                        class="boton-eliminar"
+                        *appHasRole="['administrador']"
+                        (click)="pedirEliminarProyecto(item)">
+                  Eliminar
+                </button>
+              </div>
+
+              @if (idConfirmandoEliminarProyecto === item.idProyecto) {
+                <div class="confirmacion">
+                  <p class="texto-confirmacion">
+                    ¿Eliminar este proyecto? También se eliminan sus expertos asignados.
+                  </p>
+                  <div class="botones-confirmacion">
+                    <button type="button" class="boton-secundario" (click)="cancelarEliminarProyecto()">Cancelar</button>
+                    <button type="button" class="boton-peligro" (click)="confirmarEliminarProyecto(item)">Sí, eliminar</button>
+                  </div>
+                </div>
+              }
+            </div>
           } @empty {
             <p class="provisional">Este videojuego no tiene proyectos de restauración.</p>
           }
@@ -289,7 +423,6 @@
                      class="campo"
                      type="date"
                      formControlName="fechaDeterminacion"
-                     [max]="hoy"
                      [class.invalido]="mostrarErrorEstatus('fechaDeterminacion')"
                      [attr.aria-invalid]="mostrarErrorEstatus('fechaDeterminacion')">
               @if (mostrarErrorEstatus('fechaDeterminacion')) {
@@ -391,7 +524,31 @@
 
         <div class="encabezado-seccion">
           <h2 class="titulo-seccion">Bitácora de eventos de riesgo</h2>
+
+          <!-- Solo curador y administrador -->
+          @if (!mostrarFormularioEvento) {
+            <button type="button"
+                    class="boton-registrar"
+                    *appHasRole="['curador', 'administrador']"
+                    (click)="abrirNuevoEvento()">
+              Agregar evento
+            </button>
+          }
         </div>
+
+        <!-- Agregar (sin [evento]) o editar (con [evento]) -->
+        @if (mostrarFormularioEvento && videojuego) {
+          <app-formulario-evento
+            [idVideojuego]="videojuego.idVideojuego"
+            [evento]="eventoEditando"
+            (guardado)="alGuardarEvento()"
+            (cancelado)="cerrarFormularioEvento()">
+          </app-formulario-evento>
+        }
+
+        @if (errorEvento) {
+          <p class="error-general" role="alert">{{ errorEvento }}</p>
+        }
 
         <!-- Línea de tiempo, del evento más reciente al más antiguo -->
         <ul class="linea-tiempo">
@@ -419,6 +576,32 @@
                     {{ evento.fuente }}
                   }
                 </p>
+              }
+
+              <!-- Curador y administrador editan; solo el administrador elimina -->
+              <div class="acciones-estatus">
+                <button type="button"
+                        class="boton-editar"
+                        *appHasRole="['curador', 'administrador']"
+                        (click)="abrirEditarEvento(evento)">
+                  Editar
+                </button>
+                <button type="button"
+                        class="boton-eliminar"
+                        *appHasRole="['administrador']"
+                        (click)="pedirEliminarEvento(evento)">
+                  Eliminar
+                </button>
+              </div>
+
+              @if (idConfirmandoEliminarEvento === evento.idEvento) {
+                <div class="confirmacion">
+                  <p class="texto-confirmacion">¿Eliminar este evento de la bitácora?</p>
+                  <div class="botones-confirmacion">
+                    <button type="button" class="boton-secundario" (click)="cancelarEliminarEvento()">Cancelar</button>
+                    <button type="button" class="boton-peligro" (click)="confirmarEliminarEvento(evento)">Sí, eliminar</button>
+                  </div>
+                </div>
               }
 
             </li>

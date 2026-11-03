@@ -21,6 +21,10 @@ export interface Copia {
   estadoIntegridad: EstadoIntegridad;
   fechaRegistro: string;
 
+  // Custodia vigente: los calcula el back, solo salen si la copia tiene una.
+  idInstitucionActual?: number;
+  nombreInstitucionActual?: string;
+
   // Campos de COPIA_FISICA (solo si tipoCopia es 'fisica')
   tipoSoporte?: string;
   numeroSerie?: string;

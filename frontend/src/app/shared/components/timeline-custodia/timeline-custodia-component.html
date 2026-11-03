@@ -35,6 +35,22 @@
           <p class="periodo">{{ hito.periodo }}</p>
           <p class="institucion">{{ hito.institucion }}</p>
           <p class="condiciones">{{ hito.condiciones }}</p>
+
+          <!-- Curador y administrador editan; solo el administrador elimina -->
+          <div class="acciones-hito">
+            <button type="button"
+                    class="boton-hito"
+                    *appHasRole="['curador', 'administrador']"
+                    (click)="pedirEditar(hito.id)">
+              Editar
+            </button>
+            <button type="button"
+                    class="boton-hito boton-hito-peligro"
+                    *appHasRole="['administrador']"
+                    (click)="pedirEliminar(hito.id)">
+              Eliminar
+            </button>
+          </div>
         </div>
 
       </li>

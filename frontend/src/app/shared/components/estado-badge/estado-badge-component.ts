@@ -58,6 +58,7 @@ export class EstadoBadgeComponent {
     'irrecuperable': { texto: 'Irrecuperable', color: 'bad' },
 
     // estado (PROYECTO_DE_RESTAURACION). 'activo' ya está más arriba.
+    'pausado': { texto: 'Pausado', color: 'warn' },
     'finalizado': { texto: 'Finalizado', color: 'ok' }
   };
 

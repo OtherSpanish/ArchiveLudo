@@ -1,0 +1,159 @@
+<!--
+  Formulario de proyecto de restauración (crear o editar).
+  Al crear incluye la sección de expertos (mínimo uno); al editar no.
+-->
+<form class="formulario" [formGroup]="formulario" (ngSubmit)="guardar()" novalidate>
+
+  <h3 class="titulo-formulario">{{ esEdicion ? 'Editar proyecto' : 'Nuevo proyecto de restauración' }}</h3>
+
+  <div class="grupo">
+    <label class="etiqueta" for="campo-nombre">Nombre</label>
+    <input id="campo-nombre"
+           class="campo"
+           type="text"
+           formControlName="nombre"
+           placeholder="Ej.: Rescate de System Shock"
+           [class.invalido]="hayError('nombre')"
+           [attr.aria-invalid]="hayError('nombre')">
+    @if (hayError('nombre')) {
+      <p class="error">{{ textoError('nombre') }}</p>
+    }
+  </div>
+
+  <div class="grupo">
+    <label class="etiqueta" for="campo-descripcion">Descripción <span class="opcional">(opcional)</span></label>
+    <input id="campo-descripcion"
+           class="campo"
+           type="text"
+           formControlName="descripcion"
+           [class.invalido]="hayError('descripcion')">
+    @if (hayError('descripcion')) {
+      <p class="error">{{ textoError('descripcion') }}</p>
+    }
+  </div>
+
+  <div class="grupo">
+    <label class="etiqueta" for="campo-herramienta">Herramienta o emulador <span class="opcional">(opcional)</span></label>
+    <input id="campo-herramienta"
+           class="campo"
+           type="text"
+           formControlName="herramientaEmulador"
+           placeholder="Ej.: DOSBox">
+  </div>
+
+  <div class="grupo">
+    <label class="etiqueta" for="campo-estado-proyecto">Estado</label>
+    <select id="campo-estado-proyecto" class="campo" formControlName="estado">
+      @for (opcion of opcionesEstado; track opcion.valor) {
+        <option [value]="opcion.valor">{{ opcion.texto }}</option>
+      }
+    </select>
+  </div>
+
+  <div class="grupo">
+    <label class="etiqueta" for="campo-inicio-proyecto">Fecha de inicio</label>
+    <input id="campo-inicio-proyecto"
+           class="campo"
+           type="date"
+           formControlName="fechaInicio"
+           [class.invalido]="hayError('fechaInicio')">
+    @if (hayError('fechaInicio')) {
+      <p class="error">{{ textoError('fechaInicio') }}</p>
+    }
+  </div>
+
+  <!-- La fecha de fin solo existe si el proyecto está finalizado -->
+  @if (mostrarFechaFin) {
+    <div class="grupo">
+      <label class="etiqueta" for="campo-fin-proyecto">Fecha de fin</label>
+      <input id="campo-fin-proyecto"
+             class="campo"
+             type="date"
+             formControlName="fechaFin">
+    </div>
+  }
+
+  <!-- Expertos: solo al crear. Al editar se manejan con "Gestionar expertos". -->
+  @if (!esEdicion) {
+    <fieldset class="expertos">
+      <legend class="leyenda">Expertos (mínimo uno)</legend>
+
+      <div formArrayName="participaciones" class="lista-filas">
+        @for (fila of participaciones.controls; track fila; let i = $index) {
+          <div class="fila-experto" [formGroupName]="i">
+
+            <div class="grupo">
+              <label class="etiqueta" [for]="'experto-' + i">Experto</label>
+              <select [id]="'experto-' + i"
+                      class="campo"
+                      formControlName="idExperto"
+                      [class.invalido]="hayErrorFila(i, 'idExperto')">
+                <option [ngValue]="null">Selecciona un experto</option>
+                @for (opcion of opcionesExperto; track opcion.id) {
+                  <option [ngValue]="opcion.id">{{ opcion.nombre }}</option>
+                }
+              </select>
+              @if (hayErrorFila(i, 'idExperto')) {
+                <p class="error">{{ textoError('idExperto') }}</p>
+              }
+            </div>
+
+            <div class="grupo">
+              <label class="etiqueta" [for]="'rol-' + i">Rol en el proyecto</label>
+              <input [id]="'rol-' + i"
+                     class="campo"
+                     type="text"
+                     formControlName="rolExperto"
+                     placeholder="Ej.: Ingeniería inversa"
+                     [class.invalido]="hayErrorFila(i, 'rolExperto')">
+              @if (hayErrorFila(i, 'rolExperto')) {
+                <p class="error">{{ textoError('rolExperto') }}</p>
+              }
+            </div>
+
+            <div class="grupo">
+              <label class="etiqueta" [for]="'incorporacion-' + i">Incorporación</label>
+              <input [id]="'incorporacion-' + i"
+                     class="campo"
+                     type="date"
+                     formControlName="fechaIncorporacion"
+                     [class.invalido]="hayErrorFila(i, 'fechaIncorporacion')">
+            </div>
+
+            <div class="grupo">
+              <label class="etiqueta" [for]="'salida-' + i">Salida <span class="opcional">(opcional)</span></label>
+              <input [id]="'salida-' + i"
+                     class="campo"
+                     type="date"
+                     formControlName="fechaSalida">
+            </div>
+
+            <!-- Se puede quitar mientras quede más de una fila -->
+            @if (participaciones.length > 1) {
+              <button type="button" class="boton-secundario" (click)="quitarFila(i)">Quitar experto</button>
+            }
+
+          </div>
+        }
+      </div>
+
+      <button type="button" class="boton-secundario" (click)="agregarFila()">Agregar experto</button>
+    </fieldset>
+  }
+
+  @if (errorGeneral) {
+    <p class="error-general" role="alert">{{ errorGeneral }}</p>
+  }
+
+  <div class="botones">
+    <button type="button" class="boton-secundario" (click)="cancelar()">Cancelar</button>
+    <button type="submit" class="boton-principal" [disabled]="guardando">
+      @if (guardando) {
+        Guardando…
+      } @else {
+        Guardar proyecto
+      }
+    </button>
+  </div>
+
+</form>

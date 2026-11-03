@@ -1,7 +1,6 @@
 import { Videojuego } from './videojuego-model';
-import { Copia, EstadoIntegridad, TipoCopia } from './copia-model';
-import { Custodia, Institucion } from './custodia-model';
-import { ExpertoEnProyecto, ProyectoRestauracion } from './proyecto-model';
+import { EstadoIntegridad, TipoCopia } from './copia-model';
+import { Institucion } from './custodia-model';
 
 /*
  * CONTRATO CON EL BACK.
@@ -73,16 +72,6 @@ export interface DatosFicha {
 }
 
 /*
- * GET /api/videojuegos/{id}/copias
- * Una copia junto con su custodia vigente (la que no tiene fechaFin).
- * custodiaActual es opcional: una copia puede no tener custodia registrada.
- */
-export interface CopiaConCustodia {
-  copia: Copia;
-  custodiaActual?: Custodia;
-}
-
-/*
  * GET /api/copias/{id}/custodias
  * No necesita un tipo propio: devuelve una lista de Custodia
  * (historial completo, con fechaInicio y fechaFin).
@@ -129,17 +118,4 @@ export interface DatosInstitucion {
 export interface InstitucionConCopias {
   institucion: Institucion;
   numeroCopias: number;
-}
-
-/*
- * GET /api/videojuegos/{id}/proyectos
- * Un proyecto de restauración del videojuego con todo lo que se muestra
- * en su tarjeta de la pestaña Proyectos.
- *  - expertos: los de EXP_PROY_REST (rol y fecha de incorporación). Todo
- *    proyecto tiene al menos uno.
- * Orden: del más reciente al más antiguo (fechaInicio descendente).
- */
-export interface ProyectoConDetalle {
-  proyecto: ProyectoRestauracion;
-  expertos: ExpertoEnProyecto[];
 }

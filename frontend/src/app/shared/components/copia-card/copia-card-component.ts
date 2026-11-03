@@ -1,6 +1,5 @@
-import { Component, Input } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { Copia } from '../../models/copia-model';
-import { Custodia } from '../../models/custodia-model';
 
 /*
  * Un campo de la tarjeta: etiqueta en mayúsculas arriba y valor debajo.
@@ -15,12 +14,15 @@ interface CampoCopia {
  * Tarjeta de una copia, para la pestaña "Copias" de la ficha.
  *
  * Uso:
- *   <app-copia-card [copia]="copia" [custodiaActual]="custodia"></app-copia-card>
+ *   <app-copia-card [copia]="copia" (verHistorial)="abrirHistorial($event)"></app-copia-card>
  *
- * Recibe dos datos del componente padre:
- *   - copia: la copia (física o digital) con sus campos
- *   - custodiaActual: la custodia vigente de esa copia (la que no tiene
- *     fechaFin). Es opcional: una copia puede no tener custodia registrada.
+ * Recibe un dato del componente padre:
+ *   - copia: la copia (física o digital) con sus campos. Si tiene custodia
+ *     vigente, trae idInstitucionActual y nombreInstitucionActual (los
+ *     calcula el back).
+ * Avisa al padre con (verHistorial), (editar) y (eliminar), que emiten el
+ * idCopia. Editar es para curador y administrador; eliminar, solo para el
+ * administrador.
  *
  * Según el tipo de copia, la tarjeta muestra campos distintos
  * (generalización de COPIA en COPIA_FISICA y COPIA_DIGITAL del MER):
@@ -37,8 +39,27 @@ export class CopiaCardComponent {
   /* El "!" le dice a TypeScript: "el padre siempre me va a pasar este valor". */
   @Input() copia!: Copia;
 
-  /* El "?" indica que puede no venir. */
-  @Input() custodiaActual?: Custodia;
+  /* Se emite el idCopia cuando el usuario pulsa "Ver historial de custodia". */
+  @Output() verHistorial = new EventEmitter<number>();
+
+  /* Se emite el idCopia cuando se pulsa "Editar". */
+  @Output() editar = new EventEmitter<number>();
+
+  /* Se emite el idCopia cuando se pulsa "Eliminar". */
+  @Output() eliminar = new EventEmitter<number>();
+
+  /* Lo llama el botón de la tarjeta. */
+  pedirHistorial(): void {
+    this.verHistorial.emit(this.copia.idCopia);
+  }
+
+  pedirEditar(): void {
+    this.editar.emit(this.copia.idCopia);
+  }
+
+  pedirEliminar(): void {
+    this.eliminar.emit(this.copia.idCopia);
+  }
 
   /*
    * ID en el formato de la guía: la copia 1 se muestra como "C-001".
@@ -97,21 +118,17 @@ export class CopiaCardComponent {
 
   /*
    * Pie de la tarjeta, por ejemplo:
-   * "Custodia actual: Museo de Cultura Invernadero · Registrada el 12/03/2019"
+   * "Custodiada por: Museo de Cultura Invernadero · Registrada el 12/03/2019"
+   * o, sin custodia vigente, "Sin custodia vigente · Registrada el 12/03/2019".
    */
   get textoPie(): string {
-    let nombreInstitucion = 'sin custodia registrada';
+    let custodia = 'Sin custodia vigente';
 
-    if (this.custodiaActual) {
-      nombreInstitucion = this.custodiaActual.institucion.nombre;
+    if (this.copia.nombreInstitucionActual) {
+      custodia = 'Custodiada por: ' + this.copia.nombreInstitucionActual;
     }
 
-    return (
-      'Custodia actual: ' +
-      nombreInstitucion +
-      ' · Registrada el ' +
-      this.formatearFecha(this.copia.fechaRegistro)
-    );
+    return custodia + ' · Registrada el ' + this.formatearFecha(this.copia.fechaRegistro);
   }
 
   /*

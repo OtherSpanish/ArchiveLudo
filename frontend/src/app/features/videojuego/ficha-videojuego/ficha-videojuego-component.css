@@ -570,3 +570,30 @@
   padding: 4px 12px;
   font-size: 0.8125rem;
 }
+
+/* ---------- Pestaña Proyectos: acciones debajo de cada tarjeta ---------- */
+.proyecto-con-acciones {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.acciones-proyecto {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Los botones de Editar / Gestionar reutilizan el aspecto de .boton-editar, que era para enlaces */
+button.boton-editar {
+  background: transparent;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+/* ---------- Historial de custodia: botón de registrar sobre la línea de tiempo ---------- */
+.acciones-historial {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 16px;
+}

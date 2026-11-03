@@ -1,5 +1,7 @@
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
-import { ProyectoConJuego } from '../../../shared/models/proyecto-con-juego-model';
+import { Experto } from '../../../shared/models/experto-model';
+import { ProyectoDeRestauracion } from '../../../shared/models/proyecto-model';
+import { Videojuego } from '../../../shared/models/videojuego-model';
 
 import { ArchiveludoApiService } from '../../../core/archiveludo-api-service';
 
@@ -13,6 +15,10 @@ interface FiltroProyecto {
  * Pantalla "Proyectos": todos los proyectos de restauración de todos los
  * videojuegos. Cada tarjeta muestra el nombre del juego (con enlace a su
  * ficha) y debajo la tarjeta del proyecto con sus expertos.
+ *
+ * GET /api/proyectos solo trae el idVideojuego de cada proyecto: los títulos
+ * se piden aparte (uno por videojuego distinto) y los nombres de los expertos
+ * salen de GET /api/expertos.
  *
  * El back entrega la lista completa y el filtro por estado se hace aquí,
  * en el front, porque son pocos proyectos.
@@ -29,6 +35,7 @@ export class ProyectosComponent implements OnInit {
   filtros: FiltroProyecto[] = [
     { etiqueta: 'Todos', valor: '' },
     { etiqueta: 'Activos', valor: 'activo' },
+    { etiqueta: 'Pausados', valor: 'pausado' },
     { etiqueta: 'Finalizados', valor: 'finalizado' },
   ];
 
@@ -36,7 +43,13 @@ export class ProyectosComponent implements OnInit {
   filtroActivo: string = '';
 
   /* Todos los proyectos que llegaron (sin filtrar). */
-  proyectos: ProyectoConJuego[] = [];
+  proyectos: ProyectoDeRestauracion[] = [];
+
+  /* Videojuegos de esos proyectos, por id. Mientras llegan, se muestra "Videojuego #id". */
+  juegos: Record<number, Videojuego> = {};
+
+  /* Catálogo de expertos, para los nombres de cada tarjeta. */
+  expertos: Experto[] = [];
 
   /* true mientras se espera la respuesta. */
   cargando: boolean = true;
@@ -53,19 +66,80 @@ export class ProyectosComponent implements OnInit {
     private cambios: ChangeDetectorRef
   ) { }
 
-  /* GET /api/proyectos: todos los proyectos con su videojuego y expertos. */
+  /* GET /api/proyectos y GET /api/expertos. */
   private cargarProyectos(): void {
     this.cargando = true;
     this.hayError = false;
 
     this.api.obtenerTodosLosProyectos().subscribe({
-      next: (respuesta) => {
-        this.proyectos = respuesta;
-        this.cargando = false;
-        this.cambios.markForCheck();
-      },
+      next: (respuesta) => this.alRecibirProyectos(respuesta),
       error: (error) => this.alFallar(error)
     });
+
+    // Si falla, las tarjetas muestran "Experto #id" en lugar del nombre.
+    this.api.obtenerExpertos().subscribe({
+      next: (expertos) => this.alRecibirExpertos(expertos),
+      error: (error) => console.error('No se pudieron cargar los expertos', error)
+    });
+  }
+
+  private alRecibirProyectos(proyectos: ProyectoDeRestauracion[]): void {
+    this.proyectos = proyectos;
+    this.cargando = false;
+    this.cambios.markForCheck();
+
+    this.cargarJuegos(proyectos);
+  }
+
+  private alRecibirExpertos(expertos: Experto[]): void {
+    this.expertos = expertos;
+    this.cambios.markForCheck();
+  }
+
+  /*
+   * Pide cada videojuego distinto una sola vez (GET /api/videojuegos/{id}).
+   * Si un juego falla, solo ese título queda como "Videojuego #id".
+   */
+  private cargarJuegos(proyectos: ProyectoDeRestauracion[]): void {
+    const pedidos: number[] = [];
+
+    for (const proyecto of proyectos) {
+      if (!pedidos.includes(proyecto.idVideojuego)) {
+        pedidos.push(proyecto.idVideojuego);
+      }
+    }
+
+    for (const idVideojuego of pedidos) {
+      this.api.obtenerVideojuego(idVideojuego).subscribe({
+        next: (juego) => this.alRecibirJuego(juego),
+        error: (error) => console.error('No se pudo cargar el videojuego ' + idVideojuego, error)
+      });
+    }
+  }
+
+  private alRecibirJuego(juego: Videojuego): void {
+    this.juegos[juego.idVideojuego] = juego;
+    this.cambios.markForCheck();
+  }
+
+  /* Título del videojuego de un proyecto. */
+  tituloJuego(proyecto: ProyectoDeRestauracion): string {
+    const juego = this.juegos[proyecto.idVideojuego];
+
+    if (juego) {
+      return juego.titulo;
+    }
+    return 'Videojuego #' + proyecto.idVideojuego;
+  }
+
+  /* Plataforma y año, o vacío si el juego aún no llegó. */
+  detalleJuego(proyecto: ProyectoDeRestauracion): string {
+    const juego = this.juegos[proyecto.idVideojuego];
+
+    if (juego) {
+      return juego.plataformaOriginal + ' · ' + juego.anioLanzamiento;
+    }
+    return '';
   }
 
   /* 404: el servidor todavía no tiene este servicio. Otro código: fallo general. */
@@ -92,14 +166,14 @@ export class ProyectosComponent implements OnInit {
   }
 
   /* Los proyectos que se dibujan: todos, o solo los del estado elegido. */
-  get proyectosVisibles(): ProyectoConJuego[] {
+  get proyectosVisibles(): ProyectoDeRestauracion[] {
     if (this.filtroActivo === '') {
       return this.proyectos;
     }
 
-    const resultado: ProyectoConJuego[] = [];
+    const resultado: ProyectoDeRestauracion[] = [];
     for (const item of this.proyectos) {
-      if (item.detalle.proyecto.estado === this.filtroActivo) {
+      if (item.estado === this.filtroActivo) {
         resultado.push(item);
       }
     }
@@ -114,7 +188,7 @@ export class ProyectosComponent implements OnInit {
 
     let cantidad = 0;
     for (const item of this.proyectos) {
-      if (item.detalle.proyecto.estado === valor) {
+      if (item.estado === valor) {
         cantidad = cantidad + 1;
       }
     }

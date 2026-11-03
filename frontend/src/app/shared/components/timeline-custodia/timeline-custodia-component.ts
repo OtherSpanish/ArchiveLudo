@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { Custodia } from '../../models/custodia-model';
 
 /*
@@ -36,6 +36,22 @@ export class TimelineCustodiaComponent {
   @Input() idCopia: number = 0;
 
   @Input() custodias: Custodia[] = [];
+
+  /* Se emite el idCustodia cuando se pulsa "Editar" en un hito. */
+  @Output() editar = new EventEmitter<number>();
+
+  /* Se emite el idCustodia cuando se pulsa "Eliminar" en un hito. */
+  @Output() eliminar = new EventEmitter<number>();
+
+  /* Lo llama el botón "Editar" de cada hito. */
+  pedirEditar(idCustodia: number): void {
+    this.editar.emit(idCustodia);
+  }
+
+  /* Lo llama el botón "Eliminar" de cada hito. */
+  pedirEliminar(idCustodia: number): void {
+    this.eliminar.emit(idCustodia);
+  }
 
   /* Nombres de los meses, para convertir '2019-03-12' en 'Marzo 2019'. */
   private meses: string[] = [
@@ -83,7 +99,7 @@ export class TimelineCustodiaComponent {
 
       lista.push({
         id: custodia.idCustodia,
-        institucion: custodia.institucion.nombre,
+        institucion: custodia.nombreInstitucion || 'Institución ' + custodia.idInstitucion,
         periodo: this.armarPeriodo(custodia),
         condiciones: this.armarCondiciones(custodia),
         vigente: vigente,

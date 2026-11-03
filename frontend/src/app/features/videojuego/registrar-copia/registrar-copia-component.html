@@ -22,13 +22,20 @@
     <span class="separador" aria-hidden="true">/</span>
     <a [routerLink]="['/videojuegos', videojuego.idVideojuego]">{{ videojuego.titulo }}</a>
     <span class="separador" aria-hidden="true">/</span>
-    <span aria-current="page">Registrar copia</span>
+    <span aria-current="page">{{ esEdicion ? 'Editar copia' : 'Registrar copia' }}</span>
   </nav>
 
   <header class="encabezado">
-    <h1 class="titulo">Registrar copia</h1>
+    <h1 class="titulo">{{ esEdicion ? 'Editar copia' : 'Registrar copia' }}</h1>
     <p class="subtitulo">Videojuego: {{ videojuego.titulo }}</p>
-    <p class="ayuda">La custodia de la copia (qué institución la guarda) se registra aparte.</p>
+    @if (esEdicion) {
+      <p class="ayuda">
+        El tipo de copia no se puede cambiar. Para cambiarlo, elimina la copia y registra otra.
+        La custodia se maneja en el historial de la ficha.
+      </p>
+    } @else {
+      <p class="ayuda">La custodia de la copia (qué institución la guarda) se registra aparte.</p>
+    }
   </header>
 
   <!--

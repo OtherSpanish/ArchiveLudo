@@ -70,3 +70,12 @@
   font-size: 13px;
   color: var(--text-muted);
 }
+
+/* Nombre del proyecto, debajo del código */
+.nombre-proyecto {
+  margin: 0;
+  font-family: var(--font-title);
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text-strong);
+}

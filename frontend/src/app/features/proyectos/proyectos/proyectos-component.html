@@ -26,16 +26,16 @@
 
 <!-- Cuadrícula: una columna por proyecto. Arriba el juego, debajo la tarjeta del proyecto. -->
 <section class="resultados" aria-label="Proyectos">
-  @for (item of proyectosVisibles; track item.detalle.proyecto.idProyecto) {
+  @for (item of proyectosVisibles; track item.idProyecto) {
     <article class="item">
 
       <!-- Enlace a la ficha del videojuego al que pertenece el proyecto -->
-      <a class="juego" [routerLink]="['/videojuegos', item.videojuego.idVideojuego]">
-        {{ item.videojuego.titulo }}
-        <span class="plataforma">{{ item.videojuego.plataformaOriginal }} · {{ item.videojuego.anioLanzamiento }}</span>
+      <a class="juego" [routerLink]="['/videojuegos', item.idVideojuego]">
+        {{ tituloJuego(item) }}
+        <span class="plataforma">{{ detalleJuego(item) }}</span>
       </a>
 
-      <app-proyecto-card [detalle]="item.detalle"></app-proyecto-card>
+      <app-proyecto-card [proyecto]="item" [expertos]="expertos"></app-proyecto-card>
 
     </article>
   }
