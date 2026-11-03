@@ -7,7 +7,7 @@ import { SharedModule } from '../../shared/shared-module';
 import { FichaInstitucionComponent } from './ficha-institucion/ficha-institucion-component';
 import { ListaInstitucionesComponent } from './lista-instituciones/lista-instituciones-component';
 
-/*
+/**
  * Rutas de las pantallas de instituciones, ambas con authGuard
  * (exigen tener sesión iniciada):
  *  - /instituciones      -> lista de todas las instituciones

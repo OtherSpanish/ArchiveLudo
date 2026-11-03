@@ -4,7 +4,7 @@ import { Router } from '@angular/router';
 import { catchError, throwError } from 'rxjs';
 import { AuthService } from './auth-service';
 
-/*
+/**
  * Interceptor del token: se ejecuta con CADA petición HTTP de la app.
  *  - Si hay sesión, agrega la cabecera "Authorization: Bearer <token>".
  *    El login es la excepción: todavía no hay token y el back no lo pide.

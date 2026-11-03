@@ -1,4 +1,4 @@
-/*
+/**
  * Experto en restauración. Viene de GET /api/expertos.
  * El nombre llega en cuatro partes (no hay campo "nombre"): se arma con
  * nombreCompletoExperto.
@@ -14,7 +14,7 @@ export interface Experto {
   correo: string;
 }
 
-/* Cuerpo de POST /api/expertos y PUT /api/expertos/{id}. */
+/** Cuerpo de POST /api/expertos y PUT /api/expertos/{id}. */
 export interface ExpertoNuevo {
   primerNombreEx: string;
   segundoNombreEx?: string;
@@ -25,7 +25,7 @@ export interface ExpertoNuevo {
   correo: string;
 }
 
-/* Une las partes del nombre que vengan, separadas por un espacio. */
+/** Une las partes del nombre que vengan, separadas por un espacio. */
 export function nombreCompletoExperto(experto: Experto): string {
   const partes: string[] = [];
 

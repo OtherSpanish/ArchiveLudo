@@ -23,7 +23,7 @@ import {
   ResumenInicio
 } from '../shared/models/api-model';
 
-/*
+/**
  * Servicio que concentra TODAS las llamadas a la API de Spring Boot.
  *
  * Cada función devuelve un Observable. Un Observable es "una respuesta que
@@ -38,16 +38,16 @@ import {
 })
 export class ArchiveludoApiService {
 
-  /*
+  /**
    * Dirección base de la API. Ajusta el puerto si tu Spring Boot corre en otro.
    * Si más adelante hay un servidor de producción, solo se cambia esta línea.
    */
   private urlBase: string = 'http://localhost:8080/api';
 
-  /* Angular entrega solo el HttpClient, por inyección de dependencias. */
+  /** Angular entrega solo el HttpClient, por inyección de dependencias. */
   constructor(private http: HttpClient) { }
 
-  /*
+  /**
    * POST /api/auth/login: inicia sesión.
    * Envía correo y contraseña. El back responde con los datos del usuario en
    * el cuerpo y con el token JWT en la CABECERA "Authorization"; por eso se
@@ -58,12 +58,12 @@ export class ArchiveludoApiService {
     return this.http.post<UsuarioLogin>(this.urlBase + '/auth/login', credenciales, { observe: 'response' });
   }
 
-  /* GET /api/inicio/resumen: contadores y banner de prioridad. */
+  /** GET /api/inicio/resumen: contadores y banner de prioridad. */
   obtenerResumenInicio(): Observable<ResumenInicio> {
     return this.http.get<ResumenInicio>(this.urlBase + '/inicio/resumen');
   }
 
-  /*
+  /**
    * GET /api/videojuegos?estado=en riesgo&limite=10
    * Para los carruseles del Inicio. Es la misma llamada que buscarVideojuegos,
    * pidiendo la primera página de "limite" juegos.
@@ -72,7 +72,7 @@ export class ArchiveludoApiService {
     return this.buscarVideojuegos(estado, '', 0, limite);
   }
 
-  /*
+  /**
    * GET /api/videojuegos?pagina=0&limite=20&estado=en riesgo&q=torre
    * Búsqueda del Catálogo (y de En riesgo):
    *   - "estado" es opcional: si viene vacío, no se manda y trae todos
@@ -104,7 +104,7 @@ export class ArchiveludoApiService {
       .pipe(map((respuesta) => this.armarPagina(respuesta)));
   }
 
-  /* Junta el cuerpo (arreglo) y la cabecera X-Total-Count en un solo objeto. */
+  /** Junta el cuerpo (arreglo) y la cabecera X-Total-Count en un solo objeto. */
   private armarPagina(respuesta: HttpResponse<Videojuego[]>): PaginaVideojuegos {
     const juegos = respuesta.body || [];
     const cabecera = respuesta.headers.get('X-Total-Count');
@@ -114,52 +114,52 @@ export class ArchiveludoApiService {
     return { total: total, juegos: juegos };
   }
 
-  /* GET /api/videojuegos/{id}: datos base del videojuego (con idEstudio e idsEditoras). */
+  /** GET /api/videojuegos/{id}: datos base del videojuego (con idEstudio e idsEditoras). */
   obtenerVideojuego(idVideojuego: number): Observable<Videojuego> {
     return this.http.get<Videojuego>(this.urlBase + '/videojuegos/' + idVideojuego);
   }
 
-  /* GET /api/estudios: todos los estudios (para el selector del formulario). */
+  /** GET /api/estudios: todos los estudios (para el selector del formulario). */
   obtenerEstudios(): Observable<Estudio[]> {
     return this.http.get<Estudio[]>(this.urlBase + '/estudios');
   }
 
-  /* POST /api/editoras (curador o administrador): responde 201 con la editora creada. */
+  /** POST /api/editoras (curador o administrador): responde 201 con la editora creada. */
   crearEditora(editora: EditoraNueva): Observable<CompaniaEditora> {
     return this.http.post<CompaniaEditora>(this.urlBase + '/editoras', editora);
   }
 
-  /* PUT /api/editoras/{id}: el cuerpo es igual al del POST. */
+  /** PUT /api/editoras/{id}: el cuerpo es igual al del POST. */
   actualizarEditora(idEditora: number, editora: EditoraNueva): Observable<CompaniaEditora> {
     return this.http.put<CompaniaEditora>(this.urlBase + '/editoras/' + idEditora, editora);
   }
 
-  /* DELETE /api/editoras/{id} (solo administrador): 204, o 409 si publica algún videojuego. */
+  /** DELETE /api/editoras/{id} (solo administrador): 204, o 409 si publica algún videojuego. */
   eliminarEditora(idEditora: number): Observable<void> {
     return this.http.delete<void>(this.urlBase + '/editoras/' + idEditora);
   }
 
-  /* POST /api/estudios (curador o administrador): responde 201 con el estudio creado. */
+  /** POST /api/estudios (curador o administrador): responde 201 con el estudio creado. */
   crearEstudio(estudio: EstudioNuevo): Observable<Estudio> {
     return this.http.post<Estudio>(this.urlBase + '/estudios', estudio);
   }
 
-  /* PUT /api/estudios/{id}: el cuerpo es igual al del POST. */
+  /** PUT /api/estudios/{id}: el cuerpo es igual al del POST. */
   actualizarEstudio(idEstudio: number, estudio: EstudioNuevo): Observable<Estudio> {
     return this.http.put<Estudio>(this.urlBase + '/estudios/' + idEstudio, estudio);
   }
 
-  /* DELETE /api/estudios/{id} (solo administrador): 204, o 409 si algún videojuego lo usa. */
+  /** DELETE /api/estudios/{id} (solo administrador): 204, o 409 si algún videojuego lo usa. */
   eliminarEstudio(idEstudio: number): Observable<void> {
     return this.http.delete<void>(this.urlBase + '/estudios/' + idEstudio);
   }
 
-  /* POST /api/videojuegos (curador o administrador): responde 201 con el videojuego creado. */
+  /** POST /api/videojuegos (curador o administrador): responde 201 con el videojuego creado. */
   crearVideojuego(videojuego: VideojuegoNuevo): Observable<Videojuego> {
     return this.http.post<Videojuego>(this.urlBase + '/videojuegos', videojuego);
   }
 
-  /*
+  /**
    * DELETE /api/videojuegos/{id} (solo administrador): responde 204 sin cuerpo.
    * Responde 409 si el juego tiene copias, estatus legales o eventos de riesgo.
    */
@@ -167,22 +167,22 @@ export class ArchiveludoApiService {
     return this.http.delete<void>(this.urlBase + '/videojuegos/' + idVideojuego);
   }
 
-  /* PUT /api/videojuegos/{id}: el cuerpo es igual al del POST; idsEditoras reemplaza la lista. */
+  /** PUT /api/videojuegos/{id}: el cuerpo es igual al del POST; idsEditoras reemplaza la lista. */
   actualizarVideojuego(idVideojuego: number, videojuego: VideojuegoNuevo): Observable<Videojuego> {
     return this.http.put<Videojuego>(this.urlBase + '/videojuegos/' + idVideojuego, videojuego);
   }
 
-  /* GET /api/estudios/{id}: el estudio del juego (la ficha solo trae su id). */
+  /** GET /api/estudios/{id}: el estudio del juego (la ficha solo trae su id). */
   obtenerEstudio(idEstudio: number): Observable<Estudio> {
     return this.http.get<Estudio>(this.urlBase + '/estudios/' + idEstudio);
   }
 
-  /* GET /api/editoras: todas las editoras; la ficha las cruza con idsEditoras. */
+  /** GET /api/editoras: todas las editoras; la ficha las cruza con idsEditoras. */
   obtenerEditoras(): Observable<CompaniaEditora[]> {
     return this.http.get<CompaniaEditora[]>(this.urlBase + '/editoras');
   }
 
-  /*
+  /**
    * GET /api/videojuegos/{id}/copias: copias de un videojuego.
    * El back todavía no manda la custodia vigente (llega con las custodias, C9).
    */
@@ -190,7 +190,7 @@ export class ArchiveludoApiService {
     return this.http.get<Copia[]>(this.urlBase + '/videojuegos/' + idVideojuego + '/copias');
   }
 
-  /*
+  /**
    * POST /api/videojuegos/{id}/copias: registra una copia nueva.
    * El cuerpo es una CopiaNueva; el back responde 201 con la Copia ya creada.
    */
@@ -198,12 +198,12 @@ export class ArchiveludoApiService {
     return this.http.post<Copia>(this.urlBase + '/videojuegos/' + idVideojuego + '/copias', copia);
   }
 
-  /* GET /api/videojuegos/{id}/proyectos: proyectos de restauración con sus expertos. */
+  /** GET /api/videojuegos/{id}/proyectos: proyectos de restauración con sus expertos. */
   obtenerProyectos(idVideojuego: number): Observable<ProyectoDeRestauracion[]> {
     return this.http.get<ProyectoDeRestauracion[]>(this.urlBase + '/videojuegos/' + idVideojuego + '/proyectos');
   }
 
-  /*
+  /**
    * GET /api/proyectos: TODOS los proyectos de restauración, de cualquier
    * videojuego, cada uno con sus participaciones y su idVideojuego (el título
    * del juego se busca aparte). Del más reciente al más antiguo (por
@@ -214,7 +214,7 @@ export class ArchiveludoApiService {
     return this.http.get<ProyectoDeRestauracion[]>(this.urlBase + '/proyectos');
   }
 
-  /*
+  /**
    * GET /api/videojuegos/{id}/estatus-legal: historial de estatus legal,
    * del más reciente al más antiguo. El primero es el vigente.
    */
@@ -222,7 +222,7 @@ export class ArchiveludoApiService {
     return this.http.get<EstatusLegal[]>(this.urlBase + '/videojuegos/' + idVideojuego + '/estatus-legal');
   }
 
-  /*
+  /**
    * POST /api/videojuegos/{id}/estatus-legal (curador o administrador).
    * El back responde 201. Después hay que volver a pedir la lista, porque el
    * registro nuevo puede ser (o no) el nuevo vigente.
@@ -231,7 +231,7 @@ export class ArchiveludoApiService {
     return this.http.post<EstatusLegal>(this.urlBase + '/videojuegos/' + idVideojuego + '/estatus-legal', estatus);
   }
 
-  /*
+  /**
    * GET /api/videojuegos/{id}/eventos-riesgo: bitácora de eventos de riesgo,
    * del más reciente al más antiguo.
    */
@@ -239,67 +239,67 @@ export class ArchiveludoApiService {
     return this.http.get<EventoRiesgo[]>(this.urlBase + '/videojuegos/' + idVideojuego + '/eventos-riesgo');
   }
 
-  /* GET /api/copias/{id}/custodias: historial de custodia de una copia. */
+  /** GET /api/copias/{id}/custodias: historial de custodia de una copia. */
   obtenerCustodias(idCopia: number): Observable<Custodia[]> {
     return this.http.get<Custodia[]>(this.urlBase + '/copias/' + idCopia + '/custodias');
   }
 
-  /* GET /api/instituciones: lista de instituciones (con teléfonos y correos). */
+  /** GET /api/instituciones: lista de instituciones (con teléfonos y correos). */
   obtenerInstituciones(): Observable<Institucion[]> {
     return this.http.get<Institucion[]>(this.urlBase + '/instituciones');
   }
 
-  /* POST /api/instituciones (curador o administrador): responde 201 con la institución creada. */
+  /** POST /api/instituciones (curador o administrador): responde 201 con la institución creada. */
   crearInstitucion(institucion: InstitucionNueva): Observable<Institucion> {
     return this.http.post<Institucion>(this.urlBase + '/instituciones', institucion);
   }
 
-  /* PUT /api/instituciones/{id}: el cuerpo es igual al del POST; las listas reemplazan las anteriores. */
+  /** PUT /api/instituciones/{id}: el cuerpo es igual al del POST; las listas reemplazan las anteriores. */
   actualizarInstitucion(idInstitucion: number, institucion: InstitucionNueva): Observable<Institucion> {
     return this.http.put<Institucion>(this.urlBase + '/instituciones/' + idInstitucion, institucion);
   }
 
-  /* DELETE /api/instituciones/{id} (solo administrador): 204, o 409 si tiene custodias. */
+  /** DELETE /api/instituciones/{id} (solo administrador): 204, o 409 si tiene custodias. */
   eliminarInstitucion(idInstitucion: number): Observable<void> {
     return this.http.delete<void>(this.urlBase + '/instituciones/' + idInstitucion);
   }
 
-  /* PUT /api/estatus-legal/{id}: mismo cuerpo que el POST; puede cambiar cuál es el vigente. */
+  /** PUT /api/estatus-legal/{id}: mismo cuerpo que el POST; puede cambiar cuál es el vigente. */
   actualizarEstatusLegal(idEstatus: number, estatus: EstatusLegalNuevo): Observable<EstatusLegal> {
     return this.http.put<EstatusLegal>(this.urlBase + '/estatus-legal/' + idEstatus, estatus);
   }
 
-  /* DELETE /api/estatus-legal/{id}: 204; nunca da 409. Si era el vigente, pasa a serlo el siguiente. */
+  /** DELETE /api/estatus-legal/{id}: 204; nunca da 409. Si era el vigente, pasa a serlo el siguiente. */
   eliminarEstatusLegal(idEstatus: number): Observable<void> {
     return this.http.delete<void>(this.urlBase + '/estatus-legal/' + idEstatus);
   }
 
-  /* GET /api/usuarios (solo administrador): lista sin contraseñas. */
+  /** GET /api/usuarios (solo administrador): lista sin contraseñas. */
   obtenerUsuarios(): Observable<Usuario[]> {
     return this.http.get<Usuario[]>(this.urlBase + '/usuarios');
   }
 
-  /* POST /api/usuarios (solo administrador): la contraseña es obligatoria. */
+  /** POST /api/usuarios (solo administrador): la contraseña es obligatoria. */
   crearUsuario(usuario: UsuarioNuevo): Observable<Usuario> {
     return this.http.post<Usuario>(this.urlBase + '/usuarios', usuario);
   }
 
-  /* PUT /api/usuarios/{id}: si no se envía contraseña, el back conserva la actual. */
+  /** PUT /api/usuarios/{id}: si no se envía contraseña, el back conserva la actual. */
   actualizarUsuario(idUsuario: number, usuario: UsuarioNuevo): Observable<Usuario> {
     return this.http.put<Usuario>(this.urlBase + '/usuarios/' + idUsuario, usuario);
   }
 
-  /* DELETE /api/usuarios/{id} (solo administrador): 204, o 409 si tiene registros. */
+  /** DELETE /api/usuarios/{id} (solo administrador): 204, o 409 si tiene registros. */
   eliminarUsuario(idUsuario: number): Observable<void> {
     return this.http.delete<void>(this.urlBase + '/usuarios/' + idUsuario);
   }
 
-  /* GET /api/instituciones/{id}: una institución (con teléfonos y correos). */
+  /** GET /api/instituciones/{id}: una institución (con teléfonos y correos). */
   obtenerInstitucion(idInstitucion: number): Observable<Institucion> {
     return this.http.get<Institucion>(this.urlBase + '/instituciones/' + idInstitucion);
   }
 
-  /*
+  /**
    * GET /api/reportes/{tipo}?idVideojuego=8&desde=2025-01-01&hasta=2025-12-31
    * Reporte de trazabilidad de un videojuego, a partir de las tablas de
    * historial del back. "desde" y "hasta" son opcionales (yyyy-MM-dd): si
@@ -321,29 +321,29 @@ export class ArchiveludoApiService {
 
   // ---------- Eventos de riesgo (crear, editar, eliminar) ----------
 
-  /* POST /api/videojuegos/{id}/eventos-riesgo */
+  /** POST /api/videojuegos/{id}/eventos-riesgo */
   crearEventoRiesgo(idVideojuego: number, evento: EventoRiesgoNuevo): Observable<EventoRiesgo> {
     return this.http.post<EventoRiesgo>(this.urlBase + '/videojuegos/' + idVideojuego + '/eventos-riesgo', evento);
   }
 
-  /* PUT /api/eventos-riesgo/{id}. No cambian ni el videojuego ni el usuario. */
+  /** PUT /api/eventos-riesgo/{id}. No cambian ni el videojuego ni el usuario. */
   actualizarEventoRiesgo(idEvento: number, evento: EventoRiesgoNuevo): Observable<EventoRiesgo> {
     return this.http.put<EventoRiesgo>(this.urlBase + '/eventos-riesgo/' + idEvento, evento);
   }
 
-  /* DELETE /api/eventos-riesgo/{id}. Solo administrador. Nunca da 409. */
+  /** DELETE /api/eventos-riesgo/{id}. Solo administrador. Nunca da 409. */
   eliminarEventoRiesgo(idEvento: number): Observable<void> {
     return this.http.delete<void>(this.urlBase + '/eventos-riesgo/' + idEvento);
   }
 
   // ---------- Copias (por id) ----------
 
-  /* GET /api/copias/{id} */
+  /** GET /api/copias/{id} */
   obtenerCopia(idCopia: number): Observable<Copia> {
     return this.http.get<Copia>(this.urlBase + '/copias/' + idCopia);
   }
 
-  /*
+  /**
    * PUT /api/copias/{id}
    * El tipoCopia debe ser el mismo que tiene guardado la copia; si no, el back da 400.
    */
@@ -351,14 +351,14 @@ export class ArchiveludoApiService {
     return this.http.put<Copia>(this.urlBase + '/copias/' + idCopia, copia);
   }
 
-  /* DELETE /api/copias/{id}. Solo administrador. 409 si la copia tiene custodias. */
+  /** DELETE /api/copias/{id}. Solo administrador. 409 si la copia tiene custodias. */
   eliminarCopia(idCopia: number): Observable<void> {
     return this.http.delete<void>(this.urlBase + '/copias/' + idCopia);
   }
 
   // ---------- Custodias ----------
 
-  /*
+  /**
    * POST /api/copias/{id}/custodias
    * Siempre crea la custodia vigente y cierra la anterior con la fechaInicio de la nueva.
    */
@@ -366,78 +366,78 @@ export class ArchiveludoApiService {
     return this.http.post<Custodia>(this.urlBase + '/copias/' + idCopia + '/custodias', custodia);
   }
 
-  /* PUT /api/custodias/{id}. Aquí sí se puede enviar fechaFin. */
+  /** PUT /api/custodias/{id}. Aquí sí se puede enviar fechaFin. */
   actualizarCustodia(idCustodia: number, custodia: CustodiaNueva): Observable<Custodia> {
     return this.http.put<Custodia>(this.urlBase + '/custodias/' + idCustodia, custodia);
   }
 
-  /* DELETE /api/custodias/{id}. Solo administrador. */
+  /** DELETE /api/custodias/{id}. Solo administrador. */
   eliminarCustodia(idCustodia: number): Observable<void> {
     return this.http.delete<void>(this.urlBase + '/custodias/' + idCustodia);
   }
 
   // ---------- Expertos ----------
 
-  /* GET /api/expertos (ya ordenados por apellido y nombre) */
+  /** GET /api/expertos (ya ordenados por apellido y nombre) */
   obtenerExpertos(): Observable<Experto[]> {
     return this.http.get<Experto[]>(this.urlBase + '/expertos');
   }
 
-  /* POST /api/expertos. El correo acepta cualquier dominio y no se puede repetir. */
+  /** POST /api/expertos. El correo acepta cualquier dominio y no se puede repetir. */
   crearExperto(experto: ExpertoNuevo): Observable<Experto> {
     return this.http.post<Experto>(this.urlBase + '/expertos', experto);
   }
 
-  /* PUT /api/expertos/{id} */
+  /** PUT /api/expertos/{id} */
   actualizarExperto(idExperto: number, experto: ExpertoNuevo): Observable<Experto> {
     return this.http.put<Experto>(this.urlBase + '/expertos/' + idExperto, experto);
   }
 
-  /* DELETE /api/expertos/{id}. Solo administrador. 409 si participa en proyectos. */
+  /** DELETE /api/expertos/{id}. Solo administrador. 409 si participa en proyectos. */
   eliminarExperto(idExperto: number): Observable<void> {
     return this.http.delete<void>(this.urlBase + '/expertos/' + idExperto);
   }
 
   // ---------- Proyectos de restauración (contrato nuevo) ----------
 
-  /* GET /api/proyectos/{id} */
+  /** GET /api/proyectos/{id} */
   obtenerProyecto(idProyecto: number): Observable<ProyectoDeRestauracion> {
     return this.http.get<ProyectoDeRestauracion>(this.urlBase + '/proyectos/' + idProyecto);
   }
 
-  /* POST /api/videojuegos/{id}/proyectos. Debe traer al menos una participación. */
+  /** POST /api/videojuegos/{id}/proyectos. Debe traer al menos una participación. */
   crearProyecto(idVideojuego: number, proyecto: ProyectoNuevo): Observable<ProyectoDeRestauracion> {
     return this.http.post<ProyectoDeRestauracion>(this.urlBase + '/videojuegos/' + idVideojuego + '/proyectos', proyecto);
   }
 
-  /* PUT /api/proyectos/{id}. Solo los datos del proyecto; las participaciones van aparte. */
+  /** PUT /api/proyectos/{id}. Solo los datos del proyecto; las participaciones van aparte. */
   actualizarProyecto(idProyecto: number, proyecto: ProyectoEditado): Observable<ProyectoDeRestauracion> {
     return this.http.put<ProyectoDeRestauracion>(this.urlBase + '/proyectos/' + idProyecto, proyecto);
   }
 
-  /* DELETE /api/proyectos/{id}. Solo administrador. Borra también sus participaciones. */
+  /** DELETE /api/proyectos/{id}. Solo administrador. Borra también sus participaciones. */
   eliminarProyecto(idProyecto: number): Observable<void> {
     return this.http.delete<void>(this.urlBase + '/proyectos/' + idProyecto);
   }
 
   // ---------- Participaciones ----------
 
-  /* GET /api/proyectos/{id}/participaciones */
+  /** GET /api/proyectos/{id}/participaciones */
   obtenerParticipaciones(idProyecto: number): Observable<Participacion[]> {
     return this.http.get<Participacion[]>(this.urlBase + '/proyectos/' + idProyecto + '/participaciones');
   }
 
-  /* POST /api/proyectos/{id}/participaciones. Un experto solo puede estar una vez por proyecto. */
+  /** POST /api/proyectos/{id}/participaciones. Un experto solo puede estar una vez por proyecto. */
   crearParticipacion(idProyecto: number, participacion: ParticipacionNueva): Observable<Participacion> {
     return this.http.post<Participacion>(this.urlBase + '/proyectos/' + idProyecto + '/participaciones', participacion);
   }
 
-  /* PUT /api/participaciones/{id}. No cambia ni el experto ni el proyecto. */
+  /** PUT /api/participaciones/{id}. No cambia ni el experto ni el proyecto. */
   actualizarParticipacion(idParticipacion: number, participacion: ParticipacionEditada): Observable<Participacion> {
     return this.http.put<Participacion>(this.urlBase + '/participaciones/' + idParticipacion, participacion);
   }
 
-  /* DELETE /api/participaciones/{id}. Solo administrador. 409 si es la única del proyecto. */
+  /** DELETE /api/participaciones/{id}. Solo administrador. 409 si es la única del proyecto. */
   eliminarParticipacion(idParticipacion: number): Observable<void> {
     return this.http.delete<void>(this.urlBase + '/participaciones/' + idParticipacion);
   }

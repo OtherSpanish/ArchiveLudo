@@ -13,16 +13,16 @@ import { InstitucionConCopias } from '../../../shared/models/api-model';
 import { Experto } from '../../../shared/models/experto-model';
 import { ProyectoDeRestauracion } from '../../../shared/models/proyecto-model';
 
-/*
+/**
  * Las cuatro pestañas de la ficha. Cada valor es el identificador interno
  * de la pestaña; el texto que ve el usuario se arma en el HTML.
  */
 type Pestana = 'copias' | 'proyectos' | 'legal' | 'eventos';
 
-/* Los cuatro estatus legales que acepta el back (texto legible). */
+/** Los cuatro estatus legales que acepta el back (texto legible). */
 const ESTATUS_OPCIONES: string[] = ['Protegido', 'Dominio público', 'Huérfano', 'Abandonware'];
 
-/*
+/**
  * Pantalla de la ficha de un videojuego (/videojuegos/:id).
  * Incluye: cabecera, pestañas, pestaña Copias, historial de custodia,
  * pestaña Proyectos, pestaña Estatus legal y pestaña Eventos de riesgo.
@@ -35,162 +35,162 @@ const ESTATUS_OPCIONES: string[] = ['Protegido', 'Dominio público', 'Huérfano'
 })
 export class FichaVideojuegoComponent implements OnInit {
 
-  /*
+  /**
    * El juego que se está mostrando. Empieza sin valor (undefined) y se llena
    * cuando se carga. El "?" indica que puede no tener valor: si el id de la URL
    * no existe, se queda así y el HTML muestra un mensaje de "no encontrado".
    */
   videojuego?: Videojuego;
 
-  /* Nombres de las editoras del juego (se cruzan idsEditoras con GET /api/editoras). */
+  /** Nombres de las editoras del juego (se cruzan idsEditoras con GET /api/editoras). */
   nombresEditoras: string[] = [];
 
-  /* true cuando el back respondió que el juego no existe o falló la carga. */
+  /** true cuando el back respondió que el juego no existe o falló la carga. */
   hayError: boolean = false;
 
   numeroCopias: number = 0;
 
   numeroProyectos: number = 0;
 
-  /*
+  /**
    * Copias del juego (pestaña Copias, columna izquierda). Cada una trae
    * idInstitucionActual y nombreInstitucionActual si tiene custodia vigente.
    */
   copias: Copia[] = [];
 
-  /*
+  /**
    * Instituciones que custodian copias de este juego (columna derecha).
    * Se arman en el front: se cuentan las copias por idInstitucionActual y se
    * cruzan con GET /api/instituciones (ver agruparInstituciones).
    */
   instituciones: InstitucionConCopias[] = [];
 
-  /*
+  /**
    * Copia cuyo historial de custodia se muestra abajo. Al cargar es la
    * primera de la lista; el botón "Ver historial de custodia" de cada tarjeta
    * la cambia. Vale 0 mientras el juego no tenga copias.
    */
   idCopiaHistorial: number = 0;
 
-  /* Periodos de custodia de esa copia, para la línea de tiempo. */
+  /** Periodos de custodia de esa copia, para la línea de tiempo. */
   custodiasHistorial: Custodia[] = [];
 
-  /* Proyectos de restauración del juego, con sus participaciones (pestaña Proyectos). */
+  /** Proyectos de restauración del juego, con sus participaciones (pestaña Proyectos). */
   proyectos: ProyectoDeRestauracion[] = [];
 
-  /* Catálogo de expertos: sirve para mostrar el nombre de cada participación. */
+  /** Catálogo de expertos: sirve para mostrar el nombre de cada participación. */
   expertos: Experto[] = [];
 
-  /*
+  /**
    * Historial de estatus legal (pestaña Estatus legal), del más reciente al
    * más antiguo. El primero es el vigente: el HTML lo marca con $first.
    */
   historialLegal: EstatusLegal[] = [];
 
-  /* Bitácora de eventos de riesgo (pestaña Eventos de riesgo), del más reciente al más antiguo. */
+  /** Bitácora de eventos de riesgo (pestaña Eventos de riesgo), del más reciente al más antiguo. */
   eventos: EventoRiesgo[] = [];
 
   // ---- Eventos de riesgo: agregar, editar y eliminar ----
 
-  /* true cuando el formulario de evento está desplegado. */
+  /** true cuando el formulario de evento está desplegado. */
   mostrarFormularioEvento: boolean = false;
 
-  /* Evento que se edita. Undefined cuando el formulario agrega uno nuevo. */
+  /** Evento que se edita. Undefined cuando el formulario agrega uno nuevo. */
   eventoEditando?: EventoRiesgo;
 
-  /* Id del evento que pide confirmación para eliminarse (0 = ninguno). */
+  /** Id del evento que pide confirmación para eliminarse (0 = ninguno). */
   idConfirmandoEliminarEvento: number = 0;
 
-  /* Mensaje si el back rechaza eliminar un evento. */
+  /** Mensaje si el back rechaza eliminar un evento. */
   errorEvento: string = '';
 
   // ---- Copias: eliminar (editar lleva a otra pantalla) ----
 
-  /* Id de la copia que pide confirmación para eliminarse (0 = ninguna). */
+  /** Id de la copia que pide confirmación para eliminarse (0 = ninguna). */
   idConfirmandoEliminarCopia: number = 0;
 
-  /* Mensaje si el back rechaza eliminar una copia (por ejemplo, 409 si tiene custodias). */
+  /** Mensaje si el back rechaza eliminar una copia (por ejemplo, 409 si tiene custodias). */
   errorCopia: string = '';
 
   // ---- Historial de custodia: registrar, editar y eliminar ----
 
-  /* Catálogo completo de instituciones (selector del formulario de custodia). */
+  /** Catálogo completo de instituciones (selector del formulario de custodia). */
   catalogoInstituciones: Institucion[] = [];
 
-  /* true cuando el formulario de custodia está desplegado. */
+  /** true cuando el formulario de custodia está desplegado. */
   mostrarFormularioCustodia: boolean = false;
 
-  /* Custodia que se edita. Undefined cuando el formulario registra una nueva. */
+  /** Custodia que se edita. Undefined cuando el formulario registra una nueva. */
   custodiaEditando?: Custodia;
 
-  /* Id de la custodia que pide confirmación para eliminarse (0 = ninguna). */
+  /** Id de la custodia que pide confirmación para eliminarse (0 = ninguna). */
   idConfirmandoEliminarCustodia: number = 0;
 
-  /* Mensaje si el back rechaza una acción de custodia. */
+  /** Mensaje si el back rechaza una acción de custodia. */
   errorCustodia: string = '';
 
   // ---- Pestaña Proyectos: crear, editar, eliminar y gestionar expertos ----
 
-  /* true cuando el formulario de proyecto está desplegado. */
+  /** true cuando el formulario de proyecto está desplegado. */
   mostrarFormularioProyecto: boolean = false;
 
-  /* Proyecto que se edita. Undefined cuando el formulario crea uno nuevo. */
+  /** Proyecto que se edita. Undefined cuando el formulario crea uno nuevo. */
   proyectoEditando?: ProyectoDeRestauracion;
 
-  /* Id del proyecto cuyos expertos se están gestionando (0 = ninguno). */
+  /** Id del proyecto cuyos expertos se están gestionando (0 = ninguno). */
   idProyectoGestionando: number = 0;
 
-  /* Id del proyecto que pide confirmación para eliminarse (0 = ninguno). */
+  /** Id del proyecto que pide confirmación para eliminarse (0 = ninguno). */
   idConfirmandoEliminarProyecto: number = 0;
 
-  /* Mensaje si el back rechaza eliminar un proyecto. */
+  /** Mensaje si el back rechaza eliminar un proyecto. */
   errorProyecto: string = '';
 
   // ---- Eliminar el videojuego (solo administrador) ----
 
-  /* true cuando se pidió eliminar y se espera la confirmación del usuario. */
+  /** true cuando se pidió eliminar y se espera la confirmación del usuario. */
   confirmandoEliminar: boolean = false;
 
-  /* true mientras se espera la respuesta del back. */
+  /** true mientras se espera la respuesta del back. */
   eliminando: boolean = false;
 
-  /* Mensaje si el back rechaza la eliminación (por ejemplo, 409). */
+  /** Mensaje si el back rechaza la eliminación (por ejemplo, 409). */
   errorEliminar: string = '';
 
   // ---- Formulario "Agregar estatus legal" (pestaña Estatus legal) ----
 
-  /* Opciones del selector de estatus. */
+  /** Opciones del selector de estatus. */
   opcionesEstatus: string[] = ESTATUS_OPCIONES;
 
-  /* true cuando el formulario está desplegado. */
+  /** true cuando el formulario está desplegado. */
   mostrarFormularioEstatus: boolean = false;
 
-  /* El formulario. Se arma en el constructor. */
+  /** El formulario. Se arma en el constructor. */
   formularioEstatus: FormGroup;
 
-  /* true después del primer intento de guardar; sirve para mostrar errores de campos sin tocar. */
+  /** true después del primer intento de guardar; sirve para mostrar errores de campos sin tocar. */
   estatusEnviado: boolean = false;
 
-  /* true mientras se espera la respuesta del back. */
+  /** true mientras se espera la respuesta del back. */
   guardandoEstatus: boolean = false;
 
-  /* Mensaje de error si el back rechaza el guardado. */
+  /** Mensaje de error si el back rechaza el guardado. */
   errorEstatus: string = '';
 
-  /* Registro que se está editando. Es undefined cuando el formulario agrega uno nuevo. */
+  /** Registro que se está editando. Es undefined cuando el formulario agrega uno nuevo. */
   editandoEstatus?: EstatusLegal;
 
-  /* Id del registro que está pidiendo confirmación para eliminarse (0 = ninguno). */
+  /** Id del registro que está pidiendo confirmación para eliminarse (0 = ninguno). */
   idConfirmandoEliminarEstatus: number = 0;
 
-  /* Fecha máxima del campo de fecha: hoy. No se puede determinar un estatus en el futuro. */
+  /** Fecha máxima del campo de fecha: hoy. No se puede determinar un estatus en el futuro. */
   hoy: string = this.fechaHoy();
 
-  /* Pestaña que se está viendo. Empieza en "Copias", como en el boceto. */
+  /** Pestaña que se está viendo. Empieza en "Copias", como en el boceto. */
   pestanaActiva: Pestana = 'copias';
 
 
-  /*
+  /**
    * ActivatedRoute lee datos de la URL actual.
    * ArchiveludoApiService habla con el back.
    * ChangeDetectorRef avisa a Angular que hay que redibujar la pantalla.
@@ -209,7 +209,7 @@ export class FichaVideojuegoComponent implements OnInit {
     });
   }
 
-  /*
+  /**
    * Pide al back: el videojuego, su estatus legal y sus eventos.
    * También sus copias y sus proyectos.
    * Si el juego no existe (404) se queda sin valor y el HTML muestra
@@ -268,7 +268,7 @@ export class FichaVideojuegoComponent implements OnInit {
     this.cambios.markForCheck();
   }
 
-  /* El proyecto cuyos expertos se gestionan, buscado por id en la lista actual. */
+  /** El proyecto cuyos expertos se gestionan, buscado por id en la lista actual. */
   get proyectoGestionando(): ProyectoDeRestauracion | undefined {
     for (const proyecto of this.proyectos) {
       if (proyecto.idProyecto === this.idProyectoGestionando) {
@@ -278,7 +278,7 @@ export class FichaVideojuegoComponent implements OnInit {
     return undefined;
   }
 
-  /* Abre el formulario vacío para crear un proyecto. */
+  /** Abre el formulario vacío para crear un proyecto. */
   abrirNuevoProyecto(): void {
     this.proyectoEditando = undefined;
     this.idProyectoGestionando = 0;
@@ -287,7 +287,7 @@ export class FichaVideojuegoComponent implements OnInit {
     this.mostrarFormularioProyecto = true;
   }
 
-  /* Abre el formulario con los datos de un proyecto (editar). */
+  /** Abre el formulario con los datos de un proyecto (editar). */
   abrirEditarProyecto(proyecto: ProyectoDeRestauracion): void {
     this.proyectoEditando = proyecto;
     this.idProyectoGestionando = 0;
@@ -301,13 +301,13 @@ export class FichaVideojuegoComponent implements OnInit {
     this.proyectoEditando = undefined;
   }
 
-  /* El formulario guardó: se cierra y se vuelve a pedir la lista. */
+  /** El formulario guardó: se cierra y se vuelve a pedir la lista. */
   alGuardarProyecto(): void {
     this.cerrarFormularioProyecto();
     this.recargarProyectos();
   }
 
-  /* Abre el panel de expertos de un proyecto (cierra el formulario si estaba abierto). */
+  /** Abre el panel de expertos de un proyecto (cierra el formulario si estaba abierto). */
   gestionarExpertos(proyecto: ProyectoDeRestauracion): void {
     this.mostrarFormularioProyecto = false;
     this.proyectoEditando = undefined;
@@ -320,7 +320,7 @@ export class FichaVideojuegoComponent implements OnInit {
     this.idProyectoGestionando = 0;
   }
 
-  /* Vuelve a pedir los proyectos del juego (cambian los expertos, el estado, etc.). */
+  /** Vuelve a pedir los proyectos del juego (cambian los expertos, el estado, etc.). */
   recargarProyectos(): void {
     if (!this.videojuego) {
       return;
@@ -332,7 +332,7 @@ export class FichaVideojuegoComponent implements OnInit {
     });
   }
 
-  /* Primer paso de eliminar un proyecto: confirmación debajo de su tarjeta. */
+  /** Primer paso de eliminar un proyecto: confirmación debajo de su tarjeta. */
   pedirEliminarProyecto(proyecto: ProyectoDeRestauracion): void {
     this.errorProyecto = '';
     this.idConfirmandoEliminarProyecto = proyecto.idProyecto;
@@ -342,7 +342,7 @@ export class FichaVideojuegoComponent implements OnInit {
     this.idConfirmandoEliminarProyecto = 0;
   }
 
-  /* Segundo paso: DELETE /api/proyectos/{id}; borra también sus participaciones. */
+  /** Segundo paso: DELETE /api/proyectos/{id}; borra también sus participaciones. */
   confirmarEliminarProyecto(proyecto: ProyectoDeRestauracion): void {
     this.api.eliminarProyecto(proyecto.idProyecto).subscribe({
       next: () => this.alEliminarProyecto(),
@@ -370,7 +370,7 @@ export class FichaVideojuegoComponent implements OnInit {
     this.cambios.markForCheck();
   }
 
-  /*
+  /**
    * Llegan las copias. Si alguna tiene custodia vigente, se pide la lista de
    * instituciones para armar la columna derecha, y se carga el historial de
    * la primera copia.
@@ -400,7 +400,7 @@ export class FichaVideojuegoComponent implements OnInit {
     }
   }
 
-  /* true si una copia con ese id está en la lista. */
+  /** true si una copia con ese id está en la lista. */
   private copiaExiste(idCopia: number, copias: Copia[]): boolean {
     for (const copia of copias) {
       if (copia.idCopia === idCopia) {
@@ -410,7 +410,7 @@ export class FichaVideojuegoComponent implements OnInit {
     return false;
   }
 
-  /* Abre el formulario vacío para agregar un evento. */
+  /** Abre el formulario vacío para agregar un evento. */
   abrirNuevoEvento(): void {
     this.eventoEditando = undefined;
     this.idConfirmandoEliminarEvento = 0;
@@ -418,7 +418,7 @@ export class FichaVideojuegoComponent implements OnInit {
     this.mostrarFormularioEvento = true;
   }
 
-  /* Abre el formulario con los datos de un evento (editar). */
+  /** Abre el formulario con los datos de un evento (editar). */
   abrirEditarEvento(evento: EventoRiesgo): void {
     this.eventoEditando = evento;
     this.idConfirmandoEliminarEvento = 0;
@@ -431,13 +431,13 @@ export class FichaVideojuegoComponent implements OnInit {
     this.eventoEditando = undefined;
   }
 
-  /* El formulario guardó: se cierra y se vuelve a pedir la bitácora. */
+  /** El formulario guardó: se cierra y se vuelve a pedir la bitácora. */
   alGuardarEvento(): void {
     this.cerrarFormularioEvento();
     this.recargarEventos();
   }
 
-  /* Vuelve a pedir los eventos del juego. */
+  /** Vuelve a pedir los eventos del juego. */
   recargarEventos(): void {
     if (!this.videojuego) {
       return;
@@ -449,7 +449,7 @@ export class FichaVideojuegoComponent implements OnInit {
     });
   }
 
-  /* Primer paso de eliminar un evento: confirmación en la misma tarjeta. */
+  /** Primer paso de eliminar un evento: confirmación en la misma tarjeta. */
   pedirEliminarEvento(evento: EventoRiesgo): void {
     this.errorEvento = '';
     this.idConfirmandoEliminarEvento = evento.idEvento;
@@ -459,7 +459,7 @@ export class FichaVideojuegoComponent implements OnInit {
     this.idConfirmandoEliminarEvento = 0;
   }
 
-  /* Segundo paso: DELETE /api/eventos-riesgo/{id}. */
+  /** Segundo paso: DELETE /api/eventos-riesgo/{id}. */
   confirmarEliminarEvento(evento: EventoRiesgo): void {
     this.api.eliminarEventoRiesgo(evento.idEvento).subscribe({
       next: () => this.alEliminarEvento(),
@@ -487,12 +487,12 @@ export class FichaVideojuegoComponent implements OnInit {
     this.cambios.markForCheck();
   }
 
-  /* Editar una copia: lleva a /copias/:id/editar. */
+  /** Editar una copia: lleva a /copias/:id/editar. */
   editarCopia(idCopia: number): void {
     this.router.navigate(['/copias', idCopia, 'editar']);
   }
 
-  /* Primer paso de eliminar una copia: confirmación sobre la lista. */
+  /** Primer paso de eliminar una copia: confirmación sobre la lista. */
   pedirEliminarCopia(idCopia: number): void {
     this.errorCopia = '';
     this.idConfirmandoEliminarCopia = idCopia;
@@ -502,7 +502,7 @@ export class FichaVideojuegoComponent implements OnInit {
     this.idConfirmandoEliminarCopia = 0;
   }
 
-  /* Segundo paso: DELETE /api/copias/{id}. 409 si la copia tiene custodias. */
+  /** Segundo paso: DELETE /api/copias/{id}. 409 si la copia tiene custodias. */
   confirmarEliminarCopia(): void {
     this.api.eliminarCopia(this.idConfirmandoEliminarCopia).subscribe({
       next: () => this.alEliminarCopia(),
@@ -530,7 +530,7 @@ export class FichaVideojuegoComponent implements OnInit {
     this.cambios.markForCheck();
   }
 
-  /* Vuelve a pedir las copias (cambian sus custodias vigentes y el historial). */
+  /** Vuelve a pedir las copias (cambian sus custodias vigentes y el historial). */
   recargarCopias(): void {
     if (!this.videojuego) {
       return;
@@ -542,7 +542,7 @@ export class FichaVideojuegoComponent implements OnInit {
     });
   }
 
-  /* Abre el formulario vacío para registrar (trasladar) una custodia. */
+  /** Abre el formulario vacío para registrar (trasladar) una custodia. */
   abrirNuevaCustodia(): void {
     this.custodiaEditando = undefined;
     this.idConfirmandoEliminarCustodia = 0;
@@ -550,7 +550,7 @@ export class FichaVideojuegoComponent implements OnInit {
     this.mostrarFormularioCustodia = true;
   }
 
-  /* Abre el formulario con los datos de una custodia (editar). El id llega desde el historial. */
+  /** Abre el formulario con los datos de una custodia (editar). El id llega desde el historial. */
   abrirEditarCustodia(idCustodia: number): void {
     for (const custodia of this.custodiasHistorial) {
       if (custodia.idCustodia === idCustodia) {
@@ -567,13 +567,13 @@ export class FichaVideojuegoComponent implements OnInit {
     this.custodiaEditando = undefined;
   }
 
-  /* El formulario guardó: se cierra y se refrescan copias e historial. */
+  /** El formulario guardó: se cierra y se refrescan copias e historial. */
   alGuardarCustodia(): void {
     this.cerrarFormularioCustodia();
     this.recargarCopias();
   }
 
-  /* Primer paso de eliminar una custodia: confirmación sobre el historial. */
+  /** Primer paso de eliminar una custodia: confirmación sobre el historial. */
   pedirEliminarCustodia(idCustodia: number): void {
     this.mostrarFormularioCustodia = false;
     this.custodiaEditando = undefined;
@@ -585,7 +585,7 @@ export class FichaVideojuegoComponent implements OnInit {
     this.idConfirmandoEliminarCustodia = 0;
   }
 
-  /* Segundo paso: DELETE /api/custodias/{id}. Si era la vigente, la copia queda sin custodia. */
+  /** Segundo paso: DELETE /api/custodias/{id}. Si era la vigente, la copia queda sin custodia. */
   confirmarEliminarCustodia(): void {
     this.api.eliminarCustodia(this.idConfirmandoEliminarCustodia).subscribe({
       next: () => this.alEliminarCustodia(),
@@ -613,7 +613,7 @@ export class FichaVideojuegoComponent implements OnInit {
     this.cambios.markForCheck();
   }
 
-  /* true si al menos una copia tiene institución actual. */
+  /** true si al menos una copia tiene institución actual. */
   private hayCustodiaVigente(copias: Copia[]): boolean {
     for (const copia of copias) {
       if (copia.idInstitucionActual !== undefined) {
@@ -623,14 +623,14 @@ export class FichaVideojuegoComponent implements OnInit {
     return false;
   }
 
-  /* Llega el catálogo de instituciones: se guarda y se arma la columna derecha. */
+  /** Llega el catálogo de instituciones: se guarda y se arma la columna derecha. */
   private alRecibirInstituciones(catalogo: Institucion[]): void {
     this.catalogoInstituciones = catalogo;
     this.instituciones = this.agruparInstituciones(this.copias, catalogo);
     this.cambios.markForCheck();
   }
 
-  /*
+  /**
    * Muestra el historial de custodia de una copia (botón de la tarjeta).
    * GET /api/copias/{id}/custodias. Si falla, el historial queda vacío.
    */
@@ -644,7 +644,7 @@ export class FichaVideojuegoComponent implements OnInit {
     });
   }
 
-  /* Solo se acepta la respuesta de la copia que sigue seleccionada. */
+  /** Solo se acepta la respuesta de la copia que sigue seleccionada. */
   private alRecibirCustodias(idCopia: number, custodias: Custodia[]): void {
     if (idCopia === this.idCopiaHistorial) {
       this.custodiasHistorial = custodias;
@@ -652,7 +652,7 @@ export class FichaVideojuegoComponent implements OnInit {
     }
   }
 
-  /* Llega el juego: se muestra y se piden su estudio y las editoras. */
+  /** Llega el juego: se muestra y se piden su estudio y las editoras. */
   private alRecibirVideojuego(juego: Videojuego): void {
     this.videojuego = juego;
     this.cambios.markForCheck();
@@ -675,7 +675,7 @@ export class FichaVideojuegoComponent implements OnInit {
     }
   }
 
-  /* Guarda el estudio dentro del juego, para que textoEstudio lo muestre. */
+  /** Guarda el estudio dentro del juego, para que textoEstudio lo muestre. */
   private alRecibirEstudio(estudio: Estudio): void {
     if (this.videojuego) {
       this.videojuego.estudio = estudio;
@@ -683,7 +683,7 @@ export class FichaVideojuegoComponent implements OnInit {
     this.cambios.markForCheck();
   }
 
-  /* Se queda solo con los nombres de las editoras cuyo id está en idsEditoras. */
+  /** Se queda solo con los nombres de las editoras cuyo id está en idsEditoras. */
   private alRecibirEditoras(editoras: CompaniaEditora[], ids: number[]): void {
     const nombres: string[] = [];
 
@@ -707,7 +707,7 @@ export class FichaVideojuegoComponent implements OnInit {
     this.cambios.markForCheck();
   }
 
-  /* El detalle del error queda en la consola (F12). */
+  /** El detalle del error queda en la consola (F12). */
   private mostrarError(error: unknown): void {
     console.error('No se pudo cargar la ficha del videojuego', error);
     this.hayError = true;
@@ -715,7 +715,7 @@ export class FichaVideojuegoComponent implements OnInit {
   }
 
 
-  /*
+  /**
    * ngOnInit se ejecuta una vez, cuando el componente ya está listo.
    * paramMap avisa cada vez que cambian los parámetros de la URL, así que la
    * ficha se actualiza aunque el usuario pase de /videojuegos/1 a /videojuegos/8
@@ -727,7 +727,7 @@ export class FichaVideojuegoComponent implements OnInit {
     });
   }
 
-  /* Lee el :id de la URL y pide ese juego. */
+  /** Lee el :id de la URL y pide ese juego. */
   private alCambiarParametros(parametros: ParamMap): void {
     // En /videojuegos/8 el parámetro "id" vale '8', pero como TEXTO.
     // Number() lo convierte a número para poder compararlo con idVideojuego.
@@ -736,7 +736,7 @@ export class FichaVideojuegoComponent implements OnInit {
     this.cargarJuego(id);
   }
 
-  /* Borra el juego anterior, para no mostrar datos mezclados al cambiar de id. */
+  /** Borra el juego anterior, para no mostrar datos mezclados al cambiar de id. */
   private limpiarJuego(): void {
     this.confirmandoEliminar = false;
     this.errorEliminar = '';
@@ -771,7 +771,7 @@ export class FichaVideojuegoComponent implements OnInit {
     this.eventos = [];
   }
 
-  /*
+  /**
    * Arma la lista de instituciones custodias a partir de las copias.
    * Recorre las copias, y por cada una:
    *   - si no tiene institución actual, la salta
@@ -811,7 +811,7 @@ export class FichaVideojuegoComponent implements OnInit {
     return lista;
   }
 
-  /*
+  /**
    * Busca una institución por id en el catálogo. Si no aparece, arma una
    * mínima con el nombre que trae la copia, para que la tarjeta no quede vacía.
    */
@@ -833,18 +833,18 @@ export class FichaVideojuegoComponent implements OnInit {
     };
   }
 
-  /* Primer paso: pide confirmación antes de eliminar. */
+  /** Primer paso: pide confirmación antes de eliminar. */
   pedirConfirmacionEliminar(): void {
     this.errorEliminar = '';
     this.confirmandoEliminar = true;
   }
 
-  /* El usuario se arrepintió. */
+  /** El usuario se arrepintió. */
   cancelarEliminar(): void {
     this.confirmandoEliminar = false;
   }
 
-  /* Segundo paso: DELETE /api/videojuegos/{id}. Si sale bien, vuelve al catálogo. */
+  /** Segundo paso: DELETE /api/videojuegos/{id}. Si sale bien, vuelve al catálogo. */
   confirmarEliminar(): void {
     if (!this.videojuego) {
       return;
@@ -864,7 +864,7 @@ export class FichaVideojuegoComponent implements OnInit {
     this.router.navigate(['/catalogo']);
   }
 
-  /*
+  /**
    * 409: el back explica que el juego tiene datos asociados (copias, estatus
    * o eventos). 403: el rol no puede. Otro: mensaje general.
    */
@@ -884,7 +884,7 @@ export class FichaVideojuegoComponent implements OnInit {
     this.cambios.markForCheck();
   }
 
-  /* Despliega el formulario de estatus legal, limpio. */
+  /** Despliega el formulario de estatus legal, limpio. */
   abrirFormularioEstatus(): void {
     this.editandoEstatus = undefined;
     this.idConfirmandoEliminarEstatus = 0;
@@ -894,7 +894,7 @@ export class FichaVideojuegoComponent implements OnInit {
     this.mostrarFormularioEstatus = true;
   }
 
-  /* Abre el formulario con los datos de un registro existente (editar). */
+  /** Abre el formulario con los datos de un registro existente (editar). */
   abrirEditarEstatus(registro: EstatusLegal): void {
     this.editandoEstatus = registro;
     this.idConfirmandoEliminarEstatus = 0;
@@ -908,18 +908,18 @@ export class FichaVideojuegoComponent implements OnInit {
     this.mostrarFormularioEstatus = true;
   }
 
-  /* Cierra el formulario sin guardar. */
+  /** Cierra el formulario sin guardar. */
   cancelarFormularioEstatus(): void {
     this.mostrarFormularioEstatus = false;
   }
 
-  /* Dice si hay que mostrar el error de un campo del formulario de estatus. */
+  /** Dice si hay que mostrar el error de un campo del formulario de estatus. */
   mostrarErrorEstatus(nombre: string): boolean {
     const control = this.formularioEstatus.controls[nombre];
     return control.invalid && (control.touched || this.estatusEnviado);
   }
 
-  /* Texto del error de un campo del formulario de estatus. */
+  /** Texto del error de un campo del formulario de estatus. */
   textoErrorEstatus(nombre: string): string {
     const control = this.formularioEstatus.controls[nombre];
 
@@ -932,7 +932,7 @@ export class FichaVideojuegoComponent implements OnInit {
     return '';
   }
 
-  /*
+  /**
    * Guarda el estatus: valida lo básico y envía
    * POST /api/videojuegos/{id}/estatus-legal.
    */
@@ -978,7 +978,7 @@ export class FichaVideojuegoComponent implements OnInit {
     }
   }
 
-  /* Primer paso de eliminar un registro del historial: confirmación en la misma fila. */
+  /** Primer paso de eliminar un registro del historial: confirmación en la misma fila. */
   pedirEliminarEstatus(registro: EstatusLegal): void {
     this.errorEstatus = '';
     this.idConfirmandoEliminarEstatus = registro.idEstatus;
@@ -988,7 +988,7 @@ export class FichaVideojuegoComponent implements OnInit {
     this.idConfirmandoEliminarEstatus = 0;
   }
 
-  /* Segundo paso: DELETE /api/estatus-legal/{id}; luego se vuelve a pedir la lista. */
+  /** Segundo paso: DELETE /api/estatus-legal/{id}; luego se vuelve a pedir la lista. */
   confirmarEliminarEstatus(registro: EstatusLegal): void {
     this.api.eliminarEstatusLegal(registro.idEstatus).subscribe({
       next: () => this.alEliminarEstatus(),
@@ -996,7 +996,7 @@ export class FichaVideojuegoComponent implements OnInit {
     });
   }
 
-  /* Se eliminó: el vigente puede haber cambiado, así que se pide la lista completa. */
+  /** Se eliminó: el vigente puede haber cambiado, así que se pide la lista completa. */
   private alEliminarEstatus(): void {
     this.idConfirmandoEliminarEstatus = 0;
 
@@ -1025,7 +1025,7 @@ export class FichaVideojuegoComponent implements OnInit {
     this.cambios.markForCheck();
   }
 
-  /*
+  /**
    * Se guardó. Se vuelve a pedir la lista completa porque el registro nuevo
    * puede haber cambiado cuál es el vigente.
    */
@@ -1043,7 +1043,7 @@ export class FichaVideojuegoComponent implements OnInit {
     this.cambios.markForCheck();
   }
 
-  /* 400: el back explica qué está mal. 403: el rol no puede. Otro: mensaje general. */
+  /** 400: el back explica qué está mal. 403: el rol no puede. Otro: mensaje general. */
   private alFallarEstatus(error: HttpErrorResponse): void {
     console.error('No se pudo guardar el estatus legal', error);
     this.guardandoEstatus = false;
@@ -1059,7 +1059,7 @@ export class FichaVideojuegoComponent implements OnInit {
     this.cambios.markForCheck();
   }
 
-  /* Fecha de hoy 'yyyy-MM-dd' en hora local (toISOString daría la fecha en UTC). */
+  /** Fecha de hoy 'yyyy-MM-dd' en hora local (toISOString daría la fecha en UTC). */
   private fechaHoy(): string {
     const ahora = new Date();
     const mes = String(ahora.getMonth() + 1).padStart(2, '0');
@@ -1068,12 +1068,12 @@ export class FichaVideojuegoComponent implements OnInit {
     return ahora.getFullYear() + '-' + mes + '-' + dia;
   }
 
-  /* Cambia la pestaña activa cuando el usuario hace clic en una. */
+  /** Cambia la pestaña activa cuando el usuario hace clic en una. */
   seleccionarPestana(pestana: Pestana): void {
     this.pestanaActiva = pestana;
   }
 
-  /*
+  /**
    * Convierte '2022-01-20' en '20/01/2022'.
    * split('-') parte el texto en tres pedazos: año, mes y día.
    */
@@ -1085,13 +1085,13 @@ export class FichaVideojuegoComponent implements OnInit {
     return partes[2] + '/' + partes[1] + '/' + partes[0];
   }
 
-  /*
+  /**
    * Cuántos colores de relleno hay definidos en styles.css
    * (--portada-1 hasta --portada-6).
    */
   private totalColoresPortada: number = 6;
 
-  /*
+  /**
    * Color de la portada según el id del juego, así cada juego conserva
    * siempre el mismo color. Los colores NO están aquí: viven en styles.css
    * como variables. Este código solo elige el número y devuelve el nombre
@@ -1106,7 +1106,7 @@ export class FichaVideojuegoComponent implements OnInit {
     return 'var(--portada-' + numero + ')';
   }
 
-  /* Iniciales del título: "Furia Quark" -> "FQ" */
+  /** Iniciales del título: "Furia Quark" -> "FQ" */
   get iniciales(): string {
     if (!this.videojuego) {
       return '';
@@ -1124,7 +1124,7 @@ export class FichaVideojuegoComponent implements OnInit {
     return resultado;
   }
 
-  /* Línea de plataforma y año: "Arcade · 1994" */
+  /** Línea de plataforma y año: "Arcade · 1994" */
   get plataformaYAnio(): string {
     if (!this.videojuego) {
       return '';
@@ -1132,7 +1132,7 @@ export class FichaVideojuegoComponent implements OnInit {
     return this.videojuego.plataformaOriginal + ' · ' + this.videojuego.anioLanzamiento;
   }
 
-  /*
+  /**
    * Estatus legal vigente: el registro del historial con vigente === true.
    * Si no hay ninguno (lista vacía), el juego está "Sin determinar".
    */
@@ -1145,7 +1145,7 @@ export class FichaVideojuegoComponent implements OnInit {
     return 'Sin determinar';
   }
 
-  /* Línea de editoras: "Editoras: A, B" o "Sin editora registrada". */
+  /** Línea de editoras: "Editoras: A, B" o "Sin editora registrada". */
   get textoEditoras(): string {
     if (this.nombresEditoras.length === 0) {
       return 'Sin editora registrada';
@@ -1153,12 +1153,12 @@ export class FichaVideojuegoComponent implements OnInit {
     return 'Editoras: ' + this.nombresEditoras.join(', ');
   }
 
-  /* Una fuente que empieza por "http" se muestra como enlace. */
+  /** Una fuente que empieza por "http" se muestra como enlace. */
   esEnlace(fuente: string): boolean {
     return fuente.startsWith('http');
   }
 
-  /* Línea del estudio: "Estudio: Quark Interactive (desaparecido)" */
+  /** Línea del estudio: "Estudio: Quark Interactive (desaparecido)" */
   get textoEstudio(): string {
     if (!this.videojuego || !this.videojuego.estudio) {
       return '';

@@ -1,4 +1,4 @@
-/*
+/**
  * Los seis reportes de trazabilidad. El valor es la parte de la URL del back:
  * GET /api/reportes/{tipo}
  */
@@ -10,14 +10,14 @@ export type TipoReporte =
   | 'custodias'
   | 'expertos';
 
-/* Una opción del selector de reportes: su valor, su nombre y qué responde. */
+/** Una opción del selector de reportes: su valor, su nombre y qué responde. */
 export interface OpcionReporte {
   valor: TipoReporte;
   etiqueta: string;
   descripcion: string;
 }
 
-/* Los reportes disponibles, en el orden en que se muestran en el selector. */
+/** Los reportes disponibles, en el orden en que se muestran en el selector. */
 export const OPCIONES_REPORTE: OpcionReporte[] = [
   {
     valor: 'estatus-legal',
@@ -51,7 +51,7 @@ export const OPCIONES_REPORTE: OpcionReporte[] = [
   }
 ];
 
-/*
+/**
  * GET /api/reportes/{tipo}?idVideojuego=8&desde=2025-01-01&hasta=2025-12-31
  * Un reporte como tabla genérica: los nombres de las columnas y las filas,
  * donde cada celda es un texto.

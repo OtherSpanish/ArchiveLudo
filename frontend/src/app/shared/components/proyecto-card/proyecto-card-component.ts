@@ -3,7 +3,7 @@ import { Experto, nombreCompletoExperto } from '../../models/experto-model';
 import { Participacion } from '../../models/participacion-model';
 import { ProyectoDeRestauracion } from '../../models/proyecto-model';
 
-/*
+/**
  * Una fila de la lista de expertos de la tarjeta, ya con los textos listos.
  *  - nombre: el nombre armado con las cuatro partes (o "Experto #id" si el
  *    experto no está en el catálogo).
@@ -15,7 +15,7 @@ interface FilaExperto {
   detalle: string;
 }
 
-/*
+/**
  * Tarjeta de un proyecto de restauración, para la pestaña Proyectos
  * de la ficha de videojuego y para la pantalla Proyectos.
  *
@@ -35,18 +35,18 @@ interface FilaExperto {
 })
 export class ProyectoCardComponent {
 
-  /* El "!" le dice a TypeScript: "el padre siempre me va a pasar este valor". */
+  /** El "!" le dice a TypeScript: "el padre siempre me va a pasar este valor". */
   @Input() proyecto!: ProyectoDeRestauracion;
 
-  /* Catálogo de expertos. Puede estar vacío mientras carga. */
+  /** Catálogo de expertos. Puede estar vacío mientras carga. */
   @Input() expertos: Experto[] = [];
 
-  /* Código del proyecto en el mismo formato que las copias: el proyecto 1 es "P-001". */
+  /** Código del proyecto en el mismo formato que las copias: el proyecto 1 es "P-001". */
   get codigo(): string {
     return 'P-' + String(this.proyecto.idProyecto).padStart(3, '0');
   }
 
-  /*
+  /**
    * Texto del período del proyecto:
    *  - sin fecha de fin (activo o pausado): "Desde 05/03/2024"
    *  - con fecha de fin: "05/03/2024 – 20/09/2024"
@@ -61,7 +61,7 @@ export class ProyectoCardComponent {
     return 'Desde ' + inicio;
   }
 
-  /* Texto de expertos, en singular o plural: "1 experto" / "3 expertos" */
+  /** Texto de expertos, en singular o plural: "1 experto" / "3 expertos" */
   get textoExpertos(): string {
     const cantidad = this.proyecto.participaciones.length;
 
@@ -71,7 +71,7 @@ export class ProyectoCardComponent {
     return cantidad + ' expertos';
   }
 
-  /* Una fila por participación, con el nombre buscado en el catálogo. */
+  /** Una fila por participación, con el nombre buscado en el catálogo. */
   get filasExpertos(): FilaExperto[] {
     const filas: FilaExperto[] = [];
 
@@ -86,7 +86,7 @@ export class ProyectoCardComponent {
     return filas;
   }
 
-  /* Busca el experto por id y arma su nombre; si no está, usa "Experto #id". */
+  /** Busca el experto por id y arma su nombre; si no está, usa "Experto #id". */
   private buscarNombre(idExperto: number): string {
     for (const experto of this.expertos) {
       if (experto.idExperto === idExperto) {
@@ -96,7 +96,7 @@ export class ProyectoCardComponent {
     return 'Experto #' + idExperto;
   }
 
-  /* "Rol · desde dd/mm/aaaa" y, si ya salió, " · salió el dd/mm/aaaa". */
+  /** "Rol · desde dd/mm/aaaa" y, si ya salió, " · salió el dd/mm/aaaa". */
   private armarDetalle(participacion: Participacion): string {
     let texto = participacion.rolExperto + ' · desde ' + this.formatearFecha(participacion.fechaIncorporacion);
 
@@ -107,7 +107,7 @@ export class ProyectoCardComponent {
     return texto;
   }
 
-  /*
+  /**
    * Convierte '2024-03-05' en '05/03/2024'.
    * split('-') parte el texto en tres pedazos: año, mes y día.
    */

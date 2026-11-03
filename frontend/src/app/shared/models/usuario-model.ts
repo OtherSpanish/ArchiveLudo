@@ -1,6 +1,6 @@
 import { Rol } from './sesion-model';
 
-/*
+/**
  * Un usuario del sistema (GET /api/usuarios). Solo el administrador puede
  * pedir esta lista. El back NUNCA manda la contraseña ni su hash.
  */
@@ -15,7 +15,7 @@ export interface Usuario {
   fechaCreacion: string;
 }
 
-/*
+/**
  * Cuerpo de POST /api/usuarios y PUT /api/usuarios/{id}.
  *  - contrasenia: obligatoria al crear; al editar es OPCIONAL (si no se
  *    envía, el back conserva la actual).

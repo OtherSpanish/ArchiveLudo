@@ -1,9 +1,9 @@
-/*
+/**
  * Modelos de la sesión y del login.
  * Los nombres de los campos coinciden con el JSON del back.
  */
 
-/*
+/**
  * Los tres roles de la guía (sección 9). El back los envía exactamente así
  * (CAMBIOS_BACKEND_Y_AJUSTES_FRONT, sección 8.8).
  *  - consulta: solo ve.
@@ -12,14 +12,14 @@
  */
 export type Rol = 'consulta' | 'curador' | 'administrador';
 
-/* Texto que ve el usuario para cada rol (barra superior, pantalla de login). */
+/** Texto que ve el usuario para cada rol (barra superior, pantalla de login). */
 export const ETIQUETAS_ROL: Record<Rol, string> = {
   consulta: 'Consulta',
   curador: 'Curador',
   administrador: 'Administrador'
 };
 
-/*
+/**
  * La sesión que guarda el front mientras el usuario está dentro.
  *  - correo: con el que inició sesión.
  *  - nombreUsuario: el nombre para MOSTRAR ("Ana Perez", primer nombre y primer
@@ -36,13 +36,13 @@ export interface Sesion {
   token: string;
 }
 
-/* Lo que escribe el usuario en el formulario de login. */
+/** Lo que escribe el usuario en el formulario de login. */
 export interface CredencialesLogin {
   correo: string;
   contrasenia: string;
 }
 
-/*
+/**
  * POST /api/auth/login
  * Cuerpo que se envía: CredencialesLogin.
  *

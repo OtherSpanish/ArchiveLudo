@@ -9,7 +9,7 @@ import { EstatusLegal } from '../../../shared/models/estatus-legal-model';
 import { EventoRiesgo } from '../../../shared/models/evento-riesgo-model';
 import { Copia } from '../../../shared/models/copia-model';
 
-/*
+/**
  * Pantalla "Reportes": trazabilidad de un videojuego.
  *
  * La persona elige un videojuego, un tipo de reporte y, si quiere, un rango
@@ -28,38 +28,38 @@ import { Copia } from '../../../shared/models/copia-model';
 })
 export class ReportesComponent implements OnInit {
 
-  /* Los seis tipos de reporte, para el selector. */
+  /** Los seis tipos de reporte, para el selector. */
   opciones: OpcionReporte[] = OPCIONES_REPORTE;
 
-  /* Videojuegos que se pueden elegir en el selector. */
+  /** Videojuegos que se pueden elegir en el selector. */
   juegos: Videojuego[] = [];
 
-  /* El formulario con los cuatro campos. Se arma en ngOnInit. */
+  /** El formulario con los cuatro campos. Se arma en ngOnInit. */
   formulario!: FormGroup;
 
-  /* true después del primer intento de generar; muestra los errores de campos sin tocar. */
+  /** true después del primer intento de generar; muestra los errores de campos sin tocar. */
   enviado: boolean = false;
 
-  /* true mientras se espera la respuesta del back. */
+  /** true mientras se espera la respuesta del back. */
   cargando: boolean = false;
 
-  /* true si el back respondió con error. */
+  /** true si el back respondió con error. */
   hayError: boolean = false;
 
-  /* Texto del error (cambia si ese reporte aún no está disponible). */
+  /** Texto del error (cambia si ese reporte aún no está disponible). */
   mensajeError: string = 'No pudimos generar el reporte. Intenta de nuevo más tarde.';
 
-  /* El reporte ya generado. Es null mientras no se haya generado ninguno. */
+  /** El reporte ya generado. Es null mientras no se haya generado ninguno. */
   reporte: ReporteTabla | null = null;
 
-  /* Encabezado del reporte generado: qué reporte y de qué juego. */
+  /** Encabezado del reporte generado: qué reporte y de qué juego. */
   etiquetaDelReporte: string = '';
   juegoDelReporte: string = '';
 
-  /* Meses abreviados para formatear las fechas de las celdas. */
+  /** Meses abreviados para formatear las fechas de las celdas. */
   private meses: string[] = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
 
-  /*
+  /**
    * ApiService habla con el back; ActivatedRoute lee la URL; FormBuilder arma
    * el formulario; ChangeDetectorRef avisa a Angular que hay que redibujar.
    */
@@ -70,7 +70,7 @@ export class ReportesComponent implements OnInit {
     private cambios: ChangeDetectorRef
   ) { }
 
-  /* El selector muestra los primeros 50 juegos (el límite máximo del back). */
+  /** El selector muestra los primeros 50 juegos (el límite máximo del back). */
   private cargarJuegos(): void {
     this.api.buscarVideojuegos('', '', 0, 50).subscribe({
       next: (pagina) => {
@@ -81,7 +81,7 @@ export class ReportesComponent implements OnInit {
     });
   }
 
-  /*
+  /**
    * El back no tiene un endpoint de reportes. Tres reportes se arman aquí con
    * los endpoints que sí existen (estatus legal, eventos de riesgo y copias);
    * los otros tres (proyectos, custodias y expertos) dependen de servicios que
@@ -108,7 +108,7 @@ export class ReportesComponent implements OnInit {
     }
   }
 
-  /* Tabla del reporte "Estatus legal": una fila por registro, del más antiguo al más reciente. */
+  /** Tabla del reporte "Estatus legal": una fila por registro, del más antiguo al más reciente. */
   private tablaEstatus(lista: EstatusLegal[]): ReporteTabla {
     const filas: string[][] = [];
 
@@ -119,7 +119,7 @@ export class ReportesComponent implements OnInit {
     return { columnas: ['Fecha de determinación', 'Estatus legal', 'Observación'], filas: filas };
   }
 
-  /* Tabla del reporte "Eventos de riesgo". */
+  /** Tabla del reporte "Eventos de riesgo". */
   private tablaEventos(lista: EventoRiesgo[]): ReporteTabla {
     const filas: string[][] = [];
 
@@ -130,7 +130,7 @@ export class ReportesComponent implements OnInit {
     return { columnas: ['Fecha', 'Tipo de evento', 'Descripción', 'Fuente'], filas: filas };
   }
 
-  /*
+  /**
    * Tabla del reporte "Copias en el tiempo": con las copias ordenadas por
    * fecha de registro, la columna "Copias" cuenta cuántas había en ese momento.
    */
@@ -150,7 +150,7 @@ export class ReportesComponent implements OnInit {
     return { columnas: ['Fecha', 'Copias', 'Cambio'], filas: filas };
   }
 
-  /* Ordena por la primera columna (una fecha yyyy-MM-dd), recorta por el rango y muestra la tabla. */
+  /** Ordena por la primera columna (una fecha yyyy-MM-dd), recorta por el rango y muestra la tabla. */
   private mostrarReporte(tabla: ReporteTabla, desde: string, hasta: string): void {
     const ordenadas = tabla.filas.slice();
     ordenadas.sort((a, b) => a[0].localeCompare(b[0]));
@@ -169,7 +169,7 @@ export class ReportesComponent implements OnInit {
     this.cambios.markForCheck();
   }
 
-  /* Muestra el aviso de error con el texto dado; el detalle queda en la consola (F12). */
+  /** Muestra el aviso de error con el texto dado; el detalle queda en la consola (F12). */
   private alFallar(error: unknown, mensaje: string): void {
     console.error('No se pudo generar el reporte', error);
     this.mensajeError = mensaje;
@@ -178,7 +178,7 @@ export class ReportesComponent implements OnInit {
     this.cambios.markForCheck();
   }
 
-  /* Arma el formulario, deja elegido el juego de la URL (si viene) y carga el selector. */
+  /** Arma el formulario, deja elegido el juego de la URL (si viene) y carga el selector. */
   ngOnInit(): void {
     this.formulario = this.constructorFormulario.group({
       videojuego: ['', Validators.required],
@@ -196,14 +196,14 @@ export class ReportesComponent implements OnInit {
     this.cargarJuegos();
   }
 
-  /* true si la fecha "desde" es posterior a la fecha "hasta". Las fechas yyyy-MM-dd se comparan como texto. */
+  /** true si la fecha "desde" es posterior a la fecha "hasta". Las fechas yyyy-MM-dd se comparan como texto. */
   get rangoInvalido(): boolean {
     const desde = this.formulario.value.desde;
     const hasta = this.formulario.value.hasta;
     return desde !== '' && hasta !== '' && desde > hasta;
   }
 
-  /* La descripción del tipo de reporte elegido, que se muestra bajo el selector. */
+  /** La descripción del tipo de reporte elegido, que se muestra bajo el selector. */
   get descripcionTipo(): string {
     const tipo = this.formulario.value.tipo;
     for (const opcion of this.opciones) {
@@ -214,7 +214,7 @@ export class ReportesComponent implements OnInit {
     return '';
   }
 
-  /* Botón "Generar reporte": valida el formulario y pide la tabla. */
+  /** Botón "Generar reporte": valida el formulario y pide la tabla. */
   generar(): void {
     this.enviado = true;
 
@@ -239,12 +239,12 @@ export class ReportesComponent implements OnInit {
     this.cargarReporte(tipo, idVideojuego, valores.desde, valores.hasta);
   }
 
-  /* Botón "Limpiar fechas": borra el rango para ver el reporte completo. */
+  /** Botón "Limpiar fechas": borra el rango para ver el reporte completo. */
   limpiarFechas(): void {
     this.formulario.patchValue({ desde: '', hasta: '' });
   }
 
-  /* El nombre del tipo de reporte, para el encabezado. */
+  /** El nombre del tipo de reporte, para el encabezado. */
   private buscarEtiqueta(tipo: TipoReporte): string {
     for (const opcion of this.opciones) {
       if (opcion.valor === tipo) {
@@ -254,7 +254,7 @@ export class ReportesComponent implements OnInit {
     return '';
   }
 
-  /* El título del videojuego, para el encabezado. */
+  /** El título del videojuego, para el encabezado. */
   private buscarTitulo(idVideojuego: number): string {
     for (const juego of this.juegos) {
       if (juego.idVideojuego === idVideojuego) {
@@ -264,7 +264,7 @@ export class ReportesComponent implements OnInit {
     return '';
   }
 
-  /*
+  /**
    * Formatea una celda de la tabla: una fecha yyyy-MM-dd pasa a "14 feb 2026",
    * un texto vacío pasa a "—" y cualquier otro texto queda igual.
    * Se parte el texto a mano (no con new Date) para evitar que la zona

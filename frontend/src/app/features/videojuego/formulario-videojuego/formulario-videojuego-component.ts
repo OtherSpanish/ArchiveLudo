@@ -11,13 +11,13 @@ import {
   VideojuegoNuevo
 } from '../../../shared/models/videojuego-model';
 
-/* Una opción del selector de estado: el valor que se envía y el texto que se ve. */
+/** Una opción del selector de estado: el valor que se envía y el texto que se ve. */
 interface OpcionEstado {
   valor: EstadoConservacion;
   etiqueta: string;
 }
 
-/*
+/**
  * Formulario para CREAR o EDITAR un videojuego. Es una sola pantalla con dos rutas:
  *   - /videojuegos/nuevo        -> modo crear  (no hay :id en la URL)
  *   - /videojuegos/:id/editar   -> modo editar (carga el juego y llena el formulario)
@@ -37,33 +37,33 @@ interface OpcionEstado {
 })
 export class FormularioVideojuegoComponent implements OnInit {
 
-  /* Año mínimo y máximo que acepta el back para anioLanzamiento. */
+  /** Año mínimo y máximo que acepta el back para anioLanzamiento. */
   readonly anioMinimo: number = 1950;
   readonly anioMaximo: number = new Date().getFullYear();
 
-  /* Id del juego que se edita. Vale 0 en modo crear. */
+  /** Id del juego que se edita. Vale 0 en modo crear. */
   idVideojuego: number = 0;
 
-  /* true si se está editando un juego existente. */
+  /** true si se está editando un juego existente. */
   modoEdicion: boolean = false;
 
-  /* Título del juego que se edita, para las migas y el subtítulo. */
+  /** Título del juego que se edita, para las migas y el subtítulo. */
   tituloOriginal: string = '';
 
-  /* true mientras se esperan los datos iniciales (estudios, editoras y, al editar, el juego). */
+  /** true mientras se esperan los datos iniciales (estudios, editoras y, al editar, el juego). */
   cargando: boolean = true;
 
-  /* true si no se pudo cargar lo necesario (por ejemplo, el id no existe). */
+  /** true si no se pudo cargar lo necesario (por ejemplo, el id no existe). */
   hayErrorCarga: boolean = false;
 
-  /* Datos de los selectores. */
+  /** Datos de los selectores. */
   estudios: Estudio[] = [];
   editoras: CompaniaEditora[] = [];
 
-  /* Ids de las editoras marcadas (casillas). */
+  /** Ids de las editoras marcadas (casillas). */
   editorasSeleccionadas: number[] = [];
 
-  /* Opciones del estado de conservación, con los valores EXACTOS del back (con espacios). */
+  /** Opciones del estado de conservación, con los valores EXACTOS del back (con espacios). */
   opcionesEstado: OpcionEstado[] = [
     { valor: 'activo', etiqueta: 'Activo' },
     { valor: 'en riesgo', etiqueta: 'En riesgo' },
@@ -72,19 +72,19 @@ export class FormularioVideojuegoComponent implements OnInit {
     { valor: 'restaurado', etiqueta: 'Restaurado' }
   ];
 
-  /* El formulario. */
+  /** El formulario. */
   formulario: FormGroup;
 
-  /* true después del primer intento de guardar. */
+  /** true después del primer intento de guardar. */
   enviado: boolean = false;
 
-  /* true mientras se espera la respuesta del back. */
+  /** true mientras se espera la respuesta del back. */
   guardando: boolean = false;
 
-  /* Mensaje si el back rechaza el guardado. */
+  /** Mensaje si el back rechaza el guardado. */
   errorEnvio: string = '';
 
-  /* Cuántas cargas iniciales faltan por terminar (se baja de 3 o 2 hasta 0). */
+  /** Cuántas cargas iniciales faltan por terminar (se baja de 3 o 2 hasta 0). */
   private cargasPendientes: number = 0;
 
   constructor(
@@ -108,7 +108,7 @@ export class FormularioVideojuegoComponent implements OnInit {
     });
   }
 
-  /* Decide el modo según la URL y pide los datos necesarios. */
+  /** Decide el modo según la URL y pide los datos necesarios. */
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
 
@@ -125,7 +125,7 @@ export class FormularioVideojuegoComponent implements OnInit {
     this.cargarEditoras();
   }
 
-  /* GET /api/videojuegos/{id}: llena el formulario con los datos actuales. */
+  /** GET /api/videojuegos/{id}: llena el formulario con los datos actuales. */
   private cargarJuego(): void {
     this.api.obtenerVideojuego(this.idVideojuego).subscribe({
       next: (juego) => this.alRecibirJuego(juego),
@@ -150,7 +150,7 @@ export class FormularioVideojuegoComponent implements OnInit {
     this.terminoUnaCarga();
   }
 
-  /* GET /api/estudios */
+  /** GET /api/estudios */
   private cargarEstudios(): void {
     this.api.obtenerEstudios().subscribe({
       next: (lista) => {
@@ -161,7 +161,7 @@ export class FormularioVideojuegoComponent implements OnInit {
     });
   }
 
-  /* GET /api/editoras */
+  /** GET /api/editoras */
   private cargarEditoras(): void {
     this.api.obtenerEditoras().subscribe({
       next: (lista) => {
@@ -172,7 +172,7 @@ export class FormularioVideojuegoComponent implements OnInit {
     });
   }
 
-  /* Cuando llegan todas las cargas, se muestra el formulario. */
+  /** Cuando llegan todas las cargas, se muestra el formulario. */
   private terminoUnaCarga(): void {
     this.cargasPendientes--;
 
@@ -191,12 +191,12 @@ export class FormularioVideojuegoComponent implements OnInit {
     this.cambios.markForCheck();
   }
 
-  /* true si la editora está marcada. */
+  /** true si la editora está marcada. */
   estaSeleccionada(idEditora: number): boolean {
     return this.editorasSeleccionadas.includes(idEditora);
   }
 
-  /* Marca o desmarca una editora (se llama al pulsar su casilla). */
+  /** Marca o desmarca una editora (se llama al pulsar su casilla). */
   alternarEditora(idEditora: number): void {
     if (this.estaSeleccionada(idEditora)) {
       this.editorasSeleccionadas = this.editorasSeleccionadas.filter((id) => id !== idEditora);
@@ -205,13 +205,13 @@ export class FormularioVideojuegoComponent implements OnInit {
     }
   }
 
-  /* Dice si hay que mostrar el error de un campo. */
+  /** Dice si hay que mostrar el error de un campo. */
   mostrarError(nombre: string): boolean {
     const control = this.formulario.controls[nombre];
     return control.invalid && (control.touched || this.enviado);
   }
 
-  /* Texto del error de un campo, según qué validación falló. */
+  /** Texto del error de un campo, según qué validación falló. */
   textoError(nombre: string): string {
     const control = this.formulario.controls[nombre];
 
@@ -227,7 +227,7 @@ export class FormularioVideojuegoComponent implements OnInit {
     return '';
   }
 
-  /* Se ejecuta al pulsar "Guardar": valida y envía POST o PUT según el modo. */
+  /** Se ejecuta al pulsar "Guardar": valida y envía POST o PUT según el modo. */
   guardar(): void {
     this.enviado = true;
     this.errorEnvio = '';
@@ -253,7 +253,7 @@ export class FormularioVideojuegoComponent implements OnInit {
     }
   }
 
-  /* Arma el cuerpo del POST/PUT con los valores del formulario. */
+  /** Arma el cuerpo del POST/PUT con los valores del formulario. */
   private armarCuerpo(): VideojuegoNuevo {
     const datos = this.formulario.getRawValue();
 
@@ -275,13 +275,13 @@ export class FormularioVideojuegoComponent implements OnInit {
     return cuerpo;
   }
 
-  /* Se guardó: va a la ficha del juego (nuevo o editado). */
+  /** Se guardó: va a la ficha del juego (nuevo o editado). */
   private alGuardar(juego: Videojuego): void {
     this.guardando = false;
     this.router.navigate(['/videojuegos', juego.idVideojuego]);
   }
 
-  /*
+  /**
    * Si falla, el formulario se queda como estaba:
    *  - 400 / 404: el back explica qué está mal (error.error.mensaje)
    *  - 403: el rol no puede
@@ -302,7 +302,7 @@ export class FormularioVideojuegoComponent implements OnInit {
     this.cambios.markForCheck();
   }
 
-  /* "Cancelar": vuelve a la ficha (si se edita) o al catálogo (si se crea). */
+  /** "Cancelar": vuelve a la ficha (si se edita) o al catálogo (si se crea). */
   cancelar(): void {
     if (this.modoEdicion) {
       this.router.navigate(['/videojuegos', this.idVideojuego]);
@@ -311,7 +311,7 @@ export class FormularioVideojuegoComponent implements OnInit {
     }
   }
 
-  /* Título de la pantalla según el modo. */
+  /** Título de la pantalla según el modo. */
   get titulo(): string {
     return this.modoEdicion ? 'Editar videojuego' : 'Nuevo videojuego';
   }

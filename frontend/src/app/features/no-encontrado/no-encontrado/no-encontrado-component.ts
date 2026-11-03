@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 
-/*
+/**
  * Pantalla que se muestra cuando la URL no coincide con ninguna ruta
  * (por ejemplo /algo-que-no-existe). No necesita datos: solo avisa y
  * ofrece volver al inicio.

@@ -1,4 +1,4 @@
-/*
+/**
  * Un registro del historial de estatus legal (GET /api/videojuegos/{id}/estatus-legal).
  *
  *  - estatus: ya viene como texto legible ("Protegido", "Dominio público",
@@ -17,7 +17,7 @@ export interface EstatusLegal {
   vigente: boolean;
 }
 
-/*
+/**
  * Cuerpo de POST /api/videojuegos/{id}/estatus-legal.
  * No lleva idEstatus, idVideojuego (va en la URL), idUsuario (sale del token)
  * ni vigente (lo calcula el back).

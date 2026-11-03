@@ -13,7 +13,7 @@ import { InstitucionCardComponent } from './components/institucion-card/instituc
 import { TimelineCustodiaComponent } from './components/timeline-custodia/timeline-custodia-component';
 import { ProyectoCardComponent } from './components/proyecto-card/proyecto-card-component';
 
-/*
+/**
  * Módulo de piezas compartidas. Declara cada componente y directiva
  * reutilizable y los exporta, para que cualquier otro módulo que importe
  * SharedModule pueda usar sus etiquetas (<app-estado-badge>,

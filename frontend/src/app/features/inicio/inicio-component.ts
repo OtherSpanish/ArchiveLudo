@@ -5,7 +5,7 @@ import { Copia } from '../../shared/models/copia-model';
 import { Estudio } from '../../shared/models/videojuego-model';
 import { ArchiveludoApiService } from '../../core/archiveludo-api-service';
 
-/*
+/**
  * Un contador de la parte de arriba: etiqueta, número y color del punto.
  * Es un tipo solo del front: se arma con los totales que entrega el back.
  */
@@ -15,7 +15,7 @@ interface Contador {
   color: 'info' | 'ok' | 'warn' | 'bad';
 }
 
-/*
+/**
  * Una fila del Inicio: "En riesgo crítico", "Totalmente perdidos" o "Restaurados con éxito".
  *  - color: el color del punto junto al título (coincide con las clases del CSS)
  *  - estado: valor de la base de datos, para pedirlo a la API y para el enlace "Ver todos"
@@ -29,7 +29,7 @@ interface FilaJuegos {
   juegos: JuegoConMeta[];
 }
 
-/*
+/**
  * Pantalla de Inicio. El back no tiene un endpoint de "resumen", así que
  * todo se arma con GET /api/videojuegos (la cabecera X-Total-Count da los
  * totales) y, para el banner, con las copias y el estudio del primer juego
@@ -43,30 +43,30 @@ interface FilaJuegos {
 })
 export class InicioComponent implements OnInit {
 
-  /* Total de videojuegos del catálogo (primer contador). */
+  /** Total de videojuegos del catálogo (primer contador). */
   totalTitulos: number = 0;
 
-  /* El "?" indica que al principio no tiene valor. El HTML ya revisa que exista antes de dibujar el banner. */
+  /** El "?" indica que al principio no tiene valor. El HTML ya revisa que exista antes de dibujar el banner. */
   juegoPrioritario?: Videojuego;
 
   descripcionPrioritario: string = '';
 
   criteriosPrioritario: string[] = [];
 
-  /* true si alguna petición falló; se muestra un aviso en la pantalla. */
+  /** true si alguna petición falló; se muestra un aviso en la pantalla. */
   hayError: boolean = false;
 
-  /* Las tres filas existen desde el inicio (con total 0 y sin juegos); cada una se llena con su llamada. */
+  /** Las tres filas existen desde el inicio (con total 0 y sin juegos); cada una se llena con su llamada. */
   filas: FilaJuegos[] = [
     { titulo: 'En riesgo crítico', color: 'warn', estado: 'en riesgo', total: 0, juegos: [] },
     { titulo: 'Totalmente perdidos', color: 'bad', estado: 'totalmente perdido', total: 0, juegos: [] },
     { titulo: 'Restaurados con éxito', color: 'ok', estado: 'restaurado', total: 0, juegos: [] }
   ];
 
-  /* ChangeDetectorRef avisa a Angular que hay datos nuevos para redibujar. */
+  /** ChangeDetectorRef avisa a Angular que hay datos nuevos para redibujar. */
   constructor(private api: ArchiveludoApiService, private cambios: ChangeDetectorRef) { }
 
-  /* Los contadores salen de los totales de las filas y del total del catálogo. */
+  /** Los contadores salen de los totales de las filas y del total del catálogo. */
   get contadores(): Contador[] {
     return [
       { etiqueta: 'Títulos catalogados', valor: this.totalTitulos, color: 'info' },
@@ -76,7 +76,7 @@ export class InicioComponent implements OnInit {
     ];
   }
 
-  /* Angular llama a ngOnInit una vez, cuando la pantalla está lista. */
+  /** Angular llama a ngOnInit una vez, cuando la pantalla está lista. */
   ngOnInit(): void {
     this.cargarTotal();
 
@@ -85,7 +85,7 @@ export class InicioComponent implements OnInit {
     }
   }
 
-  /* Total del catálogo: se pide un solo juego y se lee X-Total-Count. */
+  /** Total del catálogo: se pide un solo juego y se lee X-Total-Count. */
   private cargarTotal(): void {
     this.api.buscarVideojuegos('', '', 0, 1).subscribe({
       next: (pagina) => this.alRecibirTotal(pagina),
@@ -98,7 +98,7 @@ export class InicioComponent implements OnInit {
     this.cambios.markForCheck();
   }
 
-  /* Pide los juegos de una fila: GET /api/videojuegos?estado=...&limite=10 */
+  /** Pide los juegos de una fila: GET /api/videojuegos?estado=...&limite=10 */
   private cargarFila(fila: FilaJuegos): void {
     this.api.obtenerVideojuegosPorEstado(fila.estado, 10).subscribe({
       next: (pagina) => this.llenarFila(fila, pagina),
@@ -124,7 +124,7 @@ export class InicioComponent implements OnInit {
     this.cambios.markForCheck();
   }
 
-  /*
+  /**
    * Arma el banner con el primer juego en riesgo. Los criterios salen de
    * datos reales: si no tiene copias (GET /videojuegos/{id}/copias) y si su
    * estudio desapareció (GET /estudios/{id}).
@@ -165,7 +165,7 @@ export class InicioComponent implements OnInit {
     this.cambios.markForCheck();
   }
 
-  /* El detalle queda en la consola (F12) y la pantalla muestra un aviso. */
+  /** El detalle queda en la consola (F12) y la pantalla muestra un aviso. */
   private mostrarError(error: unknown): void {
     console.error('No se pudo cargar la información del Inicio', error);
     this.hayError = true;

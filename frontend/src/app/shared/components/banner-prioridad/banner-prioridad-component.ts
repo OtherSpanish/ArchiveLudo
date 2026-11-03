@@ -1,7 +1,7 @@
 import { Component, Input } from '@angular/core';
 import { Videojuego } from '../../models/videojuego-model';
 
-/*
+/**
  * Banner grande de la pantalla Inicio con el videojuego que más urgentemente
  * necesita intervención.
  *
@@ -28,14 +28,14 @@ import { Videojuego } from '../../models/videojuego-model';
   standalone: false,
 })
 export class BannerPrioridadComponent {
-  /* El "!" le dice a TypeScript: "el padre siempre me va a pasar este valor". */
+  /** El "!" le dice a TypeScript: "el padre siempre me va a pasar este valor". */
   @Input() videojuego!: Videojuego;
 
   @Input() descripcion: string = '';
 
   @Input() criterios: string[] = [];
 
-  /*
+  /**
    * Línea de subtítulo, por ejemplo:
    * "PC · 2007 · Estudio: Foro Digital (desaparecido)"
    *

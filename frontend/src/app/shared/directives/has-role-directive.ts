@@ -2,7 +2,7 @@ import { Directive, Input, TemplateRef, ViewContainerRef, effect } from '@angula
 import { AuthService } from '../../core/auth-service';
 import { Rol } from '../models/sesion-model';
 
-/*
+/**
  * Directiva estructural: dibuja un elemento solo si la persona con sesión
  * tiene alguno de los roles indicados.
  *
@@ -23,13 +23,13 @@ import { Rol } from '../models/sesion-model';
 })
 export class HasRoleDirective {
 
-  /* Los roles que pueden ver el elemento. Llegan desde el HTML. */
+  /** Los roles que pueden ver el elemento. Llegan desde el HTML. */
   private roles: Rol[] = [];
 
-  /* true si el elemento está dibujado ahora mismo. Evita dibujarlo dos veces. */
+  /** true si el elemento está dibujado ahora mismo. Evita dibujarlo dos veces. */
   private mostrado: boolean = false;
 
-  /*
+  /**
    * TemplateRef es el elemento que lleva el "*appHasRole" (la plantilla).
    * ViewContainerRef es el lugar de la pantalla donde se dibuja o se quita.
    * AuthService sabe quién tiene la sesión.
@@ -40,7 +40,7 @@ export class HasRoleDirective {
     private contenedor: ViewContainerRef,
     private auth: AuthService
   ) {
-    /*
+    /**
      * effect() ejecuta esta función ahora y otra vez cada vez que cambia algo
      * del signal de la sesión que se lea dentro (auth.tieneRol lo lee). Así el
      * elemento aparece o desaparece al iniciar o cerrar sesión.
@@ -48,13 +48,13 @@ export class HasRoleDirective {
     effect(() => this.actualizar());
   }
 
-  /* Recibe la lista de roles del HTML: *appHasRole="['curador']" */
+  /** Recibe la lista de roles del HTML: *appHasRole="['curador']" */
   @Input() set appHasRole(roles: Rol[]) {
     this.roles = roles;
     this.actualizar();
   }
 
-  /* Dibuja el elemento si el rol está permitido y no estaba, o lo quita si ya no. */
+  /** Dibuja el elemento si el rol está permitido y no estaba, o lo quita si ya no. */
   private actualizar(): void {
     const permitido = this.auth.tieneRol(this.roles);
 

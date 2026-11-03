@@ -4,7 +4,7 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ArchiveludoApiService } from '../../../core/archiveludo-api-service';
 import { Custodia, CustodiaNueva, Institucion } from '../../../shared/models/custodia-model';
 
-/*
+/**
  * Formulario para registrar una custodia nueva (traslado) o editar una.
  *
  * Uso (registrar): <app-formulario-custodia [idCopia]="11" [instituciones]="lista"
@@ -25,22 +25,22 @@ import { Custodia, CustodiaNueva, Institucion } from '../../../shared/models/cus
 })
 export class FormularioCustodiaComponent implements OnInit {
 
-  /* Copia a la que pertenece la custodia (va en la URL del POST). */
+  /** Copia a la que pertenece la custodia (va en la URL del POST). */
   @Input() idCopia!: number;
 
-  /* Si viene, el formulario edita esta custodia; si no, registra una nueva. */
+  /** Si viene, el formulario edita esta custodia; si no, registra una nueva. */
   @Input() custodia?: Custodia;
 
-  /* Catálogo de instituciones para el selector. */
+  /** Catálogo de instituciones para el selector. */
   @Input() instituciones: Institucion[] = [];
 
-  /* Se emite cuando el back guardó la custodia. */
+  /** Se emite cuando el back guardó la custodia. */
   @Output() guardado = new EventEmitter<void>();
 
-  /* Se emite cuando el usuario cierra el formulario sin guardar. */
+  /** Se emite cuando el usuario cierra el formulario sin guardar. */
   @Output() cancelado = new EventEmitter<void>();
 
-  /* Fecha máxima de los campos de fecha: hoy. */
+  /** Fecha máxima de los campos de fecha: hoy. */
   hoy: string = this.fechaHoy();
 
   formulario: FormGroup;
@@ -64,7 +64,7 @@ export class FormularioCustodiaComponent implements OnInit {
     });
   }
 
-  /* Al abrir: si se edita, se cargan los datos de la custodia. */
+  /** Al abrir: si se edita, se cargan los datos de la custodia. */
   ngOnInit(): void {
     if (this.custodia) {
       this.formulario.patchValue({
@@ -80,13 +80,13 @@ export class FormularioCustodiaComponent implements OnInit {
     return this.custodia !== undefined;
   }
 
-  /* Dice si hay que mostrar el error de un campo. */
+  /** Dice si hay que mostrar el error de un campo. */
   hayError(nombre: string): boolean {
     const control = this.formulario.controls[nombre];
     return control.invalid && (control.touched || this.enviado);
   }
 
-  /* Texto del error de un campo. */
+  /** Texto del error de un campo. */
   textoError(nombre: string): string {
     const control = this.formulario.controls[nombre];
 
@@ -96,7 +96,7 @@ export class FormularioCustodiaComponent implements OnInit {
     return 'Este campo es obligatorio.';
   }
 
-  /* Valida y envía POST (registrar) o PUT (editar). */
+  /** Valida y envía POST (registrar) o PUT (editar). */
   guardar(): void {
     this.enviado = true;
     this.errorGeneral = '';
@@ -140,7 +140,7 @@ export class FormularioCustodiaComponent implements OnInit {
     this.guardado.emit();
   }
 
-  /* 400/404: el back explica qué pasó (por ejemplo, periodos cruzados). 403: el rol no puede. */
+  /** 400/404: el back explica qué pasó (por ejemplo, periodos cruzados). 403: el rol no puede. */
   private alFallar(error: HttpErrorResponse): void {
     console.error('No se pudo guardar la custodia', error);
     this.guardando = false;
@@ -160,7 +160,7 @@ export class FormularioCustodiaComponent implements OnInit {
     this.cancelado.emit();
   }
 
-  /* Fecha de hoy 'yyyy-MM-dd' en hora local. */
+  /** Fecha de hoy 'yyyy-MM-dd' en hora local. */
   private fechaHoy(): string {
     const ahora = new Date();
     const mes = String(ahora.getMonth() + 1).padStart(2, '0');
