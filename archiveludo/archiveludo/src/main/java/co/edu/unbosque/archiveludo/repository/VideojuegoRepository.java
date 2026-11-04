@@ -26,7 +26,7 @@ public class VideojuegoRepository {
 
 	private static final String SQL_SELECCIONAR = "SELECT v.id_videojuego, v.titulo, v.genero, "
 			+ "v.plataforma_original, v.descripcion, v.anio_lanzamiento, v.estado_conservacion, "
-			+ "v.id_estudio, v.id_usuario, "
+			+ "v.id_estudio, v.id_usuario, v.url_imagen, "
 			+ "GROUP_CONCAT(cv.id_editora ORDER BY cv.id_editora) AS ids_editoras "
 			+ "FROM VIDEOJUEGO v "
 			+ "LEFT JOIN COMPED_VID cv ON cv.id_videojuego = v.id_videojuego ";
@@ -61,6 +61,7 @@ public class VideojuegoRepository {
 	private static final String SQL_BUSCAR_POR_ESTADO = SQL_SELECCIONAR + "WHERE " + SQL_CONDICION_ESTADO
 			+ SQL_AGRUPAR + SQL_ORDENAR;
 
+	/** url_imagen no va aqui: un videojuego nuevo nace sin imagen y se le sube despues. */
 	private static final String SQL_INSERTAR = "INSERT INTO VIDEOJUEGO (titulo, genero, plataforma_original, "
 			+ "descripcion, anio_lanzamiento, estado_conservacion, id_estudio, id_usuario) "
 			+ "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
@@ -71,10 +72,13 @@ public class VideojuegoRepository {
 	private static final String SQL_INSERTAR_EDITORA = "INSERT INTO COMPED_VID (id_videojuego, id_editora) "
 			+ "VALUES (?, ?)";
 
-	/** No se actualiza id_usuario: se conserva quien registro el juego. */
+	/** No se actualizan id_usuario (se conserva quien lo registro) ni url_imagen (tiene su propio metodo). */
 	private static final String SQL_ACTUALIZAR = "UPDATE VIDEOJUEGO SET titulo = ?, genero = ?, "
 			+ "plataforma_original = ?, descripcion = ?, anio_lanzamiento = ?, estado_conservacion = ?, "
 			+ "id_estudio = ? WHERE id_videojuego = ?";
+
+	private static final String SQL_ACTUALIZAR_URL_IMAGEN = "UPDATE VIDEOJUEGO SET url_imagen = ? "
+			+ "WHERE id_videojuego = ?";
 
 	private static final String SQL_ELIMINAR_EDITORAS = "DELETE FROM COMPED_VID WHERE id_videojuego = ?";
 
@@ -95,6 +99,10 @@ public class VideojuegoRepository {
 	public VideojuegoRepository(JdbcTemplate jdbcTemplate) {
 		this.jdbcTemplate = jdbcTemplate;
 	}
+
+	// ──────────────────────────────────────────────
+	// Lectura
+	// ──────────────────────────────────────────────
 
 	/**
 	 * @param idVideojuego id a buscar
@@ -185,6 +193,10 @@ public class VideojuegoRepository {
 		return cantidad;
 	}
 
+	// ──────────────────────────────────────────────
+	// Escritura (llamar siempre dentro de @Transactional en el service)
+	// ──────────────────────────────────────────────
+
 	/**
 	 * Inserta el videojuego en VIDEOJUEGO y una fila en COMPED_VID por cada editora.
 	 * Debe ir en una transaccion para que el LAST_INSERT_ID() use la misma conexion
@@ -214,6 +226,7 @@ public class VideojuegoRepository {
 	/**
 	 * Actualiza los datos del videojuego y REEMPLAZA sus editoras:
 	 * borra las filas actuales de COMPED_VID y vuelve a insertar las de la lista nueva.
+	 * La imagen no cambia aqui (ver actualizarUrlImagen).
 	 *
 	 * @param videojuego videojuego con los datos nuevos (y su id)
 	 */
@@ -233,6 +246,16 @@ public class VideojuegoRepository {
 	}
 
 	/**
+	 * Guarda (o quita, con null) la URL de la imagen del videojuego en Cloudinary.
+	 *
+	 * @param idVideojuego id del videojuego
+	 * @param urlImagen    URL de la imagen, o null para dejarlo sin imagen
+	 */
+	public void actualizarUrlImagen(long idVideojuego, String urlImagen) {
+		jdbcTemplate.update(SQL_ACTUALIZAR_URL_IMAGEN, urlImagen, idVideojuego);
+	}
+
+	/**
 	 * Elimina el videojuego. Primero borra su relacion con las editoras (COMPED_VID)
 	 * y despues la fila de VIDEOJUEGO.
 	 *
@@ -249,6 +272,9 @@ public class VideojuegoRepository {
 		}
 	}
 
+	// ──────────────────────────────────────────────
+	// Conversion de filas
+	// ──────────────────────────────────────────────
 
 	/**
 	 * Arma el WHERE del catalogo segun los filtros que lleguen y agrega sus valores a la lista de parametros.
@@ -293,6 +319,7 @@ public class VideojuegoRepository {
 		videojuego.setEstadoConservacion(convertirEstado(fila.get("estado_conservacion")));
 		videojuego.setIdEstudio(convertirALong(fila.get("id_estudio")));
 		videojuego.setIdUsuario(convertirALong(fila.get("id_usuario")));
+		videojuego.setUrlImagen((String) fila.get("url_imagen"));
 		videojuego.setIdsEditoras(convertirIdsEditoras(fila.get("ids_editoras")));
 		return videojuego;
 	}

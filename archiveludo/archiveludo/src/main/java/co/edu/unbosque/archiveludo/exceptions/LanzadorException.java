@@ -36,6 +36,9 @@ public class LanzadorException {
 	/** Anio minimo aceptado como anio de fundacion de un estudio. */
 	private static final int ANIO_MINIMO_FUNDACION = 1800;
 
+	/** Tamanio maximo de una imagen de videojuego: 5 MB. */
+	private static final long TAMANIO_MAXIMO_IMAGEN = 5L * 1024 * 1024;
+	
 	/** Cantidad de elementos por pagina cuando no se envia el parametro limite. */
 	private static final int LIMITE_POR_DEFECTO = 10;
 
@@ -1140,5 +1143,29 @@ public class LanzadorException {
 			throw new UltimaParticipacionException(idProyecto);
 		}
 	}
-	
+
+	/**
+	 * Verifica la imagen de un videojuego antes de subirla a Cloudinary:
+	 * que venga con contenido, que sea jpg, png o webp, y que no pase de 5 MB.
+	 *
+	 * @param estaVacia true si no llego archivo o llego sin bytes
+	 * @param tipo      tipo del archivo que informa el navegador (por ejemplo "image/png")
+	 * @param tamanio   tamanio del archivo en bytes
+	 * @throws ArchivoInvalidoException si se incumple alguna regla
+	 */
+	public static void verificarImagenValida(boolean estaVacia, String tipo, long tamanio) {
+		if (estaVacia) {
+			throw new ArchivoInvalidoException("Debe enviar una imagen en el campo 'imagen'");
+		}
+
+		boolean esTipoPermitido = "image/jpeg".equals(tipo) || "image/png".equals(tipo)
+				|| "image/webp".equals(tipo);
+		if (!esTipoPermitido) {
+			throw new ArchivoInvalidoException("La imagen debe ser jpg, png o webp");
+		}
+
+		if (tamanio > TAMANIO_MAXIMO_IMAGEN) {
+			throw new ArchivoInvalidoException("La imagen no puede pesar mas de 5 MB");
+		}
+	}
 }

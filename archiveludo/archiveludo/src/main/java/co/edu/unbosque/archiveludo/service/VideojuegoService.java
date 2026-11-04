@@ -1,17 +1,20 @@
 package co.edu.unbosque.archiveludo.service;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import co.edu.unbosque.archiveludo.dto.VideojuegoDTO;
 import co.edu.unbosque.archiveludo.entity.CompaniaEditora;
 import co.edu.unbosque.archiveludo.entity.Estudio;
 import co.edu.unbosque.archiveludo.entity.Usuario;
 import co.edu.unbosque.archiveludo.entity.Videojuego;
+import co.edu.unbosque.archiveludo.exceptions.ArchivoInvalidoException;
 import co.edu.unbosque.archiveludo.exceptions.LanzadorException;
 import co.edu.unbosque.archiveludo.model.EstadoConservacion;
 import co.edu.unbosque.archiveludo.repository.CompaniaEditoraRepository;
@@ -20,7 +23,8 @@ import co.edu.unbosque.archiveludo.repository.UsuarioRepository;
 import co.edu.unbosque.archiveludo.repository.VideojuegoRepository;
 
 /**
- * Logica de negocio de videojuegos: ficha, catalogo paginado, busquedas y CRUD.
+ * Logica de negocio de videojuegos: ficha, catalogo paginado, busquedas, CRUD e imagen.
+ * La imagen vive en Cloudinary; la BD solo guarda su URL (columna url_imagen).
  */
 @Service
 public class VideojuegoService {
@@ -29,19 +33,24 @@ public class VideojuegoService {
 	private final EstudioRepository estudioRepository;
 	private final CompaniaEditoraRepository companiaEditoraRepository;
 	private final UsuarioRepository usuarioRepository;
+	private final AlmacenamientoArchivosService almacenamientoArchivosService;
 	private final ModelMapper mapper;
 
 	public VideojuegoService(VideojuegoRepository videojuegoRepository, EstudioRepository estudioRepository,
 			CompaniaEditoraRepository companiaEditoraRepository, UsuarioRepository usuarioRepository,
-			ModelMapper mapper) {
+			AlmacenamientoArchivosService almacenamientoArchivosService, ModelMapper mapper) {
 		this.videojuegoRepository = videojuegoRepository;
 		this.estudioRepository = estudioRepository;
 		this.companiaEditoraRepository = companiaEditoraRepository;
 		this.usuarioRepository = usuarioRepository;
+		this.almacenamientoArchivosService = almacenamientoArchivosService;
 		this.mapper = mapper;
 	}
 
-	
+	// ──────────────────────────────────────────────
+	// Lectura
+	// ──────────────────────────────────────────────
+
 	/**
 	 * Busca un videojuego por el id que llega en la URL.
 	 *
@@ -140,8 +149,12 @@ public class VideojuegoService {
 		return convertirListaADTO(videojuegos);
 	}
 
+	// ──────────────────────────────────────────────
+	// Escritura
+	// ──────────────────────────────────────────────
+
 	/**
-	 * Crea un videojuego con su estudio y sus editoras.
+	 * Crea un videojuego con su estudio y sus editoras. Nace sin imagen (se sube despues).
 	 * El usuario que lo registra sale del token, no del cuerpo.
 	 *
 	 * @param videojuegoDTO datos del videojuego
@@ -169,7 +182,7 @@ public class VideojuegoService {
 
 	/**
 	 * Actualiza un videojuego. La lista de editoras enviada REEMPLAZA a la anterior.
-	 * El usuario que lo registro no cambia.
+	 * El usuario que lo registro y la imagen no cambian.
 	 *
 	 * @param idTexto       id tal como llego en la URL
 	 * @param videojuegoDTO datos nuevos
@@ -196,13 +209,16 @@ public class VideojuegoService {
 	}
 
 	/**
-	 * Elimina un videojuego solo si no tiene copias, estatus legales ni eventos de riesgo.
-	 * Su relacion con las editoras se borra junto con el (es parte del propio videojuego).
+	 * Elimina un videojuego solo si no tiene copias, estatus legales, eventos de riesgo ni proyectos.
+	 * Su relacion con las editoras se borra junto con el, y tambien su imagen en Cloudinary.
+	 * Primero se borra de la BD y despues de Cloudinary: si Cloudinary falla, la transaccion
+	 * se deshace y el videojuego no queda eliminado a medias.
 	 *
 	 * @param idTexto id tal como llego en la URL
 	 * @throws IdInvalidoException             si el id no es un numero mayor que cero
 	 * @throws VideojuegoNoEncontradoException si no existe
 	 * @throws RegistrosAsociadosException     si tiene registros asociados
+	 * @throws AlmacenamientoArchivosException si no se pudo borrar la imagen en Cloudinary
 	 */
 	@Transactional
 	public void eliminar(String idTexto) {
@@ -215,11 +231,91 @@ public class VideojuegoService {
 		LanzadorException.verificarSinRegistrosAsociados(tieneRegistrosAsociados, "el videojuego", idVideojuego);
 
 		videojuegoRepository.eliminar(idVideojuego);
+		almacenamientoArchivosService.eliminarArchivo(videojuego.getUrlImagen());
+	}
+
+	// ──────────────────────────────────────────────
+	// Imagen
+	// ──────────────────────────────────────────────
+
+	/**
+	 * Sube (o reemplaza) la imagen de un videojuego en Cloudinary y guarda su URL.
+	 *
+	 * @param idTexto id del videojuego tal como llego en la URL
+	 * @param imagen  archivo recibido en el campo "imagen"
+	 * @return el videojuego con su urlImagen
+	 * @throws IdInvalidoException             si el id no es un numero mayor que cero
+	 * @throws VideojuegoNoEncontradoException si el videojuego no existe
+	 * @throws ArchivoInvalidoException        si falta el archivo, no es jpg/png/webp o pasa de 5 MB
+	 * @throws AlmacenamientoArchivosException si Cloudinary no recibio la imagen
+	 */
+	@Transactional
+	public VideojuegoDTO subirImagen(String idTexto, MultipartFile imagen) {
+		long idVideojuego = LanzadorException.convertirId(idTexto, "videojuego");
+
+		Videojuego videojuego = videojuegoRepository.buscarPorId(idVideojuego);
+		LanzadorException.verificarVideojuegoExiste(videojuego, idVideojuego);
+
+		boolean estaVacia = (imagen == null || imagen.isEmpty());
+		String tipo = null;
+		long tamanio = 0;
+		if (!estaVacia) {
+			tipo = imagen.getContentType();
+			tamanio = imagen.getSize();
+		}
+		LanzadorException.verificarImagenValida(estaVacia, tipo, tamanio);
+
+		String urlImagen = almacenamientoArchivosService.subirImagenVideojuego(idVideojuego, leerBytes(imagen));
+
+		videojuegoRepository.actualizarUrlImagen(idVideojuego, urlImagen);
+		videojuego.setUrlImagen(urlImagen);
+		return convertirADTO(videojuego);
 	}
 
 	/**
+	 * Quita la imagen de un videojuego: la borra de Cloudinary y deja url_imagen en NULL.
+	 * Si el videojuego no tenia imagen, no hace nada.
+	 *
+	 * @param idTexto id del videojuego tal como llego en la URL
+	 * @throws IdInvalidoException             si el id no es un numero mayor que cero
+	 * @throws VideojuegoNoEncontradoException si el videojuego no existe
+	 * @throws AlmacenamientoArchivosException si no se pudo borrar la imagen en Cloudinary
+	 */
+	@Transactional
+	public void eliminarImagen(String idTexto) {
+		long idVideojuego = LanzadorException.convertirId(idTexto, "videojuego");
+
+		Videojuego videojuego = videojuegoRepository.buscarPorId(idVideojuego);
+		LanzadorException.verificarVideojuegoExiste(videojuego, idVideojuego);
+
+		if (videojuego.getUrlImagen() == null) {
+			return;
+		}
+
+		videojuegoRepository.actualizarUrlImagen(idVideojuego, null);
+		almacenamientoArchivosService.eliminarArchivo(videojuego.getUrlImagen());
+	}
+
+	/**
+	 * Lee los bytes del archivo recibido.
+	 *
+	 * @throws ArchivoInvalidoException si el archivo no se pudo leer
+	 */
+	private byte[] leerBytes(MultipartFile archivo) {
+		try {
+			return archivo.getBytes();
+		} catch (IOException e) {
+			throw new ArchivoInvalidoException("No se pudo leer el archivo enviado");
+		}
+	}
+
+	// ──────────────────────────────────────────────
+	// Validaciones
+	// ──────────────────────────────────────────────
+
+	/**
 	 * Valida todos los datos que llegan del front (comunes a crear y actualizar)
-	 * y los copia a la entity.
+	 * y los copia a la entity. urlImagen no se toma del cuerpo: solo cambia con su endpoint.
 	 */
 	private void llenarDatosValidados(Videojuego videojuego, VideojuegoDTO videojuegoDTO) {
 		LanzadorException.verificarCampoObligatorio(videojuegoDTO.getTitulo(), "titulo");
@@ -268,6 +364,10 @@ public class VideojuegoService {
 		}
 		return idsSinRepetir;
 	}
+
+	// ──────────────────────────────────────────────
+	// Utilidades
+	// ──────────────────────────────────────────────
 
 	/**
 	 * En el catalogo el estado es opcional: si viene vacio se devuelven todos los estados.
