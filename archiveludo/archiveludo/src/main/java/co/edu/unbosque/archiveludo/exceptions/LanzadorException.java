@@ -2,6 +2,7 @@ package co.edu.unbosque.archiveludo.exceptions;
 
 import java.time.LocalDate;
 
+import co.edu.unbosque.archiveludo.model.ResultadoInforme;
 import co.edu.unbosque.archiveludo.entity.CompaniaEditora;
 import co.edu.unbosque.archiveludo.entity.EstatusLegal;
 import co.edu.unbosque.archiveludo.entity.Estudio;
@@ -33,6 +34,7 @@ public class LanzadorException {
 	/** Anio minimo aceptado como anio de lanzamiento de un videojuego. */
 	private static final int ANIO_MINIMO_LANZAMIENTO = 1950;
 
+	public static final int LONGITUD_MAXIMA_RESUMEN_INFORME = 2000;
 	/** Anio minimo aceptado como anio de fundacion de un estudio. */
 	private static final int ANIO_MINIMO_FUNDACION = 1800;
 
@@ -1166,6 +1168,117 @@ public class LanzadorException {
 
 		if (tamanio > TAMANIO_MAXIMO_IMAGEN) {
 			throw new ArchivoInvalidoException("La imagen no puede pesar mas de 5 MB");
+		}
+	}
+	
+	/**
+	 * Verifica que el proyecto este finalizado antes de generar su informe.
+	 *
+	 * @param estaFinalizado true si el estado del proyecto es finalizado
+	 * @param idProyecto     id del proyecto para el mensaje
+	 * @throws DatosInformeInvalidosException si el proyecto no esta finalizado
+	 */
+	public static void verificarProyectoFinalizado(boolean estaFinalizado, long idProyecto) {
+		if (!estaFinalizado) {
+			throw new DatosInformeInvalidosException("El proyecto con id " + idProyecto
+					+ " no esta finalizado: solo un proyecto finalizado puede tener informe final");
+		}
+	}
+
+	/**
+	 * Verifica que el proyecto todavia no tenga informe final.
+	 *
+	 * @param urlInforme enlace guardado en el proyecto (null si no tiene)
+	 * @param idProyecto id del proyecto para el mensaje
+	 * @throws InformeYaExisteException si el proyecto ya tiene informe
+	 */
+	public static void verificarInformeNoExiste(String urlInforme, long idProyecto) {
+		if (urlInforme != null && !urlInforme.trim().isEmpty()) {
+			throw new InformeYaExisteException(idProyecto);
+		}
+	}
+
+	/**
+	 * Verifica que el proyecto si tenga informe final.
+	 *
+	 * @param urlInforme enlace guardado en el proyecto (null si no tiene)
+	 * @param idProyecto id del proyecto para el mensaje
+	 * @throws InformeNoEncontradoException si el proyecto no tiene informe
+	 */
+	public static void verificarInformeExiste(String urlInforme, long idProyecto) {
+		if (urlInforme == null || urlInforme.trim().isEmpty()) {
+			throw new InformeNoEncontradoException(idProyecto);
+		}
+	}
+
+	/**
+	 * Convierte el texto del resultado ("exitoso", "parcial" o "fracaso") al enum.
+	 *
+	 * @param texto resultado recibido en el JSON
+	 * @return el resultado convertido
+	 * @throws DatosInformeInvalidosException si viene vacio o no es un resultado valido
+	 */
+	public static ResultadoInforme convertirResultadoInforme(String texto) {
+		if (texto == null || texto.trim().isEmpty()) {
+			throw new DatosInformeInvalidosException("El resultado del informe es obligatorio");
+		}
+		ResultadoInforme resultado = ResultadoInforme.buscarPorValor(texto.trim().toLowerCase());
+		if (resultado == null) {
+			throw new DatosInformeInvalidosException("El resultado del informe debe ser exitoso, parcial o fracaso");
+		}
+		return resultado;
+	}
+
+	/**
+	 * Verifica el resumen de resultados del informe.
+	 *
+	 * @param resumen texto recibido
+	 * @throws DatosInformeInvalidosException si viene vacio o supera el maximo
+	 */
+	public static void verificarResumenInforme(String resumen) {
+		if (resumen == null || resumen.trim().isEmpty()) {
+			throw new DatosInformeInvalidosException("El resumen de resultados es obligatorio");
+		}
+		if (resumen.trim().length() > LONGITUD_MAXIMA_RESUMEN_INFORME) {
+			throw new DatosInformeInvalidosException("El resumen de resultados no puede superar "
+					+ LONGITUD_MAXIMA_RESUMEN_INFORME + " caracteres");
+		}
+	}
+
+	/**
+	 * Verifica la fecha de publicacion del informe: obligatoria, no futura
+	 * y no anterior a la fecha de fin del proyecto.
+	 *
+	 * @param fechaPublicacion fecha recibida
+	 * @param fechaFin         fecha de fin del proyecto
+	 * @throws DatosInformeInvalidosException si la fecha no cumple las reglas
+	 */
+	public static void verificarFechaPublicacion(LocalDate fechaPublicacion, LocalDate fechaFin) {
+		if (fechaPublicacion == null) {
+			throw new DatosInformeInvalidosException("La fecha de publicacion del informe es obligatoria");
+		}
+		if (fechaPublicacion.isAfter(LocalDate.now())) {
+			throw new DatosInformeInvalidosException("La fecha de publicacion del informe no puede ser futura");
+		}
+		if (fechaFin != null && fechaPublicacion.isBefore(fechaFin)) {
+			throw new DatosInformeInvalidosException(
+					"La fecha de publicacion no puede ser anterior a la fecha de fin del proyecto (" + fechaFin + ")");
+		}
+	}
+
+	/**
+	 * Un proyecto con informe final debe seguir finalizado: no puede volver a activo ni a pausado.
+	 *
+	 * @param tieneInforme true si el proyecto ya tiene informe
+	 * @param estadoNuevo  estado que llega en el PUT
+	 * @param idProyecto   id del proyecto para el mensaje
+	 * @throws DatoProyectoInvalidoException si se intenta sacar de finalizado un proyecto con informe
+	 */
+	public static void verificarCambioDeEstadoConInforme(boolean tieneInforme, EstadoProyecto estadoNuevo,
+			long idProyecto) {
+		if (tieneInforme && estadoNuevo != EstadoProyecto.FINALIZADO) {
+			throw new DatoProyectoInvalidoException("El proyecto con id " + idProyecto
+					+ " ya tiene informe final: no puede pasar a activo o pausado. Elimina primero el informe");
 		}
 	}
 }

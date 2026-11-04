@@ -15,6 +15,7 @@ import co.edu.unbosque.archiveludo.model.EstadoProyecto;
 /**
  * Acceso a datos de la tabla PROYECTO_DE_RESTAURACION con SQL escrito a mano (Spring JDBC).
  * Sus participaciones las maneja ParticipacionRepository.
+ * El enlace del informe final (url_informe) se lee y se escribe con sus propios metodos.
  */
 @Repository
 public class ProyectoDeRestauracionRepository {
@@ -41,6 +42,12 @@ public class ProyectoDeRestauracionRepository {
 	/** No se actualizan id_videojuego ni id_usuario: el proyecto sigue siendo del mismo juego y de quien lo creo. */
 	private static final String SQL_ACTUALIZAR = "UPDATE PROYECTO_DE_RESTAURACION SET nombre = ?, descripcion = ?, "
 			+ "herramienta_emulador = ?, estado = ?, fecha_inicio = ?, fecha_fin = ? WHERE id_proyecto = ?";
+
+	private static final String SQL_BUSCAR_URL_INFORME = "SELECT url_informe FROM PROYECTO_DE_RESTAURACION "
+			+ "WHERE id_proyecto = ?";
+
+	private static final String SQL_ACTUALIZAR_URL_INFORME = "UPDATE PROYECTO_DE_RESTAURACION SET url_informe = ? "
+			+ "WHERE id_proyecto = ?";
 
 	private static final String SQL_ELIMINAR = "DELETE FROM PROYECTO_DE_RESTAURACION WHERE id_proyecto = ?";
 
@@ -81,6 +88,23 @@ public class ProyectoDeRestauracionRepository {
 		return convertirFilaAProyecto(filas.get(0));
 	}
 
+	/**
+	 * @param idProyecto id del proyecto
+	 * @return el enlace del PDF del informe final, o null si el proyecto no tiene informe (o no existe)
+	 */
+	public String buscarUrlInforme(long idProyecto) {
+		List<Map<String, Object>> filas = jdbcTemplate.queryForList(SQL_BUSCAR_URL_INFORME, idProyecto);
+
+		if (filas.isEmpty()) {
+			return null;
+		}
+		Object valor = filas.get(0).get("url_informe");
+		if (valor == null || valor.toString().trim().isEmpty()) {
+			return null;
+		}
+		return valor.toString().trim();
+	}
+
 
 	/**
 	 * Inserta un proyecto y le asigna el id generado.
@@ -117,6 +141,16 @@ public class ProyectoDeRestauracionRepository {
 				Date.valueOf(proyecto.getFechaInicio()),
 				convertirAFechaSql(proyecto.getFechaFin()),
 				proyecto.getIdProyecto());
+	}
+
+	/**
+	 * Guarda (o quita, con null) el enlace del PDF del informe final en Cloudinary.
+	 *
+	 * @param idProyecto id del proyecto
+	 * @param urlInforme enlace del PDF, o null para dejar el proyecto sin informe
+	 */
+	public void actualizarUrlInforme(long idProyecto, String urlInforme) {
+		jdbcTemplate.update(SQL_ACTUALIZAR_URL_INFORME, urlInforme, idProyecto);
 	}
 
 	/**

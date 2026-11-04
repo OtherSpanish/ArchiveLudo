@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import co.edu.unbosque.archiveludo.dto.ProyectoDeRestauracionDTO;
+import co.edu.unbosque.archiveludo.exceptions.AlmacenamientoArchivosException;
 import co.edu.unbosque.archiveludo.exceptions.CredencialInvalidaException;
 import co.edu.unbosque.archiveludo.exceptions.DatoProyectoInvalidoException;
 import co.edu.unbosque.archiveludo.exceptions.ExpertoNoEncontradoException;
@@ -34,6 +35,7 @@ import co.edu.unbosque.archiveludo.service.ProyectoDeRestauracionService;
  * El listado general va por /api/proyectos; los de un juego y la creacion, por el videojuego
  * (/api/videojuegos/{id}/proyectos); ver, editar y eliminar, por el id del proyecto (/api/proyectos/{id}).
  * Leer: cualquier rol. Crear y actualizar: curador o administrador. Eliminar: solo administrador.
+ * El informe final tiene su propio controller (InformeFinalController).
  */
 @RestController
 @RequestMapping("/api")
@@ -131,6 +133,7 @@ public class ProyectoDeRestauracionController {
 	 * PUT /api/proyectos/{id}
 	 * Cuerpo:    los datos del proyecto (como el POST). Las participaciones se ignoran aqui.
 	 * Respuesta: 200 con el proyecto actualizado y sus participaciones.
+	 *            400 si se intenta pasar a activo o pausado un proyecto que ya tiene informe final.
 	 */
 	@PutMapping("/proyectos/{id}")
 	public ResponseEntity<?> actualizar(@PathVariable String id, @RequestBody ProyectoDeRestauracionDTO proyectoDTO) {
@@ -151,7 +154,8 @@ public class ProyectoDeRestauracionController {
 
 	/**
 	 * DELETE /api/proyectos/{id}
-	 * Respuesta: 204 sin cuerpo si se elimino (junto con sus participaciones).
+	 * Respuesta: 204 sin cuerpo si se elimino (junto con sus participaciones y su informe final).
+	 *            502 si no se pudo borrar el PDF en Cloudinary (en ese caso no se borra nada).
 	 */
 	@DeleteMapping("/proyectos/{id}")
 	public ResponseEntity<?> eliminar(@PathVariable String id) {
@@ -162,6 +166,8 @@ public class ProyectoDeRestauracionController {
 			return crearRespuestaError(HttpStatus.BAD_REQUEST, e.getMessage());
 		} catch (ProyectoNoEncontradoException e) {
 			return crearRespuestaError(HttpStatus.NOT_FOUND, e.getMessage());
+		} catch (AlmacenamientoArchivosException e) {
+			return crearRespuestaError(HttpStatus.BAD_GATEWAY, e.getMessage());
 		} catch (Exception e) {
 			log.error("Error inesperado al eliminar el proyecto " + id, e);
 			return crearRespuestaError(HttpStatus.INTERNAL_SERVER_ERROR, "Ocurrio un error interno en el servidor");
