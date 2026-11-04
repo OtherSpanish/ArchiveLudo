@@ -31,6 +31,13 @@ export interface Videojuego {
   idEstudio?: number;
   idUsuario?: number;
   idsEditoras?: number[];
+
+  /**
+   * Enlace de la imagen (portada) guardada en Cloudinary. Si el videojuego
+   * no tiene imagen, el back no manda este campo y la pantalla muestra la
+   * portada de relleno (color con las iniciales).
+   */
+  urlImagen?: string;
 }
 
 /**

@@ -16,6 +16,7 @@ export type EstadoProyecto = 'activo' | 'pausado' | 'finalizado';
  * Llega plano, con sus participaciones adentro.
  *  - fechaFin: solo si el estado es 'finalizado'.
  *  - descripcion y herramientaEmulador: opcionales.
+ *  - tieneInforme: true si el proyecto ya tiene su informe final (PDF).
  */
 export interface ProyectoDeRestauracion {
   idProyecto: number;
@@ -27,6 +28,8 @@ export interface ProyectoDeRestauracion {
   estado: EstadoProyecto;
   fechaInicio: string;
   fechaFin?: string;
+  /** Lo calcula el back (no se envía). El enlace del PDF se pide aparte, en /api/proyectos/{id}/informe. */
+  tieneInforme: boolean;
   participaciones: Participacion[];
 }
 

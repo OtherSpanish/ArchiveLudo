@@ -6,10 +6,17 @@
 -->
 <a class="tarjeta" [routerLink]="['/videojuegos', videojuego.idVideojuego]">
 
-  <!-- Portada de relleno: color plano con las iniciales abajo a la izquierda -->
-  <div class="portada" [style.background]="colorPortada">
-    <span class="iniciales">{{ iniciales }}</span>
-  </div>
+  <!--
+    Si el juego tiene imagen (urlImagen, guardada en Cloudinary) se muestra.
+    Si no, queda la portada de relleno: color plano con las iniciales.
+  -->
+  @if (videojuego.urlImagen) {
+    <img class="imagen" [src]="videojuego.urlImagen" [alt]="'Portada de ' + videojuego.titulo">
+  } @else {
+    <div class="portada" [style.background]="colorPortada">
+      <span class="iniciales">{{ iniciales }}</span>
+    </div>
+  }
 
   <div class="cuerpo">
     <h3 class="titulo">{{ videojuego.titulo }}</h3>

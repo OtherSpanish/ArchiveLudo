@@ -45,9 +45,12 @@
     <label class="etiqueta" for="campo-estado-proyecto">Estado</label>
     <select id="campo-estado-proyecto" class="campo" formControlName="estado">
       @for (opcion of opcionesEstado; track opcion.valor) {
-        <option [value]="opcion.valor">{{ opcion.texto }}</option>
+        <option [value]="opcion.valor" [disabled]="opcionBloqueada(opcion.valor)">{{ opcion.texto }}</option>
       }
     </select>
+    @if (tieneInforme) {
+      <p class="aviso">Este proyecto tiene informe final. Para reactivarlo o pausarlo, primero elimina el informe.</p>
+    }
   </div>
 
   <div class="grupo">

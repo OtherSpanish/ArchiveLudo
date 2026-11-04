@@ -22,10 +22,14 @@
   <!-- Cabecera: portada cuadrada a la izquierda, datos a la derecha -->
   <header class="cabecera">
 
-    <!-- Portada de relleno de 112 px, con las iniciales del título -->
-    <div class="portada" [style.background]="colorPortada">
-      <span class="iniciales">{{ iniciales }}</span>
-    </div>
+    <!-- Imagen del juego (urlImagen) o, si no tiene, portada de relleno de 112 px con las iniciales -->
+    @if (videojuego.urlImagen) {
+      <img class="imagen-portada" [src]="videojuego.urlImagen" [alt]="'Portada de ' + videojuego.titulo">
+    } @else {
+      <div class="portada" [style.background]="colorPortada">
+        <span class="iniciales">{{ iniciales }}</span>
+      </div>
+    }
 
     <div class="datos">
 
@@ -91,6 +95,61 @@
 
       @if (errorEliminar) {
         <p class="error-general" role="alert">{{ errorEliminar }}</p>
+      }
+
+      <!--
+        Imagen (portada). Subir o cambiar: curador y administrador.
+        Quitar: solo administrador. El input de archivo va oculto y lo abre el botón.
+        El back valida el formato (JPG, PNG o WEBP) y el tamaño (5 MB); aquí solo se informa.
+      -->
+      <div class="fila-imagen" *appHasRole="['curador', 'administrador']">
+        <input #entradaImagen
+               type="file"
+               hidden
+               accept="image/jpeg,image/png,image/webp"
+               (change)="alElegirImagen($event)">
+
+        <button type="button"
+                class="boton-imagen"
+                [disabled]="subiendoImagen"
+                (click)="entradaImagen.click()">
+          @if (subiendoImagen) {
+            Subiendo imagen…
+          } @else if (videojuego.urlImagen) {
+            Cambiar imagen
+          } @else {
+            Subir imagen
+          }
+        </button>
+
+        @if (videojuego.urlImagen && !confirmandoQuitarImagen) {
+          <button type="button"
+                  class="boton-eliminar"
+                  *appHasRole="['administrador']"
+                  (click)="pedirConfirmacionQuitarImagen()">
+            Quitar imagen
+          </button>
+        }
+      </div>
+
+      @if (confirmandoQuitarImagen) {
+        <div class="confirmacion" role="alertdialog" aria-label="Confirmar quitar la imagen">
+          <p class="texto-confirmacion">¿Quitar la imagen de «{{ videojuego.titulo }}»?</p>
+          <div class="botones-confirmacion">
+            <button type="button" class="boton-secundario" (click)="cancelarQuitarImagen()">Cancelar</button>
+            <button type="button" class="boton-peligro" [disabled]="quitandoImagen" (click)="confirmarQuitarImagen()">
+              @if (quitandoImagen) {
+                Quitando…
+              } @else {
+                Sí, quitar
+              }
+            </button>
+          </div>
+        </div>
+      }
+
+      @if (errorImagen) {
+        <p class="error-general" role="alert">{{ errorImagen }}</p>
       }
 
     </div>
@@ -343,6 +402,12 @@
             <div class="proyecto-con-acciones">
               <app-proyecto-card [proyecto]="item" [expertos]="expertos"></app-proyecto-card>
 
+              <!-- Informe final (PDF): solo curador y administrador; al rol consulta no se le muestra -->
+              <app-informe-final *appHasRole="['curador', 'administrador']"
+                                 [proyecto]="item"
+                                 (cambio)="recargarProyectos()">
+              </app-informe-final>
+
               <div class="acciones-proyecto">
                 <button type="button"
                         class="boton-editar"
@@ -367,7 +432,7 @@
               @if (idConfirmandoEliminarProyecto === item.idProyecto) {
                 <div class="confirmacion">
                   <p class="texto-confirmacion">
-                    ¿Eliminar este proyecto? También se eliminan sus expertos asignados.
+                    ¿Eliminar este proyecto? También se eliminan sus expertos asignados y su informe final.
                   </p>
                   <div class="botones-confirmacion">
                     <button type="button" class="boton-secundario" (click)="cancelarEliminarProyecto()">Cancelar</button>

@@ -157,6 +157,20 @@ export class FichaVideojuegoComponent implements OnInit {
   /** Mensaje si el back rechaza la eliminación (por ejemplo, 409). */
   errorEliminar: string = '';
 
+  // ---- Imagen (portada) del videojuego ----
+
+  /** true mientras se sube la imagen (el back la envía a Cloudinary y tarda un poco). */
+  subiendoImagen: boolean = false;
+
+  /** true cuando se pidió quitar la imagen y se espera la confirmación (solo administrador). */
+  confirmandoQuitarImagen: boolean = false;
+
+  /** true mientras se espera la respuesta del back al quitar la imagen. */
+  quitandoImagen: boolean = false;
+
+  /** Mensaje si el back rechaza subir o quitar la imagen. */
+  errorImagen: string = '';
+
   // ---- Formulario "Agregar estatus legal" (pestaña Estatus legal) ----
 
   /** Opciones del selector de estatus. */
@@ -363,6 +377,9 @@ export class FichaVideojuegoComponent implements OnInit {
       this.errorProyecto = 'Solo un administrador puede eliminar proyectos.';
     } else if (error.status === 404) {
       this.errorProyecto = 'Ese proyecto ya no existe.';
+    } else if (error.status === 502) {
+      // Cloudinary no pudo borrar el PDF del informe: el back no borró nada.
+      this.errorProyecto = 'No se pudo eliminar el informe del proyecto. Inténtalo de nuevo en unos minutos.';
     } else {
       this.errorProyecto = 'No se pudo eliminar el proyecto. Inténtalo de nuevo.';
     }
@@ -879,6 +896,125 @@ export class FichaVideojuegoComponent implements OnInit {
       this.errorEliminar = 'Solo un administrador puede eliminar videojuegos.';
     } else {
       this.errorEliminar = 'No se pudo eliminar el videojuego. Inténtalo de nuevo.';
+    }
+
+    this.cambios.markForCheck();
+  }
+
+  // ---- Imagen (portada) del videojuego ----
+
+  /**
+   * El usuario eligió un archivo: POST /api/videojuegos/{id}/imagen (multipart).
+   * No se valida nada aquí: el formato (JPG, PNG, WEBP) y el tamaño (5 MB) los
+   * revisa el back y la pantalla solo muestra su respuesta.
+   */
+  alElegirImagen(evento: Event): void {
+    const entrada = evento.target as HTMLInputElement;
+
+    if (!this.videojuego || !entrada.files || entrada.files.length === 0) {
+      return;
+    }
+
+    const archivo = entrada.files[0];
+    // Se limpia el input para poder volver a elegir el mismo archivo si falla.
+    entrada.value = '';
+
+    this.subiendoImagen = true;
+    this.errorImagen = '';
+    this.confirmandoQuitarImagen = false;
+
+    this.api.subirImagenVideojuego(this.videojuego.idVideojuego, archivo).subscribe({
+      next: (juego) => this.alSubirImagen(juego),
+      error: (error) => this.alFallarSubirImagen(error)
+    });
+  }
+
+  /** El back devolvió el juego con su urlImagen nueva (el enlace cambia al reemplazar la imagen). */
+  private alSubirImagen(juego: Videojuego): void {
+    this.subiendoImagen = false;
+    if (this.videojuego) {
+      this.videojuego.urlImagen = juego.urlImagen;
+    }
+    this.cambios.markForCheck();
+  }
+
+  /**
+   * 400: el back explica qué pasó (formato, vacío). 413 o 500: Spring rechaza el
+   * archivo grande antes de llegar al controller y no manda { estado, mensaje }.
+   * 0: el back cortó la conexión (archivo muy grande) o no responde.
+   * 502: Cloudinary falló. 403: el rol no puede.
+   */
+  private alFallarSubirImagen(error: HttpErrorResponse): void {
+    console.error('No se pudo subir la imagen', error);
+    this.subiendoImagen = false;
+
+    if (error.status === 400 && error.error && error.error.mensaje) {
+      this.errorImagen = error.error.mensaje;
+    } else if (error.status === 413 || error.status === 500) {
+      this.errorImagen = 'La imagen supera el tamaño permitido (5 MB).';
+    } else if (error.status === 0) {
+      // Con un archivo muy grande el back corta la conexión y el navegador no recibe código.
+      // Tampoco se distingue de un back apagado, por eso el mensaje cubre las dos causas.
+      this.errorImagen = 'No se pudo subir la imagen. Revisa que pese menos de 5 MB y que el servidor esté disponible.';
+    } else if (error.status === 502) {
+      this.errorImagen = 'No se pudo guardar la imagen. Inténtalo de nuevo en unos minutos.';
+    } else if (error.status === 403) {
+      this.errorImagen = 'Tu rol no puede cambiar la imagen.';
+    } else {
+      this.errorImagen = 'No se pudo subir la imagen. Inténtalo de nuevo.';
+    }
+
+    this.cambios.markForCheck();
+  }
+
+  /** Primer paso: pide confirmación antes de quitar la imagen. */
+  pedirConfirmacionQuitarImagen(): void {
+    this.errorImagen = '';
+    this.confirmandoQuitarImagen = true;
+  }
+
+  /** El usuario se arrepintió. */
+  cancelarQuitarImagen(): void {
+    this.confirmandoQuitarImagen = false;
+  }
+
+  /** Segundo paso: DELETE /api/videojuegos/{id}/imagen (204 sin cuerpo). */
+  confirmarQuitarImagen(): void {
+    if (!this.videojuego) {
+      return;
+    }
+
+    this.quitandoImagen = true;
+    this.errorImagen = '';
+
+    this.api.eliminarImagenVideojuego(this.videojuego.idVideojuego).subscribe({
+      next: () => this.alQuitarImagen(),
+      error: (error) => this.alFallarQuitarImagen(error)
+    });
+  }
+
+  /** La imagen se borró: el juego vuelve a mostrar la portada de relleno. */
+  private alQuitarImagen(): void {
+    this.quitandoImagen = false;
+    this.confirmandoQuitarImagen = false;
+    if (this.videojuego) {
+      this.videojuego.urlImagen = undefined;
+    }
+    this.cambios.markForCheck();
+  }
+
+  /** 502: Cloudinary falló y la imagen sigue ahí. 403: solo un administrador puede quitarla. */
+  private alFallarQuitarImagen(error: HttpErrorResponse): void {
+    console.error('No se pudo quitar la imagen', error);
+    this.quitandoImagen = false;
+    this.confirmandoQuitarImagen = false;
+
+    if (error.status === 403) {
+      this.errorImagen = 'Solo un administrador puede quitar la imagen.';
+    } else if (error.status === 502) {
+      this.errorImagen = 'No se pudo quitar la imagen. Inténtalo de nuevo en unos minutos.';
+    } else {
+      this.errorImagen = 'No se pudo quitar la imagen. Inténtalo de nuevo.';
     }
 
     this.cambios.markForCheck();

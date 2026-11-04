@@ -8,6 +8,7 @@ import { Custodia, CustodiaNueva, Institucion, InstitucionNueva } from '../share
 import { Experto, ExpertoNuevo } from '../shared/models/experto-model';
 import { Participacion, ParticipacionEditada, ParticipacionNueva } from '../shared/models/participacion-model';
 import { ProyectoDeRestauracion, ProyectoEditado, ProyectoNuevo } from '../shared/models/proyecto-model';
+import { InformeFinal, InformeFinalSolicitud } from '../shared/models/informe-final-model';
 import { EstatusLegal, EstatusLegalNuevo } from '../shared/models/estatus-legal-model';
 import { EventoRiesgo, EventoRiesgoNuevo } from '../shared/models/evento-riesgo-model';
 import { CompaniaEditora, EditoraNueva } from '../shared/models/compania-editora-model';
@@ -117,6 +118,24 @@ export class ArchiveludoApiService {
   /** GET /api/videojuegos/{id}: datos base del videojuego (con idEstudio e idsEditoras). */
   obtenerVideojuego(idVideojuego: number): Observable<Videojuego> {
     return this.http.get<Videojuego>(this.urlBase + '/videojuegos/' + idVideojuego);
+  }
+
+  /**
+   * POST /api/videojuegos/{id}/imagen: sube (o reemplaza) la portada del videojuego.
+   * La petición NO es JSON: es multipart/form-data y el archivo va en el campo "imagen".
+   * No se pone Content-Type a mano: con un FormData el navegador lo arma solo.
+   * Curador o administrador. Formatos JPG, PNG o WEBP, máximo 5 MB.
+   * Responde con el videojuego completo, ya con la urlImagen nueva.
+   */
+  subirImagenVideojuego(idVideojuego: number, archivo: File): Observable<Videojuego> {
+    const datos = new FormData();
+    datos.append('imagen', archivo);
+    return this.http.post<Videojuego>(this.urlBase + '/videojuegos/' + idVideojuego + '/imagen', datos);
+  }
+
+  /** DELETE /api/videojuegos/{id}/imagen: quita la portada. Solo administrador. */
+  eliminarImagenVideojuego(idVideojuego: number): Observable<void> {
+    return this.http.delete<void>(this.urlBase + '/videojuegos/' + idVideojuego + '/imagen');
   }
 
   /** GET /api/estudios: todos los estudios (para el selector del formulario). */
@@ -415,9 +434,38 @@ export class ArchiveludoApiService {
     return this.http.put<ProyectoDeRestauracion>(this.urlBase + '/proyectos/' + idProyecto, proyecto);
   }
 
-  /** DELETE /api/proyectos/{id}. Solo administrador. Borra también sus participaciones. */
+  /** DELETE /api/proyectos/{id}. Solo administrador. Borra también sus participaciones y su informe final (502 si Cloudinary falla; entonces no se borra nada). */
   eliminarProyecto(idProyecto: number): Observable<void> {
     return this.http.delete<void>(this.urlBase + '/proyectos/' + idProyecto);
+  }
+
+  // ---------- Informe final del proyecto (PDF) ----------
+
+  /**
+   * GET /api/proyectos/{id}/informe: el enlace del PDF (solo idProyecto y urlInforme).
+   * Curador o administrador; el rol consulta recibe 403. 404 si el proyecto no tiene informe.
+   */
+  obtenerInformeFinal(idProyecto: number): Observable<InformeFinal> {
+    return this.http.get<InformeFinal>(this.urlBase + '/proyectos/' + idProyecto + '/informe');
+  }
+
+  /**
+   * POST /api/proyectos/{id}/informe: el back arma el PDF con estos 3 datos y los del
+   * proyecto, lo sube a Cloudinary y devuelve el enlace. Curador o administrador.
+   * 400 si el proyecto no está finalizado o algún dato no es válido; 409 si ya tiene informe.
+   */
+  crearInformeFinal(idProyecto: number, informe: InformeFinalSolicitud): Observable<InformeFinal> {
+    return this.http.post<InformeFinal>(this.urlBase + '/proyectos/' + idProyecto + '/informe', informe);
+  }
+
+  /** PUT /api/proyectos/{id}/informe: regenera el PDF (enlace nuevo; el anterior se borra). 404 si no tiene informe. */
+  actualizarInformeFinal(idProyecto: number, informe: InformeFinalSolicitud): Observable<InformeFinal> {
+    return this.http.put<InformeFinal>(this.urlBase + '/proyectos/' + idProyecto + '/informe', informe);
+  }
+
+  /** DELETE /api/proyectos/{id}/informe: borra el PDF. Solo administrador. */
+  eliminarInformeFinal(idProyecto: number): Observable<void> {
+    return this.http.delete<void>(this.urlBase + '/proyectos/' + idProyecto + '/informe');
   }
 
   // ---------- Participaciones ----------
