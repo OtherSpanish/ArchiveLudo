@@ -113,6 +113,19 @@ export class FormularioProyectoComponent implements OnInit {
     return this.proyecto !== undefined;
   }
 
+  /** true si el proyecto que se edita ya tiene su informe final (PDF). */
+  get tieneInforme(): boolean {
+    return this.proyecto !== undefined && this.proyecto.tieneInforme;
+  }
+
+  /**
+   * Con informe final el proyecto debe seguir finalizado: "activo" y "pausado"
+   * salen deshabilitados. El back también lo rechaza con 400 si se intenta.
+   */
+  opcionBloqueada(valor: EstadoProyecto): boolean {
+    return this.tieneInforme && valor !== 'finalizado';
+  }
+
   /** La fecha de fin solo se muestra (y se envía) si el estado es "finalizado". */
   get mostrarFechaFin(): boolean {
     return this.formulario.controls['estado'].value === 'finalizado';

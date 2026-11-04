@@ -1,0 +1,151 @@
+<!--
+  Informe final del proyecto (PDF). Se muestra debajo de la tarjeta del proyecto,
+  solo a curador y administrador (lo decide la ficha con *appHasRole).
+-->
+<section class="informe" aria-label="Informe final del proyecto">
+
+  <h4 class="titulo-informe">Informe final</h4>
+
+  @if (proyecto.tieneInforme) {
+
+    <!-- Con informe: abrir el PDF, regenerarlo o (solo administrador) eliminarlo -->
+    <div class="fila-informe">
+
+      @if (urlInforme) {
+        <a class="boton-accion" [href]="urlInforme" target="_blank" rel="noopener">Ver informe (PDF)</a>
+      } @else {
+        <span class="nota">Cargando enlace…</span>
+      }
+
+      <button type="button"
+              class="boton-accion"
+              [disabled]="generando"
+              (click)="abrirFormularioRegenerar()">
+        Regenerar informe
+      </button>
+
+      @if (!confirmandoEliminar) {
+        <button type="button"
+                class="boton-eliminar"
+                *appHasRole="['administrador']"
+                (click)="pedirEliminar()">
+          Eliminar informe
+        </button>
+      }
+
+    </div>
+
+  } @else if (proyecto.estado === 'finalizado') {
+
+    <!-- Finalizado y sin informe: se puede generar -->
+    <div class="fila-informe">
+      <button type="button"
+              class="boton-accion"
+              [disabled]="mostrarFormulario"
+              (click)="abrirFormularioGenerar()">
+        Generar informe final
+      </button>
+    </div>
+
+  } @else {
+
+    <p class="nota">El informe se puede generar cuando el proyecto esté finalizado.</p>
+
+  }
+
+  @if (confirmandoEliminar) {
+    <div class="confirmacion" role="alertdialog" aria-label="Confirmar eliminar el informe">
+      <p class="texto-confirmacion">¿Eliminar el informe final de este proyecto? Se borra el PDF.</p>
+      <div class="botones-confirmacion">
+        <button type="button" class="boton-secundario" (click)="cancelarEliminar()">Cancelar</button>
+        <button type="button" class="boton-peligro" [disabled]="eliminando" (click)="confirmarEliminar()">
+          @if (eliminando) {
+            Eliminando…
+          } @else {
+            Sí, eliminar
+          }
+        </button>
+      </div>
+    </div>
+  }
+
+  @if (mostrarFormulario) {
+    <form class="formulario" [formGroup]="formulario" (ngSubmit)="guardar()" novalidate>
+
+      <h5 class="titulo-formulario">{{ regenerando ? 'Regenerar informe final' : 'Generar informe final' }}</h5>
+
+      @if (regenerando) {
+        <p class="aviso">Se reemplazará el PDF actual por uno nuevo. El back no guarda los datos del informe anterior, así que vuelve a escribirlos.</p>
+      }
+
+      <div class="grupo">
+        <label class="etiqueta" [attr.for]="'fecha-informe-' + proyecto.idProyecto">Fecha de publicación</label>
+        <input [id]="'fecha-informe-' + proyecto.idProyecto"
+               class="campo"
+               type="date"
+               formControlName="fechaPublicacion"
+               [max]="hoy"
+               [class.invalido]="hayError('fechaPublicacion')"
+               [attr.aria-invalid]="hayError('fechaPublicacion')">
+        @if (hayError('fechaPublicacion')) {
+          <p class="error">{{ textoError('fechaPublicacion') }}</p>
+        }
+      </div>
+
+      <div class="grupo">
+        <label class="etiqueta" [attr.for]="'resultado-informe-' + proyecto.idProyecto">Resultado</label>
+        <select [id]="'resultado-informe-' + proyecto.idProyecto"
+                class="campo"
+                formControlName="resultado"
+                [class.invalido]="hayError('resultado')"
+                [attr.aria-invalid]="hayError('resultado')">
+          <option value="">Selecciona un resultado</option>
+          @for (opcion of opcionesResultado; track opcion.valor) {
+            <option [value]="opcion.valor">{{ opcion.texto }}</option>
+          }
+        </select>
+        @if (hayError('resultado')) {
+          <p class="error">{{ textoError('resultado') }}</p>
+        }
+      </div>
+
+      <div class="grupo">
+        <label class="etiqueta" [attr.for]="'resumen-informe-' + proyecto.idProyecto">Resumen de resultados</label>
+        <textarea [id]="'resumen-informe-' + proyecto.idProyecto"
+                  class="campo area"
+                  rows="5"
+                  formControlName="resumenResultados"
+                  [attr.maxlength]="longitudMaximaResumen"
+                  [class.invalido]="hayError('resumenResultados')"
+                  [attr.aria-invalid]="hayError('resumenResultados')"></textarea>
+        <p class="contador">{{ cantidadCaracteres }} / {{ longitudMaximaResumen }}</p>
+        @if (hayError('resumenResultados')) {
+          <p class="error">{{ textoError('resumenResultados') }}</p>
+        }
+      </div>
+
+      <div class="botones">
+        <button type="button" class="boton-secundario" [disabled]="generando" (click)="cerrarFormulario()">Cancelar</button>
+        <button type="submit" class="boton-principal" [disabled]="generando">
+          @if (generando) {
+            Generando informe…
+          } @else if (regenerando) {
+            Regenerar
+          } @else {
+            Generar
+          }
+        </button>
+      </div>
+
+      @if (generando) {
+        <p class="nota">El back está armando el PDF y subiéndolo. Puede tardar unos segundos.</p>
+      }
+
+    </form>
+  }
+
+  @if (errorGeneral) {
+    <p class="error-general" role="alert">{{ errorGeneral }}</p>
+  }
+
+</section>

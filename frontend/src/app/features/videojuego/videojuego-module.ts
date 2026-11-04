@@ -10,6 +10,7 @@ import { FormularioEventoComponent } from './formulario-evento/formulario-evento
 import { FormularioCustodiaComponent } from './formulario-custodia/formulario-custodia-component';
 import { FormularioProyectoComponent } from './formulario-proyecto/formulario-proyecto-component';
 import { GestionExpertosComponent } from './gestion-expertos/gestion-expertos-component';
+import { InformeFinalComponent } from './informe-final/informe-final-component';
 import { RegistrarCopiaComponent } from './registrar-copia/registrar-copia-component';
 
 /**
@@ -25,7 +26,8 @@ import { RegistrarCopiaComponent } from './registrar-copia/registrar-copia-compo
     FormularioProyectoComponent,
     FormularioCustodiaComponent,
     FormularioEventoComponent,
-    GestionExpertosComponent
+    GestionExpertosComponent,
+    InformeFinalComponent
   ],
   imports: [CommonModule, RouterModule, ReactiveFormsModule, SharedModule],
   exports: [FichaVideojuegoComponent, RegistrarCopiaComponent, FormularioVideojuegoComponent],

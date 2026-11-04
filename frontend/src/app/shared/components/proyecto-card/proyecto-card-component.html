@@ -9,6 +9,9 @@
   <div class="fila-superior">
     <span class="codigo">{{ codigo }}</span>
     <app-estado-badge [estado]="proyecto.estado"></app-estado-badge>
+    @if (proyecto.tieneInforme) {
+      <span class="etiqueta-informe">Con informe</span>
+    }
   </div>
 
   <h3 class="nombre-proyecto">{{ proyecto.nombre }}</h3>
