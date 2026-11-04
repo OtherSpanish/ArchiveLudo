@@ -2,14 +2,14 @@ import { Videojuego } from './videojuego-model';
 import { EstadoIntegridad, TipoCopia } from './copia-model';
 import { Institucion } from './custodia-model';
 
-/*
+/**
  * CONTRATO CON EL BACK.
  * Cada interfaz de este archivo describe el JSON que debe devolver un
  * endpoint de Spring Boot. Los nombres de los campos tienen que coincidir
  * exactamente con los del DTO de Java. Pásaselo a quien arme la API.
  */
 
-/*
+/**
  * GET /api/inicio/resumen
  * Datos de los 4 contadores y del banner de prioridad.
  *
@@ -26,7 +26,7 @@ export interface ResumenInicio {
   criteriosPrioritario: string[];
 }
 
-/*
+/**
  * Un videojuego junto con su línea de "meta" (nº de copias, estatus legal, etc.).
  * La meta no es un campo de VIDEOJUEGO: la calcula el backend.
  */
@@ -35,13 +35,13 @@ export interface JuegoConMeta {
   meta: string;
 }
 
-/*
+/**
  * GET /api/videojuegos?estado=en_riesgo&limite=10
  * Una fila del Inicio: cuántos juegos hay en total en esa categoría
  * (el número de "Ver todos (61)") y solo los primeros, para el carrusel.
  * El Catálogo usa la misma forma, con los parámetros extra q y pagina.
  */
-/*
+/**
  * Página de videojuegos del back real (Catálogo y En riesgo).
  * El back devuelve un arreglo plano en el cuerpo y el total en la cabecera
  * X-Total-Count; el servicio los junta en este objeto.
@@ -56,7 +56,7 @@ export interface JuegosPorEstado {
   juegos: JuegoConMeta[];
 }
 
-/*
+/**
  * GET /api/videojuegos/{id}
  * Cabecera de la ficha.
  *  - estatusLegal: el estatus legal vigente. No es una columna: es el registro
@@ -71,13 +71,13 @@ export interface DatosFicha {
   numeroProyectos: number;
 }
 
-/*
+/**
  * GET /api/copias/{id}/custodias
  * No necesita un tipo propio: devuelve una lista de Custodia
  * (historial completo, con fechaInicio y fechaFin).
  */
 
-/*
+/**
  * Una copia que una institución custodia ahora mismo, junto con el
  * videojuego al que pertenece. Se usa en la ficha de institución.
  *  - fechaInicio y condicionAlmacenamiento: los de la custodia vigente
@@ -92,7 +92,7 @@ export interface CopiaCustodiada {
   condicionAlmacenamiento?: string;
 }
 
-/*
+/**
  * GET /api/instituciones/{id}
  * Ficha de una institución.
  *  - telefonos y correos: las listas completas, de las tablas
@@ -107,7 +107,7 @@ export interface DatosInstitucion {
   copias: CopiaCustodiada[];
 }
 
-/*
+/**
  * GET /api/instituciones
  * Lista de la pantalla /instituciones: una fila por institución.
  *  - numeroCopias: cuántas copias custodia ahora mismo (custodias sin

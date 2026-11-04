@@ -4,7 +4,7 @@ import { Observable, map, tap } from 'rxjs';
 import { CredencialesLogin, Rol, Sesion, UsuarioLogin } from '../shared/models/sesion-model';
 import { ArchiveludoApiService } from './archiveludo-api-service';
 
-/*
+/**
  * Servicio que guarda quién tiene la sesión iniciada.
  * Lo usan el login (iniciar sesión), la barra superior (mostrar el usuario),
  * los guards (dejar pasar o no) y el interceptor (agregar el token a cada
@@ -15,13 +15,13 @@ import { ArchiveludoApiService } from './archiveludo-api-service';
 })
 export class AuthService {
 
-  /* Nombre con el que se guarda la sesión en sessionStorage. */
+  /** Nombre con el que se guarda la sesión en sessionStorage. */
   private claveSesion: string = 'archiveludo.sesion';
 
-  /* inject() pide el servicio de la API a Angular, igual que un constructor. */
+  /** inject() pide el servicio de la API a Angular, igual que un constructor. */
   private api = inject(ArchiveludoApiService);
 
-  /*
+  /**
    * La sesión actual, o null si nadie ha iniciado sesión.
    * Es un "signal": una caja que avisa a toda plantilla que la lea cuando
    * su contenido cambia. Así la barra superior se actualiza sola al entrar
@@ -30,12 +30,12 @@ export class AuthService {
    */
   readonly sesion = signal<Sesion | null>(null);
 
-  /* Al crearse el servicio, recupera la sesión guardada (por si el usuario refrescó la página). */
+  /** Al crearse el servicio, recupera la sesión guardada (por si el usuario refrescó la página). */
   constructor() {
     this.restaurarSesion();
   }
 
-  /*
+  /**
    * Login real: POST /api/auth/login. Si responde bien, convierte la respuesta
    * en una Sesion y la guarda. Si el back responde 401, el error le llega al
    * componente del login (el subscribe de allá).
@@ -47,7 +47,7 @@ export class AuthService {
     );
   }
 
-  /*
+  /**
    * Arma la Sesion con las dos partes de la respuesta: los datos del usuario
    * (cuerpo) y el token (cabecera "Authorization", que llega como "Bearer eyJ...").
    * El token se guarda SIN el prefijo "Bearer ": el interceptor lo agrega.
@@ -69,7 +69,7 @@ export class AuthService {
     };
   }
 
-  /* Cierra la sesión: borra lo guardado y deja la sesión en null. */
+  /** Cierra la sesión: borra lo guardado y deja la sesión en null. */
   cerrarSesion(): void {
     this.sesion.set(null);
 
@@ -80,12 +80,12 @@ export class AuthService {
     }
   }
 
-  /* true si hay alguien con sesión iniciada. */
+  /** true si hay alguien con sesión iniciada. */
   estaAutenticado(): boolean {
     return this.sesion() !== null;
   }
 
-  /* El token JWT de la sesión, o '' si no hay sesión. Lo usa el interceptor. */
+  /** El token JWT de la sesión, o '' si no hay sesión. Lo usa el interceptor. */
   get token(): string {
     const actual = this.sesion();
     if (actual === null) {
@@ -94,7 +94,7 @@ export class AuthService {
     return actual.token;
   }
 
-  /* true si la persona tiene alguno de los roles de la lista. Sin sesión, siempre false. */
+  /** true si la persona tiene alguno de los roles de la lista. Sin sesión, siempre false. */
   tieneRol(roles: Rol[]): boolean {
     const actual = this.sesion();
     if (actual === null) {
@@ -103,7 +103,7 @@ export class AuthService {
     return roles.includes(actual.rol);
   }
 
-  /* Guarda la sesión en el signal y en sessionStorage (para sobrevivir a un refresco). */
+  /** Guarda la sesión en el signal y en sessionStorage (para sobrevivir a un refresco). */
   private guardarSesion(sesion: Sesion): void {
     this.sesion.set(sesion);
 
@@ -114,7 +114,7 @@ export class AuthService {
     }
   }
 
-  /*
+  /**
    * Lee la sesión guardada, si existe y tiene el formato esperado.
    * Exige "correo": así se descartan las sesiones viejas (guardadas antes de
    * conectar el back), que no lo tenían y llevaban un token falso.

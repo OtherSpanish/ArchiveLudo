@@ -4,7 +4,7 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ArchiveludoApiService } from '../../../core/archiveludo-api-service';
 import { EventoRiesgo, EventoRiesgoNuevo, TIPOS_EVENTO } from '../../../shared/models/evento-riesgo-model';
 
-/*
+/**
  * Formulario para agregar o editar un evento de riesgo.
  *
  * Uso (agregar): <app-formulario-evento [idVideojuego]="8"
@@ -23,22 +23,22 @@ import { EventoRiesgo, EventoRiesgoNuevo, TIPOS_EVENTO } from '../../../shared/m
 })
 export class FormularioEventoComponent implements OnInit {
 
-  /* Videojuego al que pertenece el evento (va en la URL del POST). */
+  /** Videojuego al que pertenece el evento (va en la URL del POST). */
   @Input() idVideojuego!: number;
 
-  /* Si viene, el formulario edita este evento; si no, agrega uno nuevo. */
+  /** Si viene, el formulario edita este evento; si no, agrega uno nuevo. */
   @Input() evento?: EventoRiesgo;
 
-  /* Se emite cuando el back guardó el evento. */
+  /** Se emite cuando el back guardó el evento. */
   @Output() guardado = new EventEmitter<void>();
 
-  /* Se emite cuando el usuario cierra el formulario sin guardar. */
+  /** Se emite cuando el usuario cierra el formulario sin guardar. */
   @Output() cancelado = new EventEmitter<void>();
 
-  /* Opciones del selector de tipo. */
+  /** Opciones del selector de tipo. */
   tipos: string[] = TIPOS_EVENTO;
 
-  /* Fecha máxima del campo de fecha: hoy. */
+  /** Fecha máxima del campo de fecha: hoy. */
   hoy: string = this.fechaHoy();
 
   formulario: FormGroup;
@@ -62,7 +62,7 @@ export class FormularioEventoComponent implements OnInit {
     });
   }
 
-  /* Al abrir: si se edita, se cargan los datos del evento. */
+  /** Al abrir: si se edita, se cargan los datos del evento. */
   ngOnInit(): void {
     if (this.evento) {
       this.formulario.patchValue({
@@ -78,13 +78,13 @@ export class FormularioEventoComponent implements OnInit {
     return this.evento !== undefined;
   }
 
-  /* Dice si hay que mostrar el error de un campo. */
+  /** Dice si hay que mostrar el error de un campo. */
   hayError(nombre: string): boolean {
     const control = this.formulario.controls[nombre];
     return control.invalid && (control.touched || this.enviado);
   }
 
-  /* Texto del error de un campo. */
+  /** Texto del error de un campo. */
   textoError(nombre: string): string {
     const control = this.formulario.controls[nombre];
 
@@ -97,7 +97,7 @@ export class FormularioEventoComponent implements OnInit {
     return 'Este campo es obligatorio.';
   }
 
-  /* Valida y envía POST (agregar) o PUT (editar). */
+  /** Valida y envía POST (agregar) o PUT (editar). */
   guardar(): void {
     this.enviado = true;
     this.errorGeneral = '';
@@ -141,7 +141,7 @@ export class FormularioEventoComponent implements OnInit {
     this.guardado.emit();
   }
 
-  /* 400/404: el back explica qué pasó. 403: el rol no puede. Otro: mensaje general. */
+  /** 400/404: el back explica qué pasó. 403: el rol no puede. Otro: mensaje general. */
   private alFallar(error: HttpErrorResponse): void {
     console.error('No se pudo guardar el evento de riesgo', error);
     this.guardando = false;
@@ -161,7 +161,7 @@ export class FormularioEventoComponent implements OnInit {
     this.cancelado.emit();
   }
 
-  /* Fecha de hoy 'yyyy-MM-dd' en hora local. */
+  /** Fecha de hoy 'yyyy-MM-dd' en hora local. */
   private fechaHoy(): string {
     const ahora = new Date();
     const mes = String(ahora.getMonth() + 1).padStart(2, '0');

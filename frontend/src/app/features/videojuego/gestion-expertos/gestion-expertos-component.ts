@@ -6,13 +6,13 @@ import { Experto, nombreCompletoExperto } from '../../../shared/models/experto-m
 import { Participacion, ParticipacionEditada, ParticipacionNueva } from '../../../shared/models/participacion-model';
 import { ProyectoDeRestauracion } from '../../../shared/models/proyecto-model';
 
-/* Una opción del selector de experto: el id y el nombre ya armado. */
+/** Una opción del selector de experto: el id y el nombre ya armado. */
 interface OpcionExperto {
   id: number;
   nombre: string;
 }
 
-/*
+/**
  * Gestión de los expertos de UN proyecto: ver, agregar, editar y quitar
  * participaciones.
  *
@@ -38,22 +38,22 @@ export class GestionExpertosComponent {
 
   @Input() proyecto!: ProyectoDeRestauracion;
 
-  /* Catálogo de expertos (nombres y selector de "agregar"). */
+  /** Catálogo de expertos (nombres y selector de "agregar"). */
   @Input() expertos: Experto[] = [];
 
-  /* Se emite después de agregar, editar o quitar una participación. */
+  /** Se emite después de agregar, editar o quitar una participación. */
   @Output() cambio = new EventEmitter<void>();
 
-  /* Se emite cuando el usuario cierra el panel. */
+  /** Se emite cuando el usuario cierra el panel. */
   @Output() cerrado = new EventEmitter<void>();
 
-  /* Fecha máxima de los campos de fecha: hoy. */
+  /** Fecha máxima de los campos de fecha: hoy. */
   hoy: string = this.fechaHoy();
 
-  /* true cuando el formulario (agregar o editar) está desplegado. */
+  /** true cuando el formulario (agregar o editar) está desplegado. */
   mostrarFormulario: boolean = false;
 
-  /* Participación que se edita. Undefined cuando el formulario agrega. */
+  /** Participación que se edita. Undefined cuando el formulario agrega. */
   editando?: Participacion;
 
   formulario: FormGroup;
@@ -62,10 +62,10 @@ export class GestionExpertosComponent {
 
   guardando: boolean = false;
 
-  /* Mensaje de error de la última acción (guardar o quitar). */
+  /** Mensaje de error de la última acción (guardar o quitar). */
   errorGeneral: string = '';
 
-  /* Id de la participación que pide confirmación para quitarse (0 = ninguna). */
+  /** Id de la participación que pide confirmación para quitarse (0 = ninguna). */
   idConfirmandoQuitar: number = 0;
 
   constructor(
@@ -81,7 +81,7 @@ export class GestionExpertosComponent {
     });
   }
 
-  /* Nombre del experto de una participación; si no está en el catálogo, "Experto #id". */
+  /** Nombre del experto de una participación; si no está en el catálogo, "Experto #id". */
   nombreExperto(idExperto: number): string {
     for (const experto of this.expertos) {
       if (experto.idExperto === idExperto) {
@@ -91,7 +91,7 @@ export class GestionExpertosComponent {
     return 'Experto #' + idExperto;
   }
 
-  /* Expertos que todavía no están en el proyecto (los únicos que se pueden agregar). */
+  /** Expertos que todavía no están en el proyecto (los únicos que se pueden agregar). */
   get opcionesDisponibles(): OpcionExperto[] {
     const lista: OpcionExperto[] = [];
 
@@ -113,12 +113,12 @@ export class GestionExpertosComponent {
     return false;
   }
 
-  /* El botón "Quitar" se desactiva cuando solo queda un experto. */
+  /** El botón "Quitar" se desactiva cuando solo queda un experto. */
   get sePuedeQuitar(): boolean {
     return this.proyecto.participaciones.length > 1;
   }
 
-  /* Abre el formulario vacío para agregar un experto. */
+  /** Abre el formulario vacío para agregar un experto. */
   abrirAgregar(): void {
     this.editando = undefined;
     this.idConfirmandoQuitar = 0;
@@ -130,7 +130,7 @@ export class GestionExpertosComponent {
     this.mostrarFormulario = true;
   }
 
-  /* Abre el formulario con los datos de una participación (el experto no se cambia). */
+  /** Abre el formulario con los datos de una participación (el experto no se cambia). */
   abrirEditar(participacion: Participacion): void {
     this.editando = participacion;
     this.idConfirmandoQuitar = 0;
@@ -151,13 +151,13 @@ export class GestionExpertosComponent {
     this.mostrarFormulario = false;
   }
 
-  /* Dice si hay que mostrar el error de un campo. */
+  /** Dice si hay que mostrar el error de un campo. */
   hayError(nombre: string): boolean {
     const control = this.formulario.controls[nombre];
     return control.invalid && (control.touched || this.enviado);
   }
 
-  /* Valida y envía POST (agregar) o PUT (editar). */
+  /** Valida y envía POST (agregar) o PUT (editar). */
   guardar(): void {
     this.enviado = true;
     this.errorGeneral = '';
@@ -209,7 +209,7 @@ export class GestionExpertosComponent {
     this.cambios.markForCheck();
   }
 
-  /* Primer paso de quitar: confirmación en la misma fila. */
+  /** Primer paso de quitar: confirmación en la misma fila. */
   pedirQuitar(participacion: Participacion): void {
     this.errorGeneral = '';
     this.idConfirmandoQuitar = participacion.idParticipacion;
@@ -219,7 +219,7 @@ export class GestionExpertosComponent {
     this.idConfirmandoQuitar = 0;
   }
 
-  /* Segundo paso: DELETE /api/participaciones/{id}. */
+  /** Segundo paso: DELETE /api/participaciones/{id}. */
   confirmarQuitar(participacion: Participacion): void {
     this.api.eliminarParticipacion(participacion.idParticipacion).subscribe({
       next: () => this.alQuitar(),
@@ -233,7 +233,7 @@ export class GestionExpertosComponent {
     this.cambios.markForCheck();
   }
 
-  /* 409: el back dice que es la única participación. 403: solo administrador. */
+  /** 409: el back dice que es la única participación. 403: solo administrador. */
   private alFallarQuitar(error: HttpErrorResponse): void {
     console.error('No se pudo quitar al experto', error);
     this.idConfirmandoQuitar = 0;
@@ -249,7 +249,7 @@ export class GestionExpertosComponent {
     this.cambios.markForCheck();
   }
 
-  /* 400/404: el back explica qué pasó (por ejemplo, experto repetido). */
+  /** 400/404: el back explica qué pasó (por ejemplo, experto repetido). */
   private alFallar(error: HttpErrorResponse): void {
     console.error('No se pudo guardar la participación', error);
     this.guardando = false;
@@ -269,7 +269,7 @@ export class GestionExpertosComponent {
     this.cerrado.emit();
   }
 
-  /* '2026-09-01' -> '01/09/2026' */
+  /** '2026-09-01' -> '01/09/2026' */
   formatearFecha(fecha: string): string {
     const partes = fecha.split('-');
     if (partes.length !== 3) {
@@ -278,7 +278,7 @@ export class GestionExpertosComponent {
     return partes[2] + '/' + partes[1] + '/' + partes[0];
   }
 
-  /* Fecha de hoy 'yyyy-MM-dd' en hora local. */
+  /** Fecha de hoy 'yyyy-MM-dd' en hora local. */
   private fechaHoy(): string {
     const ahora = new Date();
     const mes = String(ahora.getMonth() + 1).padStart(2, '0');

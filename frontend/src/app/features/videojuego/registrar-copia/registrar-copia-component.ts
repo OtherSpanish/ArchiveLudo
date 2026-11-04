@@ -7,20 +7,20 @@ import { Copia, CopiaNueva, EstadoIntegridad, TipoCopia } from '../../../shared/
 import { HttpErrorResponse } from '@angular/common/http';
 import { ArchiveludoApiService } from '../../../core/archiveludo-api-service';
 
-/* Unidad en la que el usuario escribe el tamaño; "factor" la convierte a bytes. */
+/** Unidad en la que el usuario escribe el tamaño; "factor" la convierte a bytes. */
 interface UnidadTamanio {
   valor: string;
   etiqueta: string;
   factor: number;
 }
 
-/* Una opción de los botones de selección: el valor que se guarda y el texto que se ve. */
+/** Una opción de los botones de selección: el valor que se guarda y el texto que se ve. */
 interface Opcion<T> {
   valor: T;
   etiqueta: string;
 }
 
-/*
+/**
  * Pantalla para registrar una copia nueva de un videojuego
  * (/videojuegos/:id/copias/nueva) o para editar una existente
  * (/copias/:idCopia/editar).
@@ -41,39 +41,39 @@ interface Opcion<T> {
 })
 export class RegistrarCopiaComponent implements OnInit {
 
-  /* Videojuego al que se le agrega la copia. Sin valor hasta que se carga. */
+  /** Videojuego al que se le agrega la copia. Sin valor hasta que se carga. */
   videojuego?: Videojuego;
 
-  /* Id que viene en la URL (/videojuegos/8/copias/nueva -> 8). */
+  /** Id que viene en la URL (/videojuegos/8/copias/nueva -> 8). */
   idVideojuego: number = 0;
 
-  /* Id de la copia que se edita (/copias/11/editar -> 11). Vale 0 cuando se registra una nueva. */
+  /** Id de la copia que se edita (/copias/11/editar -> 11). Vale 0 cuando se registra una nueva. */
   idCopia: number = 0;
 
-  /* true cuando la pantalla edita una copia existente. */
+  /** true cuando la pantalla edita una copia existente. */
   get esEdicion(): boolean {
     return this.idCopia > 0;
   }
 
-  /* true mientras se espera el videojuego. Evita mostrar "no encontrado" antes de tiempo. */
+  /** true mientras se espera el videojuego. Evita mostrar "no encontrado" antes de tiempo. */
   cargando: boolean = true;
 
-  /* El formulario. Se arma en ngOnInit (ver crearFormulario). */
+  /** El formulario. Se arma en ngOnInit (ver crearFormulario). */
   formulario!: FormGroup;
 
-  /*
+  /**
    * true después del primer intento de enviar. Sirve para mostrar los errores
    * de los campos que el usuario nunca tocó.
    */
   enviado: boolean = false;
 
-  /* true mientras se espera la respuesta del back; deshabilita el botón de guardar. */
+  /** true mientras se espera la respuesta del back; deshabilita el botón de guardar. */
   guardando: boolean = false;
 
-  /* Mensaje si el back responde un error al guardar. Vacío si no hay error. */
+  /** Mensaje si el back responde un error al guardar. Vacío si no hay error. */
   errorEnvio: string = '';
 
-  /*
+  /**
    * Unidades del tamaño. El usuario escribe "700" y elige "MB"; al enviar,
    * se convierte a bytes (700 x 1024 x 1024), que es lo que pide el back.
    */
@@ -83,13 +83,13 @@ export class RegistrarCopiaComponent implements OnInit {
     { valor: 'GB', etiqueta: 'GB', factor: 1024 * 1024 * 1024 }
   ];
 
-  /* Opciones del tipo de copia, en el orden en que se muestran. */
+  /** Opciones del tipo de copia, en el orden en que se muestran. */
   opcionesTipo: Opcion<TipoCopia>[] = [
     { valor: 'fisica', etiqueta: 'Física' },
     { valor: 'digital', etiqueta: 'Digital' }
   ];
 
-  /* Opciones del estado de integridad (mismos valores que la tabla COPIA). */
+  /** Opciones del estado de integridad (mismos valores que la tabla COPIA). */
   opcionesEstado: Opcion<EstadoIntegridad>[] = [
     { valor: 'buena', etiqueta: 'Buena' },
     { valor: 'deteriorada', etiqueta: 'Deteriorada' },
@@ -97,15 +97,15 @@ export class RegistrarCopiaComponent implements OnInit {
     { valor: 'irrecuperable', etiqueta: 'Irrecuperable' }
   ];
 
-  /* Campos que solo existen en una copia física, y cuáles de ellos son obligatorios. */
+  /** Campos que solo existen en una copia física, y cuáles de ellos son obligatorios. */
   private camposFisica: string[] = ['tipoSoporte', 'numeroSerie', 'ubicacionFisica'];
   private obligatoriosFisica: string[] = ['tipoSoporte', 'ubicacionFisica'];
 
-  /* Campos que solo existen en una copia digital, y cuáles de ellos son obligatorios. */
+  /** Campos que solo existen en una copia digital, y cuáles de ellos son obligatorios. */
   private camposDigital: string[] = ['formatoArchivo', 'tamanio', 'hashVerificacion'];
   private obligatoriosDigital: string[] = ['formatoArchivo', 'tamanio', 'hashVerificacion'];
 
-  /*
+  /**
    * ActivatedRoute lee datos de la URL; Router cambia de pantalla;
    * FormBuilder arma el formulario; ArchiveludoApiService habla con el back;
    * ChangeDetectorRef avisa a Angular que hay que redibujar.
@@ -118,7 +118,7 @@ export class RegistrarCopiaComponent implements OnInit {
     private cambios: ChangeDetectorRef
   ) { }
 
-  /* Pide el videojuego para mostrar su título: GET /api/videojuegos/{id} */
+  /** Pide el videojuego para mostrar su título: GET /api/videojuegos/{id} */
   private cargarJuego(id: number): void {
     this.api.obtenerVideojuego(id).subscribe({
       next: (videojuego) => this.alRecibirJuego(videojuego),
@@ -133,7 +133,7 @@ export class RegistrarCopiaComponent implements OnInit {
     this.cambios.markForCheck();
   }
 
-  /* Si el back responde error (por ejemplo 404), el HTML muestra "No encontramos ese videojuego". */
+  /** Si el back responde error (por ejemplo 404), el HTML muestra "No encontramos ese videojuego". */
   private alFallarJuego(): void {
     this.videojuego = undefined;
     this.cargando = false;
@@ -141,7 +141,7 @@ export class RegistrarCopiaComponent implements OnInit {
     this.cambios.markForCheck();
   }
 
-  /*
+  /**
    * Envía la copia: POST /api/videojuegos/{id}/copias (nueva) o
    * PUT /api/copias/{id} (edición, con el mismo tipoCopia que tiene guardado).
    */
@@ -164,7 +164,7 @@ export class RegistrarCopiaComponent implements OnInit {
     this.volverALaFicha();
   }
 
-  /*
+  /**
    * Si falla, el formulario se queda como estaba y se muestra un mensaje:
    *  - 400: el back explica qué dato está mal (viene en error.error.mensaje)
    *  - 403: el rol de consulta no puede registrar copias
@@ -187,7 +187,7 @@ export class RegistrarCopiaComponent implements OnInit {
 
 
 
-  /*
+  /**
    * ngOnInit se ejecuta una vez, cuando el componente ya está listo.
    * Arma el formulario y empieza a escuchar el id de la URL.
    */
@@ -199,7 +199,7 @@ export class RegistrarCopiaComponent implements OnInit {
     });
   }
 
-  /*
+  /**
    * Lee la URL. En /videojuegos/8/copias/nueva el parámetro "id" vale '8'
    * (como TEXTO; Number() lo convierte) y se pide ese juego. En
    * /copias/11/editar viene "idCopia": se pide la copia, y de ella sale el juego.
@@ -219,7 +219,7 @@ export class RegistrarCopiaComponent implements OnInit {
     this.cargarJuego(this.idVideojuego);
   }
 
-  /* Edición: GET /api/copias/{id}. Si no existe (404), se muestra "No encontramos...". */
+  /** Edición: GET /api/copias/{id}. Si no existe (404), se muestra "No encontramos...". */
   private cargarCopia(idCopia: number): void {
     this.api.obtenerCopia(idCopia).subscribe({
       next: (copia) => this.alRecibirCopia(copia),
@@ -227,7 +227,7 @@ export class RegistrarCopiaComponent implements OnInit {
     });
   }
 
-  /* Llega la copia: se rellena el formulario, se bloquea el tipo y se pide su juego. */
+  /** Llega la copia: se rellena el formulario, se bloquea el tipo y se pide su juego. */
   private alRecibirCopia(copia: Copia): void {
     this.idVideojuego = copia.idVideojuego;
 
@@ -254,7 +254,7 @@ export class RegistrarCopiaComponent implements OnInit {
     this.cargarJuego(copia.idVideojuego);
   }
 
-  /*
+  /**
    * Convierte bytes a la unidad más grande que dé un número de 1 o más
    * (GB, MB o KB). Ejemplo: 734003200 -> { valor: 700, unidad: 'MB' }.
    */
@@ -276,7 +276,7 @@ export class RegistrarCopiaComponent implements OnInit {
     return { valor: Math.round((bytes / 1024) * 1000) / 1000, unidad: 'KB' };
   }
 
-  /*
+  /**
    * Arma el formulario con todos los campos (físicos y digitales) y un valor
    * inicial para cada uno. Después ajusta cuáles son obligatorios según el
    * tipo elegido, y vuelve a ajustarlos cada vez que el usuario cambia de tipo.
@@ -301,7 +301,7 @@ export class RegistrarCopiaComponent implements OnInit {
     });
   }
 
-  /*
+  /**
    * Deja activos solo los campos del tipo elegido:
    *  - los del tipo elegido reciben sus validadores (los obligatorios llevan
    *    "required"; todos limitan el largo a 255 caracteres)
@@ -342,17 +342,17 @@ export class RegistrarCopiaComponent implements OnInit {
     }
   }
 
-  /* true si la copia que se está registrando es física. */
+  /** true si la copia que se está registrando es física. */
   get esFisica(): boolean {
     return this.formulario.controls['tipoCopia'].value === 'fisica';
   }
 
-  /* true si la copia que se está registrando es digital. */
+  /** true si la copia que se está registrando es digital. */
   get esDigital(): boolean {
     return this.formulario.controls['tipoCopia'].value === 'digital';
   }
 
-  /*
+  /**
    * Dice si hay que mostrar el error de un campo: solo si tiene un error Y
    * (el usuario ya pasó por él O ya intentó enviar el formulario).
    */
@@ -361,7 +361,7 @@ export class RegistrarCopiaComponent implements OnInit {
     return control.invalid && (control.touched || this.enviado);
   }
 
-  /* Texto del error de un campo, según qué validación falló. */
+  /** Texto del error de un campo, según qué validación falló. */
   textoError(nombre: string): string {
     const control = this.formulario.controls[nombre];
 
@@ -377,7 +377,7 @@ export class RegistrarCopiaComponent implements OnInit {
     return '';
   }
 
-  /*
+  /**
    * Se ejecuta al pulsar "Guardar copia". Si hay errores, los muestra y no
    * envía nada. Si todo está bien, arma el cuerpo y lo envía.
    */
@@ -394,7 +394,7 @@ export class RegistrarCopiaComponent implements OnInit {
     this.enviarCopia(this.armarCopia());
   }
 
-  /*
+  /**
    * Arma el cuerpo que se envía al back (CopiaNueva). Solo incluye los campos
    * del tipo elegido, sin espacios sobrantes; el número de serie, que es
    * opcional, se omite si está vacío. La fecha y el usuario NO se envían:
@@ -425,17 +425,17 @@ export class RegistrarCopiaComponent implements OnInit {
     return copia;
   }
 
-  /* Se ejecuta al pulsar "Cancelar": vuelve a la ficha sin guardar nada. */
+  /** Se ejecuta al pulsar "Cancelar": vuelve a la ficha sin guardar nada. */
   cancelar(): void {
     this.volverALaFicha();
   }
 
-  /* Navega a /videojuegos/:id, la ficha del juego. */
+  /** Navega a /videojuegos/:id, la ficha del juego. */
   private volverALaFicha(): void {
     this.router.navigate(['/videojuegos', this.idVideojuego]);
   }
 
-  /*
+  /**
    * Convierte el tamaño escrito por el usuario a bytes.
    * Busca la unidad elegida (KB, MB o GB) y multiplica por su factor.
    * Ejemplo: 700 MB -> 700 x 1048576 = 734003200.

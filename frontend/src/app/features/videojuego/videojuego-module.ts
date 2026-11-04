@@ -12,7 +12,7 @@ import { FormularioProyectoComponent } from './formulario-proyecto/formulario-pr
 import { GestionExpertosComponent } from './gestion-expertos/gestion-expertos-component';
 import { RegistrarCopiaComponent } from './registrar-copia/registrar-copia-component';
 
-/*
+/**
  * Pantallas de un videojuego: la ficha y el formulario para registrar copias.
  * Sus rutas se declaran en AppRoutingModule.
  * ReactiveFormsModule da las herramientas del formulario (formGroup, formControlName).

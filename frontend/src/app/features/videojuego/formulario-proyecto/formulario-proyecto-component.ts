@@ -11,19 +11,19 @@ import {
   ProyectoNuevo
 } from '../../../shared/models/proyecto-model';
 
-/* Una opción del selector de estado: el valor que viaja al back y el texto que se ve. */
+/** Una opción del selector de estado: el valor que viaja al back y el texto que se ve. */
 interface OpcionEstado {
   valor: EstadoProyecto;
   texto: string;
 }
 
-/* Una opción del selector de experto: el id y el nombre ya armado. */
+/** Una opción del selector de experto: el id y el nombre ya armado. */
 interface OpcionExperto {
   id: number;
   nombre: string;
 }
 
-/*
+/**
  * Formulario para crear o editar un proyecto de restauración.
  *
  * Uso (crear):  <app-formulario-proyecto [idVideojuego]="8" [expertos]="lista"
@@ -44,19 +44,19 @@ interface OpcionExperto {
 })
 export class FormularioProyectoComponent implements OnInit {
 
-  /* Videojuego al que pertenece el proyecto (va en la URL del POST). */
+  /** Videojuego al que pertenece el proyecto (va en la URL del POST). */
   @Input() idVideojuego!: number;
 
-  /* Si viene, el formulario edita este proyecto; si no, crea uno nuevo. */
+  /** Si viene, el formulario edita este proyecto; si no, crea uno nuevo. */
   @Input() proyecto?: ProyectoDeRestauracion;
 
-  /* Catálogo de expertos para los selectores. */
+  /** Catálogo de expertos para los selectores. */
   @Input() expertos: Experto[] = [];
 
-  /* Se emite cuando el back guardó el proyecto. */
+  /** Se emite cuando el back guardó el proyecto. */
   @Output() guardado = new EventEmitter<void>();
 
-  /* Se emite cuando el usuario cierra el formulario sin guardar. */
+  /** Se emite cuando el usuario cierra el formulario sin guardar. */
   @Output() cancelado = new EventEmitter<void>();
 
   opcionesEstado: OpcionEstado[] = [
@@ -65,12 +65,12 @@ export class FormularioProyectoComponent implements OnInit {
     { valor: 'finalizado', texto: 'Finalizado' }
   ];
 
-  /* Fecha máxima de todos los campos de fecha: hoy. */
+  /** Fecha máxima de todos los campos de fecha: hoy. */
   hoy: string = this.fechaHoy();
 
   formulario: FormGroup;
 
-  /* true después del primer intento de guardar; muestra errores de campos sin tocar. */
+  /** true después del primer intento de guardar; muestra errores de campos sin tocar. */
   enviado: boolean = false;
 
   guardando: boolean = false;
@@ -93,7 +93,7 @@ export class FormularioProyectoComponent implements OnInit {
     });
   }
 
-  /* Al abrir: si se edita, se cargan los datos; si se crea, se deja una fila de experto. */
+  /** Al abrir: si se edita, se cargan los datos; si se crea, se deja una fila de experto. */
   ngOnInit(): void {
     if (this.proyecto) {
       this.formulario.patchValue({
@@ -113,7 +113,7 @@ export class FormularioProyectoComponent implements OnInit {
     return this.proyecto !== undefined;
   }
 
-  /* La fecha de fin solo se muestra (y se envía) si el estado es "finalizado". */
+  /** La fecha de fin solo se muestra (y se envía) si el estado es "finalizado". */
   get mostrarFechaFin(): boolean {
     return this.formulario.controls['estado'].value === 'finalizado';
   }
@@ -122,7 +122,7 @@ export class FormularioProyectoComponent implements OnInit {
     return this.formulario.controls['participaciones'] as FormArray;
   }
 
-  /* Opciones del selector de experto, con el nombre armado. */
+  /** Opciones del selector de experto, con el nombre armado. */
   get opcionesExperto(): OpcionExperto[] {
     const lista: OpcionExperto[] = [];
 
@@ -133,7 +133,7 @@ export class FormularioProyectoComponent implements OnInit {
     return lista;
   }
 
-  /* Agrega una fila vacía de experto. */
+  /** Agrega una fila vacía de experto. */
   agregarFila(): void {
     this.participaciones.push(this.constructorFormulario.group({
       idExperto: [null, Validators.required],
@@ -143,27 +143,27 @@ export class FormularioProyectoComponent implements OnInit {
     }));
   }
 
-  /* Quita una fila; siempre queda al menos una. */
+  /** Quita una fila; siempre queda al menos una. */
   quitarFila(posicion: number): void {
     if (this.participaciones.length > 1) {
       this.participaciones.removeAt(posicion);
     }
   }
 
-  /* Dice si hay que mostrar el error de un campo del proyecto. */
+  /** Dice si hay que mostrar el error de un campo del proyecto. */
   hayError(nombre: string): boolean {
     const control = this.formulario.controls[nombre];
     return control.invalid && (control.touched || this.enviado);
   }
 
-  /* Dice si hay que mostrar el error de un campo de una fila de experto. */
+  /** Dice si hay que mostrar el error de un campo de una fila de experto. */
   hayErrorFila(posicion: number, nombre: string): boolean {
     const fila = this.participaciones.at(posicion) as FormGroup;
     const control = fila.controls[nombre];
     return control.invalid && (control.touched || this.enviado);
   }
 
-  /* Texto del error de un campo (sirve para el proyecto y para las filas). */
+  /** Texto del error de un campo (sirve para el proyecto y para las filas). */
   textoError(nombre: string): string {
     if (nombre === 'nombre' || nombre === 'fechaInicio' || nombre === 'idExperto' || nombre === 'rolExperto' || nombre === 'fechaIncorporacion') {
       return 'Este campo es obligatorio.';
@@ -174,7 +174,7 @@ export class FormularioProyectoComponent implements OnInit {
     return 'Revisa este campo.';
   }
 
-  /* Valida, arma el cuerpo y envía POST (crear) o PUT (editar). */
+  /** Valida, arma el cuerpo y envía POST (crear) o PUT (editar). */
   guardar(): void {
     this.enviado = true;
     this.errorGeneral = '';
@@ -203,7 +203,7 @@ export class FormularioProyectoComponent implements OnInit {
     }
   }
 
-  /* Cuerpo del PUT: los campos vacíos se omiten y fechaFin solo va si es finalizado. */
+  /** Cuerpo del PUT: los campos vacíos se omiten y fechaFin solo va si es finalizado. */
   private armarEditado(datos: { nombre: string; descripcion: string; herramientaEmulador: string; estado: EstadoProyecto; fechaInicio: string; fechaFin: string }): ProyectoEditado {
     const cuerpo: ProyectoEditado = {
       nombre: datos.nombre.trim(),
@@ -228,7 +228,7 @@ export class FormularioProyectoComponent implements OnInit {
     return cuerpo;
   }
 
-  /* Cuerpo del POST: igual que el PUT, más la lista de participaciones. */
+  /** Cuerpo del POST: igual que el PUT, más la lista de participaciones. */
   private armarNuevo(datos: { nombre: string; descripcion: string; herramientaEmulador: string; estado: EstadoProyecto; fechaInicio: string; fechaFin: string; participaciones: ParticipacionNueva[] }): ProyectoNuevo {
     const base = this.armarEditado(datos);
     const filas: ParticipacionNueva[] = [];
@@ -255,7 +255,7 @@ export class FormularioProyectoComponent implements OnInit {
     this.guardado.emit();
   }
 
-  /* 400/404/409: el back explica qué pasó. 403: el rol no puede. Otro: mensaje general. */
+  /** 400/404/409: el back explica qué pasó. 403: el rol no puede. Otro: mensaje general. */
   private alFallar(error: HttpErrorResponse): void {
     console.error('No se pudo guardar el proyecto', error);
     this.guardando = false;
@@ -271,12 +271,12 @@ export class FormularioProyectoComponent implements OnInit {
     this.cambios.markForCheck();
   }
 
-  /* El usuario cierra el formulario sin guardar. */
+  /** El usuario cierra el formulario sin guardar. */
   cancelar(): void {
     this.cancelado.emit();
   }
 
-  /* Fecha de hoy 'yyyy-MM-dd' en hora local (toISOString daría la fecha en UTC). */
+  /** Fecha de hoy 'yyyy-MM-dd' en hora local (toISOString daría la fecha en UTC). */
   private fechaHoy(): string {
     const ahora = new Date();
     const mes = String(ahora.getMonth() + 1).padStart(2, '0');

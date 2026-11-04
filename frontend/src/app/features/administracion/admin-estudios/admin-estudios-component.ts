@@ -4,7 +4,7 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ArchiveludoApiService } from '../../../core/archiveludo-api-service';
 import { Estudio, EstudioNuevo } from '../../../shared/models/videojuego-model';
 
-/*
+/**
  * Pantalla de administración de estudios (/administracion/estudios).
  * Muestra la lista de estudios y un formulario (para crear o editar) que se
  * despliega en la misma pantalla. Curador y administrador pueden crear y
@@ -20,36 +20,36 @@ import { Estudio, EstudioNuevo } from '../../../shared/models/videojuego-model';
 })
 export class AdminEstudiosComponent implements OnInit {
 
-  /* Límites de año que acepta el back en anioFundacion. */
+  /** Límites de año que acepta el back en anioFundacion. */
   readonly anioMinimo: number = 1800;
   readonly anioMaximo: number = new Date().getFullYear();
 
-  /* Estudios de la lista. */
+  /** Estudios de la lista. */
   estudios: Estudio[] = [];
 
-  /* true mientras se espera la lista; true en hayError si el back falló. */
+  /** true mientras se espera la lista; true en hayError si el back falló. */
   cargando: boolean = true;
   hayError: boolean = false;
 
-  /* true cuando el formulario está desplegado. */
+  /** true cuando el formulario está desplegado. */
   mostrarFormulario: boolean = false;
 
-  /* Estudio que se edita. Es undefined cuando se está creando uno nuevo. */
+  /** Estudio que se edita. Es undefined cuando se está creando uno nuevo. */
   editando?: Estudio;
 
-  /* El formulario. */
+  /** El formulario. */
   formulario: FormGroup;
 
-  /* true después del primer intento de guardar. */
+  /** true después del primer intento de guardar. */
   enviado: boolean = false;
 
-  /* true mientras se espera la respuesta del guardado. */
+  /** true mientras se espera la respuesta del guardado. */
   guardando: boolean = false;
 
-  /* Mensaje de error del guardado o de la eliminación. */
+  /** Mensaje de error del guardado o de la eliminación. */
   errorMensaje: string = '';
 
-  /* Id del estudio que está pidiendo confirmación para eliminarse (0 = ninguno). */
+  /** Id del estudio que está pidiendo confirmación para eliminarse (0 = ninguno). */
   idConfirmandoEliminar: number = 0;
 
   constructor(
@@ -68,7 +68,7 @@ export class AdminEstudiosComponent implements OnInit {
       anioCierre: ['']
     });
 
-    /* Cada vez que cambia el estado, se ajustan las reglas del año de cierre. */
+    /** Cada vez que cambia el estado, se ajustan las reglas del año de cierre. */
     this.formulario.controls['estadoActual'].valueChanges.subscribe({
       next: () => this.ajustarAnioCierre()
     });
@@ -78,7 +78,7 @@ export class AdminEstudiosComponent implements OnInit {
     this.cargarEstudios();
   }
 
-  /* GET /api/estudios */
+  /** GET /api/estudios */
   private cargarEstudios(): void {
     this.api.obtenerEstudios().subscribe({
       next: (lista) => this.alRecibirLista(lista),
@@ -102,12 +102,12 @@ export class AdminEstudiosComponent implements OnInit {
     this.cambios.markForCheck();
   }
 
-  /* true si el estudio del formulario está desaparecido (entonces pide año de cierre). */
+  /** true si el estudio del formulario está desaparecido (entonces pide año de cierre). */
   get esDesaparecido(): boolean {
     return this.formulario.controls['estadoActual'].value === 'desaparecido';
   }
 
-  /*
+  /**
    * Si el estudio está "desaparecido", el año de cierre es obligatorio y
    * debe estar entre 1800 y hoy. Si está "activo", se vacía y no se valida.
    */
@@ -128,7 +128,7 @@ export class AdminEstudiosComponent implements OnInit {
     control.updateValueAndValidity();
   }
 
-  /* Abre el formulario vacío para crear un estudio. */
+  /** Abre el formulario vacío para crear un estudio. */
   abrirNuevo(): void {
     this.editando = undefined;
     this.formulario.reset({ nombre: '', pais: '', estadoActual: 'activo', anioFundacion: '', anioCierre: '' });
@@ -136,7 +136,7 @@ export class AdminEstudiosComponent implements OnInit {
     this.abrirFormulario();
   }
 
-  /* Abre el formulario con los datos del estudio que se va a editar. */
+  /** Abre el formulario con los datos del estudio que se va a editar. */
   abrirEditar(estudio: Estudio): void {
     this.editando = estudio;
     this.formulario.reset({
@@ -161,13 +161,13 @@ export class AdminEstudiosComponent implements OnInit {
     this.mostrarFormulario = false;
   }
 
-  /* Dice si hay que mostrar el error de un campo. */
+  /** Dice si hay que mostrar el error de un campo. */
   mostrarError(nombre: string): boolean {
     const control = this.formulario.controls[nombre];
     return control.invalid && (control.touched || this.enviado);
   }
 
-  /* Texto del error de un campo, según qué validación falló. */
+  /** Texto del error de un campo, según qué validación falló. */
   textoError(nombre: string): string {
     const control = this.formulario.controls[nombre];
 
@@ -183,7 +183,7 @@ export class AdminEstudiosComponent implements OnInit {
     return '';
   }
 
-  /* Valida y envía POST (crear) o PUT (editar). */
+  /** Valida y envía POST (crear) o PUT (editar). */
   guardar(): void {
     this.enviado = true;
     this.errorMensaje = '';
@@ -201,7 +201,7 @@ export class AdminEstudiosComponent implements OnInit {
       anioFundacion: Number(datos.anioFundacion)
     };
 
-    /* El año de cierre solo viaja si el estudio está desaparecido. */
+    /** El año de cierre solo viaja si el estudio está desaparecido. */
     if (datos.estadoActual === 'desaparecido') {
       cuerpo.anioCierre = Number(datos.anioCierre);
 
@@ -226,14 +226,14 @@ export class AdminEstudiosComponent implements OnInit {
     }
   }
 
-  /* Se guardó: se cierra el formulario y se vuelve a pedir la lista. */
+  /** Se guardó: se cierra el formulario y se vuelve a pedir la lista. */
   private alGuardar(): void {
     this.guardando = false;
     this.mostrarFormulario = false;
     this.cargarEstudios();
   }
 
-  /* Primer paso de eliminar: pide confirmación en la misma fila. */
+  /** Primer paso de eliminar: pide confirmación en la misma fila. */
   pedirEliminar(estudio: Estudio): void {
     this.errorMensaje = '';
     this.idConfirmandoEliminar = estudio.idEstudio;
@@ -243,7 +243,7 @@ export class AdminEstudiosComponent implements OnInit {
     this.idConfirmandoEliminar = 0;
   }
 
-  /* Segundo paso: DELETE /api/estudios/{id}. */
+  /** Segundo paso: DELETE /api/estudios/{id}. */
   confirmarEliminar(estudio: Estudio): void {
     this.api.eliminarEstudio(estudio.idEstudio).subscribe({
       next: () => this.alEliminar(),
@@ -256,7 +256,7 @@ export class AdminEstudiosComponent implements OnInit {
     this.cargarEstudios();
   }
 
-  /*
+  /**
    * Muestra el error según el código:
    *  - 400 / 404 / 409: el back explica qué pasó (error.error.mensaje)
    *  - 403: el rol no puede
@@ -280,7 +280,7 @@ export class AdminEstudiosComponent implements OnInit {
     this.cambios.markForCheck();
   }
 
-  /* Línea de años de un estudio: "1998 – 2006" o "Desde 1995". */
+  /** Línea de años de un estudio: "1998 – 2006" o "Desde 1995". */
   textoAnios(estudio: Estudio): string {
     if (estudio.anioCierre !== undefined && estudio.anioCierre !== null) {
       return estudio.anioFundacion + ' – ' + estudio.anioCierre;

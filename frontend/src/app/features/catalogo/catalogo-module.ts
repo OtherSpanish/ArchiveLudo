@@ -6,7 +6,7 @@ import { authGuard } from '../../core/auth-guard';
 import { SharedModule } from '../../shared/shared-module';
 import { CatalogoComponent } from './catalogo-component';
 
-/*
+/**
  * Rutas de esta pantalla. "forChild" las suma a las rutas generales
  * de la app (las que están en app-routing-module.ts).
  * authGuard exige tener sesión iniciada para ver el catálogo.

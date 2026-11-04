@@ -8,7 +8,7 @@ import { FichaVideojuegoComponent } from './features/videojuego/ficha-videojuego
 import { RegistrarCopiaComponent } from './features/videojuego/registrar-copia/registrar-copia-component';
 import { FormularioVideojuegoComponent } from './features/videojuego/formulario-videojuego/formulario-videojuego-component';
 
-/*
+/**
  * Rutas principales de la app. Catálogo, Instituciones y Login declaran las
  * suyas dentro de sus propios módulos.
  *

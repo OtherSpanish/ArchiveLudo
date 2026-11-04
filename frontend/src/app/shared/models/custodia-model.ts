@@ -1,4 +1,4 @@
-/*
+/**
  * Institución que custodia copias (museo, universidad, archivo o colección
  * privada). Viene de GET /api/instituciones y GET /api/instituciones/{id}.
  *
@@ -14,11 +14,11 @@ export interface Institucion {
   pais: string;
   telefonos: number[];
   correos: string[];
-  /* Cuántas copias guarda hoy (custodias vigentes). La calcula el back; siempre llega. */
+  /** Cuántas copias guarda hoy (custodias vigentes). La calcula el back; siempre llega. */
   cantidadCopiasCustodiadas: number;
 }
 
-/*
+/**
  * Cuerpo de POST /api/instituciones y PUT /api/instituciones/{id}.
  *  - tipo: texto legible ("Museo", "Universidad", "Archivo", "Colección privada").
  *  - telefonos y correos: al menos uno de cada uno; en un PUT REEMPLAZAN las listas.
@@ -31,7 +31,7 @@ export interface InstitucionNueva {
   correos: string[];
 }
 
-/*
+/**
  * Un periodo en el que una institución tuvo una copia bajo su custodia.
  * Viene de la tabla CUSTODIA.
  *
@@ -48,7 +48,7 @@ export interface Custodia {
   condicionAlmacenamiento: string;
 }
 
-/*
+/**
  * Cuerpo de POST /api/copias/{id}/custodias y PUT /api/custodias/{id}.
  * En el POST no va fechaFin: el back siempre crea la vigente y cierra la anterior.
  */

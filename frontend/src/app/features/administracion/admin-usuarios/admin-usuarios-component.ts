@@ -6,19 +6,19 @@ import { AuthService } from '../../../core/auth-service';
 import { ETIQUETAS_ROL, Rol } from '../../../shared/models/sesion-model';
 import { Usuario, UsuarioNuevo } from '../../../shared/models/usuario-model';
 
-/* Correo con uno de los dominios permitidos por el back. */
+/** Correo con uno de los dominios permitidos por el back. */
 const PATRON_CORREO: RegExp = /^[^@\s]+@(gmail\.com|hotmail\.com|unbosque\.edu\.co)$/i;
 
-/* Contraseña: mínimo 8 caracteres, con una minúscula, una mayúscula y un número. */
+/** Contraseña: mínimo 8 caracteres, con una minúscula, una mayúscula y un número. */
 const PATRON_CONTRASENIA: RegExp = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9]).{8,}$/;
 
-/* Una opción del selector de rol. */
+/** Una opción del selector de rol. */
 interface OpcionRol {
   valor: Rol;
   etiqueta: string;
 }
 
-/*
+/**
  * Pantalla de administración de usuarios (/administracion/usuarios).
  * SOLO el administrador entra (lo exige roleGuard en la ruta).
  * Lista de usuarios y un formulario (crear o editar) en la misma pantalla.
@@ -34,7 +34,7 @@ interface OpcionRol {
 })
 export class AdminUsuariosComponent implements OnInit {
 
-  /* Opciones del rol, con los valores que usa el back. */
+  /** Opciones del rol, con los valores que usa el back. */
   opcionesRol: OpcionRol[] = [
     { valor: 'consulta', etiqueta: ETIQUETAS_ROL['consulta'] },
     { valor: 'curador', etiqueta: ETIQUETAS_ROL['curador'] },
@@ -48,20 +48,20 @@ export class AdminUsuariosComponent implements OnInit {
 
   mostrarFormulario: boolean = false;
 
-  /* Usuario que se edita. Es undefined cuando se está creando uno nuevo. */
+  /** Usuario que se edita. Es undefined cuando se está creando uno nuevo. */
   editando?: Usuario;
 
   formulario: FormGroup;
 
-  /* true después del primer intento de guardar. */
+  /** true después del primer intento de guardar. */
   enviado: boolean = false;
 
   guardando: boolean = false;
 
-  /* Mensaje de error del guardado o de la eliminación. */
+  /** Mensaje de error del guardado o de la eliminación. */
   errorMensaje: string = '';
 
-  /* Id del usuario que está pidiendo confirmación para eliminarse (0 = ninguno). */
+  /** Id del usuario que está pidiendo confirmación para eliminarse (0 = ninguno). */
   idConfirmandoEliminar: number = 0;
 
   constructor(
@@ -85,7 +85,7 @@ export class AdminUsuariosComponent implements OnInit {
     this.cargarUsuarios();
   }
 
-  /* GET /api/usuarios */
+  /** GET /api/usuarios */
   private cargarUsuarios(): void {
     this.api.obtenerUsuarios().subscribe({
       next: (lista) => this.alRecibirLista(lista),
@@ -93,7 +93,7 @@ export class AdminUsuariosComponent implements OnInit {
     });
   }
 
-  /* Guarda la lista ordenada por primer nombre. */
+  /** Guarda la lista ordenada por primer nombre. */
   private alRecibirLista(lista: Usuario[]): void {
     const ordenada = lista.slice();
     ordenada.sort((a, b) => a.primerNombre.localeCompare(b.primerNombre));
@@ -110,7 +110,7 @@ export class AdminUsuariosComponent implements OnInit {
     this.cambios.markForCheck();
   }
 
-  /* Nombre completo: "Carlos Andres Rojas Mejia" (sin los segundos que falten). */
+  /** Nombre completo: "Carlos Andres Rojas Mejia" (sin los segundos que falten). */
   nombreCompleto(usuario: Usuario): string {
     const partes = [
       usuario.primerNombre,
@@ -122,18 +122,18 @@ export class AdminUsuariosComponent implements OnInit {
     return partes.filter((parte) => parte).join(' ');
   }
 
-  /* "Curador" a partir de 'curador'. */
+  /** "Curador" a partir de 'curador'. */
   textoRol(rol: Rol): string {
     return ETIQUETAS_ROL[rol];
   }
 
-  /* true si la fila es de la persona que tiene la sesión: no puede eliminarse a sí misma. */
+  /** true si la fila es de la persona que tiene la sesión: no puede eliminarse a sí misma. */
   esUsuarioActual(usuario: Usuario): boolean {
     const sesion = this.auth.sesion();
     return sesion !== null && sesion.idUsuario === usuario.idUsuario;
   }
 
-  /* true si el formulario está editando (la contraseña es opcional). */
+  /** true si el formulario está editando (la contraseña es opcional). */
   get esEdicion(): boolean {
     return this.editando !== undefined;
   }
@@ -142,7 +142,7 @@ export class AdminUsuariosComponent implements OnInit {
   // Abrir y cerrar el formulario
   // ------------------------------------------------------------------
 
-  /* Abre el formulario vacío para crear un usuario (la contraseña es obligatoria). */
+  /** Abre el formulario vacío para crear un usuario (la contraseña es obligatoria). */
   abrirNuevo(): void {
     this.editando = undefined;
     this.formulario.reset({
@@ -153,7 +153,7 @@ export class AdminUsuariosComponent implements OnInit {
     this.abrirFormulario();
   }
 
-  /* Abre el formulario con los datos del usuario (la contraseña queda vacía = no se cambia). */
+  /** Abre el formulario con los datos del usuario (la contraseña queda vacía = no se cambia). */
   abrirEditar(usuario: Usuario): void {
     this.editando = usuario;
     this.formulario.reset({
@@ -169,7 +169,7 @@ export class AdminUsuariosComponent implements OnInit {
     this.abrirFormulario();
   }
 
-  /*
+  /**
    * Al crear, la contraseña es obligatoria y debe cumplir las reglas.
    * Al editar, puede quedar vacía (no se cambia); si se escribe, debe cumplirlas.
    * Validators.pattern no se queja de un campo vacío, por eso "required" se agrega aparte.
@@ -201,13 +201,13 @@ export class AdminUsuariosComponent implements OnInit {
   // Errores de los campos
   // ------------------------------------------------------------------
 
-  /* Dice si hay que mostrar el error de un campo. */
+  /** Dice si hay que mostrar el error de un campo. */
   mostrarError(nombre: string): boolean {
     const control = this.formulario.controls[nombre];
     return control.invalid && (control.touched || this.enviado);
   }
 
-  /* Texto del error de un campo, según qué validación falló. */
+  /** Texto del error de un campo, según qué validación falló. */
   textoError(nombre: string): string {
     const control = this.formulario.controls[nombre];
 
@@ -230,7 +230,7 @@ export class AdminUsuariosComponent implements OnInit {
   // Guardar
   // ------------------------------------------------------------------
 
-  /* Valida y envía POST (crear) o PUT (editar). */
+  /** Valida y envía POST (crear) o PUT (editar). */
   guardar(): void {
     this.enviado = true;
     this.errorMensaje = '';
@@ -256,7 +256,7 @@ export class AdminUsuariosComponent implements OnInit {
     }
   }
 
-  /*
+  /**
    * Arma el cuerpo. Los nombres opcionales vacíos se omiten, y la contraseña
    * solo viaja si se escribió una (al editar, vacía = no se cambia).
    */
@@ -287,7 +287,7 @@ export class AdminUsuariosComponent implements OnInit {
     return cuerpo;
   }
 
-  /* Se guardó: se cierra el formulario y se vuelve a pedir la lista. */
+  /** Se guardó: se cierra el formulario y se vuelve a pedir la lista. */
   private alGuardar(): void {
     this.guardando = false;
     this.mostrarFormulario = false;
@@ -298,7 +298,7 @@ export class AdminUsuariosComponent implements OnInit {
   // Eliminar
   // ------------------------------------------------------------------
 
-  /* Primer paso de eliminar: pide confirmación en la misma fila. */
+  /** Primer paso de eliminar: pide confirmación en la misma fila. */
   pedirEliminar(usuario: Usuario): void {
     this.errorMensaje = '';
     this.idConfirmandoEliminar = usuario.idUsuario;
@@ -308,7 +308,7 @@ export class AdminUsuariosComponent implements OnInit {
     this.idConfirmandoEliminar = 0;
   }
 
-  /* Segundo paso: DELETE /api/usuarios/{id}. */
+  /** Segundo paso: DELETE /api/usuarios/{id}. */
   confirmarEliminar(usuario: Usuario): void {
     this.api.eliminarUsuario(usuario.idUsuario).subscribe({
       next: () => this.alEliminar(),
@@ -321,7 +321,7 @@ export class AdminUsuariosComponent implements OnInit {
     this.cargarUsuarios();
   }
 
-  /*
+  /**
    * Muestra el error según el código:
    *  - 400 / 404 / 409: el back explica qué pasó (error.error.mensaje);
    *    el 409 sale, por ejemplo, con un correo repetido o si el usuario

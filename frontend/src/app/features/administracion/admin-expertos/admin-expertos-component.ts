@@ -4,10 +4,10 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ArchiveludoApiService } from '../../../core/archiveludo-api-service';
 import { Experto, ExpertoNuevo, nombreCompletoExperto } from '../../../shared/models/experto-model';
 
-/* Correo de cualquier dominio (a diferencia de los usuarios, que solo aceptan tres). */
+/** Correo de cualquier dominio (a diferencia de los usuarios, que solo aceptan tres). */
 const PATRON_CORREO: RegExp = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
-/*
+/**
  * Pantalla de administración de expertos (/administracion/expertos).
  * Entran curador y administrador (lo exige roleGuard en la ruta); solo el
  * administrador ve el botón de eliminar.
@@ -23,7 +23,7 @@ const PATRON_CORREO: RegExp = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 })
 export class AdminExpertosComponent implements OnInit {
 
-  /* Expertos, ya ordenados por apellido y nombre por el back. */
+  /** Expertos, ya ordenados por apellido y nombre por el back. */
   expertos: Experto[] = [];
 
   cargando: boolean = true;
@@ -31,20 +31,20 @@ export class AdminExpertosComponent implements OnInit {
 
   mostrarFormulario: boolean = false;
 
-  /* Experto que se edita. Es undefined cuando se está creando uno nuevo. */
+  /** Experto que se edita. Es undefined cuando se está creando uno nuevo. */
   editando?: Experto;
 
   formulario: FormGroup;
 
-  /* true después del primer intento de guardar. */
+  /** true después del primer intento de guardar. */
   enviado: boolean = false;
 
   guardando: boolean = false;
 
-  /* Mensaje de error del guardado o de la eliminación. */
+  /** Mensaje de error del guardado o de la eliminación. */
   errorMensaje: string = '';
 
-  /* Id del experto que está pidiendo confirmación para eliminarse (0 = ninguno). */
+  /** Id del experto que está pidiendo confirmación para eliminarse (0 = ninguno). */
   idConfirmandoEliminar: number = 0;
 
   constructor(
@@ -67,7 +67,7 @@ export class AdminExpertosComponent implements OnInit {
     this.cargarExpertos();
   }
 
-  /* GET /api/expertos */
+  /** GET /api/expertos */
   private cargarExpertos(): void {
     this.api.obtenerExpertos().subscribe({
       next: (lista) => this.alRecibirLista(lista),
@@ -89,12 +89,12 @@ export class AdminExpertosComponent implements OnInit {
     this.cambios.markForCheck();
   }
 
-  /* Nombre armado con las cuatro partes ("Laura Sofia Mejia Rios"). */
+  /** Nombre armado con las cuatro partes ("Laura Sofia Mejia Rios"). */
   nombreCompleto(experto: Experto): string {
     return nombreCompletoExperto(experto);
   }
 
-  /* Segunda línea de cada fila: especialidad y, si hay, afiliación. */
+  /** Segunda línea de cada fila: especialidad y, si hay, afiliación. */
   detalle(experto: Experto): string {
     if (experto.afiliacion) {
       return experto.especialidad + ' · ' + experto.afiliacion;
@@ -106,7 +106,7 @@ export class AdminExpertosComponent implements OnInit {
   // Abrir y cerrar el formulario
   // ------------------------------------------------------------------
 
-  /* Abre el formulario vacío para crear un experto. */
+  /** Abre el formulario vacío para crear un experto. */
   abrirNuevo(): void {
     this.editando = undefined;
     this.formulario.reset({
@@ -116,7 +116,7 @@ export class AdminExpertosComponent implements OnInit {
     this.abrirFormulario();
   }
 
-  /* Abre el formulario con los datos del experto. */
+  /** Abre el formulario con los datos del experto. */
   abrirEditar(experto: Experto): void {
     this.editando = experto;
     this.formulario.reset({
@@ -146,13 +146,13 @@ export class AdminExpertosComponent implements OnInit {
   // Errores de los campos
   // ------------------------------------------------------------------
 
-  /* Dice si hay que mostrar el error de un campo. */
+  /** Dice si hay que mostrar el error de un campo. */
   mostrarError(nombre: string): boolean {
     const control = this.formulario.controls[nombre];
     return control.invalid && (control.touched || this.enviado);
   }
 
-  /* Texto del error de un campo, según qué validación falló. */
+  /** Texto del error de un campo, según qué validación falló. */
   textoError(nombre: string): string {
     const control = this.formulario.controls[nombre];
 
@@ -172,7 +172,7 @@ export class AdminExpertosComponent implements OnInit {
   // Guardar
   // ------------------------------------------------------------------
 
-  /* Valida y envía POST (crear) o PUT (editar). */
+  /** Valida y envía POST (crear) o PUT (editar). */
   guardar(): void {
     this.enviado = true;
     this.errorMensaje = '';
@@ -198,7 +198,7 @@ export class AdminExpertosComponent implements OnInit {
     }
   }
 
-  /* Arma el cuerpo. Los campos opcionales vacíos se omiten. */
+  /** Arma el cuerpo. Los campos opcionales vacíos se omiten. */
   private armarCuerpo(): ExpertoNuevo {
     const datos = this.formulario.getRawValue();
 
@@ -227,7 +227,7 @@ export class AdminExpertosComponent implements OnInit {
     return cuerpo;
   }
 
-  /* Se guardó: se cierra el formulario y se vuelve a pedir la lista. */
+  /** Se guardó: se cierra el formulario y se vuelve a pedir la lista. */
   private alGuardar(): void {
     this.guardando = false;
     this.mostrarFormulario = false;
@@ -238,7 +238,7 @@ export class AdminExpertosComponent implements OnInit {
   // Eliminar
   // ------------------------------------------------------------------
 
-  /* Primer paso de eliminar: pide confirmación en la misma fila. */
+  /** Primer paso de eliminar: pide confirmación en la misma fila. */
   pedirEliminar(experto: Experto): void {
     this.errorMensaje = '';
     this.idConfirmandoEliminar = experto.idExperto;
@@ -248,7 +248,7 @@ export class AdminExpertosComponent implements OnInit {
     this.idConfirmandoEliminar = 0;
   }
 
-  /* Segundo paso: DELETE /api/expertos/{id}. 409 si participa en proyectos. */
+  /** Segundo paso: DELETE /api/expertos/{id}. 409 si participa en proyectos. */
   confirmarEliminar(experto: Experto): void {
     this.api.eliminarExperto(experto.idExperto).subscribe({
       next: () => this.alEliminar(),
@@ -261,7 +261,7 @@ export class AdminExpertosComponent implements OnInit {
     this.cargarExpertos();
   }
 
-  /*
+  /**
    * Muestra el error según el código:
    *  - 400 / 404 / 409: el back explica qué pasó (error.error.mensaje); el 409
    *    sale si el experto participa (o participó) en algún proyecto

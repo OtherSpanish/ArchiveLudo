@@ -12,7 +12,7 @@ import { AdminEstudiosComponent } from './admin-estudios/admin-estudios-componen
 import { AdminUsuariosComponent } from './admin-usuarios/admin-usuarios-component';
 import { AdminExpertosComponent } from './admin-expertos/admin-expertos-component';
 
-/*
+/**
  * Pantallas de administración (catálogos que usa el formulario de videojuegos).
  * Solo curador y administrador (authGuard + roleGuard):
  *  - /administracion/estudios  -> lista y formulario de estudios

@@ -1,17 +1,17 @@
-/*
+/**
  * Modelos de los proyectos de restauración.
  * Los nombres de los campos coinciden con el JSON del back.
  */
 
 import { Participacion, ParticipacionNueva } from './participacion-model';
 
-/*
+/**
  * Estado de un proyecto de restauración (PROYECTO_DE_RESTAURACION.estado).
  * Solo 'finalizado' lleva fechaFin.
  */
 export type EstadoProyecto = 'activo' | 'pausado' | 'finalizado';
 
-/*
+/**
  * Un proyecto de restauración (GET /api/proyectos y GET /api/videojuegos/{id}/proyectos).
  * Llega plano, con sus participaciones adentro.
  *  - fechaFin: solo si el estado es 'finalizado'.
@@ -30,7 +30,7 @@ export interface ProyectoDeRestauracion {
   participaciones: Participacion[];
 }
 
-/*
+/**
  * Cuerpo de POST /api/videojuegos/{id}/proyectos: el proyecto con al menos
  * una participación. Con 'activo' o 'pausado' NO se envía fechaFin.
  */
@@ -44,7 +44,7 @@ export interface ProyectoNuevo {
   participaciones: ParticipacionNueva[];
 }
 
-/* Cuerpo de PUT /api/proyectos/{id}: solo los datos del proyecto. */
+/** Cuerpo de PUT /api/proyectos/{id}: solo los datos del proyecto. */
 export interface ProyectoEditado {
   nombre: string;
   descripcion?: string;

@@ -1,12 +1,12 @@
-/*
+/**
  * Modelos de las copias de un videojuego.
  * Los nombres de los campos coinciden con el MER y con el JSON del back.
  */
 
-/* Una copia es física o digital (generalización disjunta del MER). */
+/** Una copia es física o digital (generalización disjunta del MER). */
 export type TipoCopia = 'fisica' | 'digital';
 
-/* Estado de integridad (COPIA.estadoIntegridad). */
+/** Estado de integridad (COPIA.estadoIntegridad). */
 export type EstadoIntegridad =
   | 'buena'
   | 'deteriorada'
@@ -36,7 +36,7 @@ export interface Copia {
   hashVerificacion?: string;
 }
 
-/*
+/**
  * POST /api/videojuegos/{id}/copias
  * Cuerpo que envía el formulario "Registrar copia". El back responde
  * 201 con la Copia creada (ya con su idCopia).

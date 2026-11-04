@@ -8,7 +8,7 @@ interface EnlaceNavegacion {
   ruta: string;
 }
 
-/*
+/**
  * Barra superior de toda la app: logo, navegación, buscador y datos del
  * usuario. Solo se dibuja cuando hay una sesión iniciada; en /login no aparece.
  */
@@ -29,10 +29,10 @@ export class BarraSuperiorComponent {
     { etiqueta: 'Reportes', ruta: '/reportes' }
   ];
 
-  /* Enlace extra solo para curador y administrador. */
+  /** Enlace extra solo para curador y administrador. */
   private enlaceAdministracion: EnlaceNavegacion = { etiqueta: 'Administración', ruta: '/administracion/estudios' };
 
-  /*
+  /**
    * Los enlaces que ve la persona: los de siempre, y "Administración" solo
    * si su rol es curador o administrador.
    */
@@ -43,7 +43,7 @@ export class BarraSuperiorComponent {
     return this.enlaces;
   }
 
-  /*
+  /**
    * Router cambia de pantalla; AuthService guarda quién tiene la sesión.
    * Angular entrega las dos solas (inyección de dependencias).
    */
@@ -52,7 +52,7 @@ export class BarraSuperiorComponent {
     private auth: AuthService
   ) { }
 
-  /*
+  /**
    * La sesión actual, o null si nadie ha entrado. Lee el signal de
    * AuthService, así que la barra se actualiza sola cuando alguien inicia
    * o cierra sesión, aunque lo haga otra pantalla.
@@ -61,7 +61,7 @@ export class BarraSuperiorComponent {
     return this.auth.sesion();
   }
 
-  /* Texto del rol para mostrar: 'curador' -> 'Curador' */
+  /** Texto del rol para mostrar: 'curador' -> 'Curador' */
   get textoRol(): string {
     const actual = this.auth.sesion();
     if (actual === null) {
@@ -78,7 +78,7 @@ export class BarraSuperiorComponent {
     this.router.navigate(['/catalogo'], { queryParams: { q: textoLimpio } });
   }
 
-  /* Se ejecuta al pulsar "Cerrar sesión": borra la sesión y lleva al login. */
+  /** Se ejecuta al pulsar "Cerrar sesión": borra la sesión y lleva al login. */
   cerrarSesion(): void {
     this.auth.cerrarSesion();
     this.router.navigate(['/login']);
