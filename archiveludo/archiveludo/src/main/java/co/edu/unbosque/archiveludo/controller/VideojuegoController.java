@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -20,9 +21,12 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import co.edu.unbosque.archiveludo.dto.VideojuegoDTO;
+import co.edu.unbosque.archiveludo.exceptions.AlmacenamientoArchivosException;
 import co.edu.unbosque.archiveludo.exceptions.AnioInvalidoException;
+import co.edu.unbosque.archiveludo.exceptions.ArchivoInvalidoException;
 import co.edu.unbosque.archiveludo.exceptions.CampoObligatorioException;
 import co.edu.unbosque.archiveludo.exceptions.CompaniaEditoraNoEncontradaException;
 import co.edu.unbosque.archiveludo.exceptions.CredencialInvalidaException;
@@ -36,7 +40,8 @@ import co.edu.unbosque.archiveludo.service.VideojuegoService;
 
 /**
  * Endpoints de videojuegos.
- * Leer: cualquier rol. Crear y actualizar: curador o administrador. Eliminar: solo administrador.
+ * Leer: cualquier rol. Crear, actualizar y subir imagen: curador o administrador.
+ * Eliminar (el videojuego o su imagen): solo administrador.
  * Los parametros de busqueda se reciben como opcionales (required = false) para que,
  * si faltan, los valide el service y la respuesta salga con el formato { estado, mensaje }.
  */
@@ -52,7 +57,10 @@ public class VideojuegoController {
 	@Autowired
 	private VideojuegoService videojuegoService;
 
-	
+	// ──────────────────────────────────────────────
+	// Lectura
+	// ──────────────────────────────────────────────
+
 	/**
 	 * GET /api/videojuegos?estado=en riesgo&q=ambar&pagina=0&limite=10
 	 * Todos los parametros son opcionales.
@@ -180,13 +188,16 @@ public class VideojuegoController {
 		}
 	}
 
-	
+	// ──────────────────────────────────────────────
+	// Escritura
+	// ──────────────────────────────────────────────
+
 	/**
 	 * POST /api/videojuegos
 	 * Cuerpo:    { "titulo": "Deus Ex", "genero": "RPG", "plataformaOriginal": "PC",
 	 *              "descripcion": "...", "anioLanzamiento": 2000, "estadoConservacion": "activo",
 	 *              "idEstudio": 3, "idsEditoras": [2, 5] }
-	 * Respuesta: 201 con el videojuego creado. El usuario que lo registra sale del token.
+	 * Respuesta: 201 con el videojuego creado (sin imagen). El usuario que lo registra sale del token.
 	 */
 	@PostMapping
 	public ResponseEntity<?> crear(@RequestBody VideojuegoDTO videojuegoDTO,
@@ -218,6 +229,7 @@ public class VideojuegoController {
 	/**
 	 * PUT /api/videojuegos/{id}
 	 * Cuerpo:    los mismos campos que el POST. "idsEditoras" reemplaza la lista anterior.
+	 *            La imagen no cambia aqui (tiene su propio endpoint).
 	 * Respuesta: 200 con el videojuego actualizado.
 	 */
 	@PutMapping("/{id}")
@@ -247,8 +259,8 @@ public class VideojuegoController {
 
 	/**
 	 * DELETE /api/videojuegos/{id}
-	 * Respuesta: 204 sin cuerpo si se elimino;
-	 *            409 si tiene copias, estatus legales o eventos de riesgo.
+	 * Respuesta: 204 sin cuerpo si se elimino (tambien se borra su imagen de Cloudinary);
+	 *            409 si tiene copias, estatus legales, eventos de riesgo o proyectos.
 	 */
 	@DeleteMapping("/{id}")
 	public ResponseEntity<?> eliminar(@PathVariable String id) {
@@ -261,8 +273,60 @@ public class VideojuegoController {
 			return crearRespuestaError(HttpStatus.NOT_FOUND, e.getMessage());
 		} catch (RegistroAsociadoException e) {
 			return crearRespuestaError(HttpStatus.CONFLICT, e.getMessage());
+		} catch (AlmacenamientoArchivosException e) {
+			return crearRespuestaError(HttpStatus.BAD_GATEWAY, e.getMessage());
 		} catch (Exception e) {
 			log.error("Error inesperado al eliminar el videojuego " + id, e);
+			return crearRespuestaError(HttpStatus.INTERNAL_SERVER_ERROR, "Ocurrio un error interno en el servidor");
+		}
+	}
+
+	// ──────────────────────────────────────────────
+	// Imagen
+	// ──────────────────────────────────────────────
+
+	/**
+	 * POST /api/videojuegos/{id}/imagen
+	 * Cuerpo:    multipart/form-data con el archivo en el campo "imagen" (jpg, png o webp; maximo 5 MB).
+	 * Respuesta: 200 con el videojuego y su urlImagen. Si ya tenia imagen, la reemplaza.
+	 */
+	@PostMapping(value = "/{id}/imagen", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	public ResponseEntity<?> subirImagen(@PathVariable String id,
+			@RequestParam(name = "imagen", required = false) MultipartFile imagen) {
+		try {
+			VideojuegoDTO videojuego = videojuegoService.subirImagen(id, imagen);
+			return new ResponseEntity<VideojuegoDTO>(videojuego, HttpStatus.OK);
+		} catch (IdInvalidoException e) {
+			return crearRespuestaError(HttpStatus.BAD_REQUEST, e.getMessage());
+		} catch (VideojuegoNoEncontradoException e) {
+			return crearRespuestaError(HttpStatus.NOT_FOUND, e.getMessage());
+		} catch (ArchivoInvalidoException e) {
+			return crearRespuestaError(HttpStatus.BAD_REQUEST, e.getMessage());
+		} catch (AlmacenamientoArchivosException e) {
+			return crearRespuestaError(HttpStatus.BAD_GATEWAY, e.getMessage());
+		} catch (Exception e) {
+			log.error("Error inesperado al subir la imagen del videojuego " + id, e);
+			return crearRespuestaError(HttpStatus.INTERNAL_SERVER_ERROR, "Ocurrio un error interno en el servidor");
+		}
+	}
+
+	/**
+	 * DELETE /api/videojuegos/{id}/imagen
+	 * Respuesta: 204 sin cuerpo (tambien si el videojuego no tenia imagen).
+	 */
+	@DeleteMapping("/{id}/imagen")
+	public ResponseEntity<?> eliminarImagen(@PathVariable String id) {
+		try {
+			videojuegoService.eliminarImagen(id);
+			return new ResponseEntity<Void>(HttpStatus.NO_CONTENT);
+		} catch (IdInvalidoException e) {
+			return crearRespuestaError(HttpStatus.BAD_REQUEST, e.getMessage());
+		} catch (VideojuegoNoEncontradoException e) {
+			return crearRespuestaError(HttpStatus.NOT_FOUND, e.getMessage());
+		} catch (AlmacenamientoArchivosException e) {
+			return crearRespuestaError(HttpStatus.BAD_GATEWAY, e.getMessage());
+		} catch (Exception e) {
+			log.error("Error inesperado al eliminar la imagen del videojuego " + id, e);
 			return crearRespuestaError(HttpStatus.INTERNAL_SERVER_ERROR, "Ocurrio un error interno en el servidor");
 		}
 	}
