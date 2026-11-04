@@ -45,6 +45,9 @@ public class SecurityConfig {
 						// Gestion de usuarios (todo el CRUD): solo administrador
 						.requestMatchers("/api/usuarios/**").hasRole("ADMINISTRADOR")
 
+						// Informe final: consulta no puede verlo (va antes de la regla general de lectura)
+						.requestMatchers(HttpMethod.GET, "/api/proyectos/*/informe").hasAnyRole("CURADOR", "ADMINISTRADOR")
+
 						// Lectura: cualquier rol
 						.requestMatchers(HttpMethod.GET, "/api/**").hasAnyRole("CONSULTA", "CURADOR", "ADMINISTRADOR")
 

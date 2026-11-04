@@ -8,6 +8,8 @@ import java.util.List;
  * Datos de un proyecto de restauracion que viajan por HTTP.
  * Tiene los mismos atributos que ProyectoDeRestauracion (con el estado como texto)
  * y ademas la lista de sus participaciones, que el service guarda y lee en la tabla PARTICIPACION.
+ * tieneInforme es un campo derivado: el enlace del PDF solo se entrega por /api/proyectos/{id}/informe,
+ * que no es visible para el rol consulta.
  */
 public class ProyectoDeRestauracionDTO {
 
@@ -20,6 +22,7 @@ public class ProyectoDeRestauracionDTO {
 	private String estado;
 	private LocalDate fechaInicio;
 	private LocalDate fechaFin;
+	private boolean tieneInforme;
 	private List<ParticipacionDTO> participaciones;
 
 	public ProyectoDeRestauracionDTO() {
@@ -28,7 +31,7 @@ public class ProyectoDeRestauracionDTO {
 
 	public ProyectoDeRestauracionDTO(long idProyecto, long idVideojuego, long idUsuario, String nombre,
 			String descripcion, String herramientaEmulador, String estado, LocalDate fechaInicio, LocalDate fechaFin,
-			List<ParticipacionDTO> participaciones) {
+			boolean tieneInforme, List<ParticipacionDTO> participaciones) {
 		super();
 		this.idProyecto = idProyecto;
 		this.idVideojuego = idVideojuego;
@@ -39,6 +42,7 @@ public class ProyectoDeRestauracionDTO {
 		this.estado = estado;
 		this.fechaInicio = fechaInicio;
 		this.fechaFin = fechaFin;
+		this.tieneInforme = tieneInforme;
 		this.participaciones = participaciones;
 	}
 
@@ -47,7 +51,8 @@ public class ProyectoDeRestauracionDTO {
 		return "ProyectoDeRestauracionDTO [idProyecto=" + idProyecto + ", idVideojuego=" + idVideojuego
 				+ ", idUsuario=" + idUsuario + ", nombre=" + nombre + ", descripcion=" + descripcion
 				+ ", herramientaEmulador=" + herramientaEmulador + ", estado=" + estado + ", fechaInicio="
-				+ fechaInicio + ", fechaFin=" + fechaFin + ", participaciones=" + participaciones + "]";
+				+ fechaInicio + ", fechaFin=" + fechaFin + ", tieneInforme=" + tieneInforme + ", participaciones="
+				+ participaciones + "]";
 	}
 
 	public long getIdProyecto() {
@@ -120,6 +125,14 @@ public class ProyectoDeRestauracionDTO {
 
 	public void setFechaFin(LocalDate fechaFin) {
 		this.fechaFin = fechaFin;
+	}
+
+	public boolean isTieneInforme() {
+		return tieneInforme;
+	}
+
+	public void setTieneInforme(boolean tieneInforme) {
+		this.tieneInforme = tieneInforme;
 	}
 
 	public List<ParticipacionDTO> getParticipaciones() {

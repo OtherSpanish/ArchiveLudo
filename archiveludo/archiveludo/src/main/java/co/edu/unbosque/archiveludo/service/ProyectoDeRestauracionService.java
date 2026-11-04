@@ -27,6 +27,8 @@ import co.edu.unbosque.archiveludo.repository.VideojuegoRepository;
  * Une dos tablas: PROYECTO_DE_RESTAURACION y PARTICIPACION, cada una con su repository.
  * Las participaciones viajan como lista dentro de ProyectoDeRestauracionDTO.
  * Todo proyecto debe tener al menos un experto, por eso se crea junto con sus participaciones.
+ * El informe final (PDF) lo maneja InformeFinalService; aqui solo se informa si existe (tieneInforme)
+ * y se borra junto con el proyecto.
  */
 @Service
 public class ProyectoDeRestauracionService {
@@ -36,16 +38,19 @@ public class ProyectoDeRestauracionService {
 	private final VideojuegoRepository videojuegoRepository;
 	private final UsuarioRepository usuarioRepository;
 	private final ExpertoRepository expertoRepository;
+	private final AlmacenamientoArchivosService almacenamientoArchivosService;
 	private final ModelMapper mapper;
 
 	public ProyectoDeRestauracionService(ProyectoDeRestauracionRepository proyectoRepository,
 			ParticipacionRepository participacionRepository, VideojuegoRepository videojuegoRepository,
-			UsuarioRepository usuarioRepository, ExpertoRepository expertoRepository, ModelMapper mapper) {
+			UsuarioRepository usuarioRepository, ExpertoRepository expertoRepository,
+			AlmacenamientoArchivosService almacenamientoArchivosService, ModelMapper mapper) {
 		this.proyectoRepository = proyectoRepository;
 		this.participacionRepository = participacionRepository;
 		this.videojuegoRepository = videojuegoRepository;
 		this.usuarioRepository = usuarioRepository;
 		this.expertoRepository = expertoRepository;
+		this.almacenamientoArchivosService = almacenamientoArchivosService;
 		this.mapper = mapper;
 	}
 
@@ -100,7 +105,7 @@ public class ProyectoDeRestauracionService {
 	 * @throws IdInvalidoException             si el id del videojuego o de un experto no es valido
 	 * @throws VideojuegoNoEncontradoException si no existe el videojuego
 	 * @throws ExpertoNoEncontradoException    si no existe alguno de los expertos
-	 * @throws DatosProyectoInvalidosException si los datos del proyecto o de una participacion no son validos
+	 * @throws DatoProyectoInvalidoException   si los datos del proyecto o de una participacion no son validos
 	 * @throws CredencialInvalidaException     si el usuario del token ya no existe
 	 */
 	@Transactional
@@ -137,14 +142,16 @@ public class ProyectoDeRestauracionService {
 	/**
 	 * Actualiza los datos del proyecto (no sus participaciones, que tienen sus propios endpoints).
 	 * No cambia de videojuego ni de usuario que lo creo.
+	 * Si el proyecto ya tiene informe final, debe seguir finalizado.
 	 *
 	 * @param idTexto     id del proyecto tal como llego en la URL
-	 * @param proyectoDTO datos nuevos del proyecto; si trae "participaciones", se ignoran
+	 * @param proyectoDTO datos nuevos del proyecto; si trae "participaciones" o "tieneInforme", se ignoran
 	 * @return el proyecto actualizado, con sus participaciones
-	 * @throws IdInvalidoException             si el id no es un numero mayor que cero
-	 * @throws ProyectoNoEncontradoException   si no existe
-	 * @throws DatosProyectoInvalidosException si algun dato no es valido, o si la nueva fecha de inicio
-	 *                                         es posterior a la incorporacion de algun experto
+	 * @throws IdInvalidoException           si el id no es un numero mayor que cero
+	 * @throws ProyectoNoEncontradoException si no existe
+	 * @throws DatoProyectoInvalidoException si algun dato no es valido, si la nueva fecha de inicio
+	 *                                       es posterior a la incorporacion de algun experto, o si se
+	 *                                       intenta reactivar o pausar un proyecto con informe
 	 */
 	@Transactional
 	public ProyectoDeRestauracionDTO actualizar(String idTexto, ProyectoDeRestauracionDTO proyectoDTO) {
@@ -154,6 +161,9 @@ public class ProyectoDeRestauracionService {
 		LanzadorException.verificarProyectoExiste(proyecto, idProyecto);
 
 		EstadoProyecto estado = verificarDatosProyecto(proyectoDTO);
+
+		String urlInforme = proyectoRepository.buscarUrlInforme(idProyecto);
+		LanzadorException.verificarCambioDeEstadoConInforme(urlInforme != null, estado, idProyecto);
 
 		// Los expertos que ya estan no pueden quedar incorporados antes del nuevo inicio del proyecto
 		for (Participacion participacion : participacionRepository.buscarPorIdProyecto(idProyecto)) {
@@ -167,12 +177,14 @@ public class ProyectoDeRestauracionService {
 	}
 
 	/**
-	 * Elimina un proyecto con sus participaciones, en la misma transaccion.
-	 * Las participaciones son parte del proyecto, asi que no generan 409.
+	 * Elimina un proyecto con sus participaciones y, si tiene, su informe final (el PDF en Cloudinary).
+	 * Las participaciones y el informe son parte del proyecto, asi que no generan 409.
+	 * El PDF se borra al final: si Cloudinary falla, la transaccion se revierte y el proyecto sigue completo.
 	 *
 	 * @param idTexto id del proyecto tal como llego en la URL
-	 * @throws IdInvalidoException           si el id no es un numero mayor que cero
-	 * @throws ProyectoNoEncontradoException si no existe
+	 * @throws IdInvalidoException            si el id no es un numero mayor que cero
+	 * @throws ProyectoNoEncontradoException  si no existe
+	 * @throws AlmacenamientoArchivosException si no se pudo borrar el PDF en Cloudinary
 	 */
 	@Transactional
 	public void eliminar(String idTexto) {
@@ -181,8 +193,14 @@ public class ProyectoDeRestauracionService {
 		ProyectoDeRestauracion proyecto = proyectoRepository.buscarPorId(idProyecto);
 		LanzadorException.verificarProyectoExiste(proyecto, idProyecto);
 
+		String urlInforme = proyectoRepository.buscarUrlInforme(idProyecto);
+
 		participacionRepository.eliminarPorIdProyecto(idProyecto);
 		proyectoRepository.eliminar(idProyecto);
+
+		if (urlInforme != null) {
+			almacenamientoArchivosService.eliminarArchivo(urlInforme);
+		}
 	}
 
 
@@ -270,7 +288,8 @@ public class ProyectoDeRestauracionService {
 	}
 
 	/**
-	 * Convierte la entity a DTO: el estado pasa a su texto ("activo") y se agregan sus participaciones.
+	 * Convierte la entity a DTO: el estado pasa a su texto ("activo"), se agregan sus participaciones
+	 * y se indica si tiene informe final (sin exponer el enlace).
 	 */
 	private ProyectoDeRestauracionDTO convertirADTO(ProyectoDeRestauracion proyecto) {
 		ProyectoDeRestauracionDTO proyectoDTO = mapper.map(proyecto, ProyectoDeRestauracionDTO.class);
@@ -283,6 +302,8 @@ public class ProyectoDeRestauracionService {
 			participacionesDTO.add(mapper.map(participacion, ParticipacionDTO.class));
 		}
 		proyectoDTO.setParticipaciones(participacionesDTO);
+
+		proyectoDTO.setTieneInforme(proyectoRepository.buscarUrlInforme(proyecto.getIdProyecto()) != null);
 		return proyectoDTO;
 	}
 
