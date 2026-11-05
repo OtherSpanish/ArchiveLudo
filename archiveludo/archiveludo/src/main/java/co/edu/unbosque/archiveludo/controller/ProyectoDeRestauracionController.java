@@ -25,6 +25,7 @@ import co.edu.unbosque.archiveludo.exceptions.AlmacenamientoArchivosException;
 import co.edu.unbosque.archiveludo.exceptions.CredencialInvalidaException;
 import co.edu.unbosque.archiveludo.exceptions.DatoProyectoInvalidoException;
 import co.edu.unbosque.archiveludo.exceptions.ExpertoNoEncontradoException;
+import co.edu.unbosque.archiveludo.exceptions.ExpertoRepetidoException;
 import co.edu.unbosque.archiveludo.exceptions.IdInvalidoException;
 import co.edu.unbosque.archiveludo.exceptions.ProyectoNoEncontradoException;
 import co.edu.unbosque.archiveludo.exceptions.VideojuegoNoEncontradoException;
@@ -105,6 +106,7 @@ public class ProyectoDeRestauracionController {
 	 *              "fechaInicio": "2026-09-01",
 	 *              "participaciones": [ { "idExperto": 3, "rolExperto": "...", "fechaIncorporacion": "2026-09-01" } ] }
 	 * Respuesta: 201 con el proyecto creado y sus participaciones. El usuario que lo crea sale del token.
+	 *            409 si un experto viene repetido en la lista.
 	 */
 	@PostMapping("/videojuegos/{id}/proyectos")
 	public ResponseEntity<?> crear(@PathVariable String id, @RequestBody ProyectoDeRestauracionDTO proyectoDTO,
@@ -119,6 +121,8 @@ public class ProyectoDeRestauracionController {
 			return crearRespuestaError(HttpStatus.NOT_FOUND, e.getMessage());
 		} catch (ExpertoNoEncontradoException e) {
 			return crearRespuestaError(HttpStatus.NOT_FOUND, e.getMessage());
+		} catch (ExpertoRepetidoException e) {
+			return crearRespuestaError(HttpStatus.CONFLICT, e.getMessage());
 		} catch (DatoProyectoInvalidoException e) {
 			return crearRespuestaError(HttpStatus.BAD_REQUEST, e.getMessage());
 		} catch (CredencialInvalidaException e) {

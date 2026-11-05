@@ -1069,20 +1069,17 @@ public class LanzadorException {
 	}
 
 	/**
-	 * Verifica que un experto no aparezca dos veces en el mismo proyecto
-	 * (la tabla PARTICIPACION tiene UNIQUE (id_proyecto, id_experto)).
+	 * Verifica que el experto no este ya en el proyecto.
 	 *
-	 * @param estaRepetido true si el experto ya esta en el proyecto
-	 * @param idExperto    id del experto (para el mensaje)
-	 * @throws DatosProyectoInvalidosException si esta repetido
+	 * @param yaParticipa true si el experto ya esta en el proyecto (o ya vino antes en la misma lista)
+	 * @param idExperto   id del experto para el mensaje
+	 * @throws ExpertoRepetidoException si el experto ya participa
 	 */
-	public static void verificarExpertoNoRepetido(boolean estaRepetido, long idExperto) {
-		if (estaRepetido) {
-			throw new DatoProyectoInvalidoException(
-					"El experto " + idExperto + " ya participa en este proyecto");
+	public static void verificarExpertoNoRepetido(boolean yaParticipa, long idExperto) {
+		if (yaParticipa) {
+			throw new ExpertoRepetidoException(idExperto);
 		}
 	}
-
 	/**
 	 * Verifica las fechas de una participacion:
 	 * - la incorporacion es obligatoria, no puede ser futura ni anterior al inicio del proyecto;
