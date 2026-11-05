@@ -24,6 +24,10 @@ import co.edu.unbosque.archiveludo.model.TipoInstitucion;
 import co.edu.unbosque.archiveludo.entity.Copia;
 import co.edu.unbosque.archiveludo.entity.Custodia;
 import co.edu.unbosque.archiveludo.model.TipoCopia;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
+
+import co.edu.unbosque.archiveludo.model.TipoReporte;
 
 /**
  * Lanzador de las excepciones propias de ArchiveLudo.
@@ -1276,6 +1280,62 @@ public class LanzadorException {
 		if (tieneInforme && estadoNuevo != EstadoProyecto.FINALIZADO) {
 			throw new DatoProyectoInvalidoException("El proyecto con id " + idProyecto
 					+ " ya tiene informe final: no puede pasar a activo o pausado. Elimina primero el informe");
+		}
+	}
+	
+	/**
+	 * Convierte el tipo de reporte de la URL al enum.
+	 *
+	 * @param texto tipo recibido (por ejemplo "eventos")
+	 * @return el tipo convertido
+	 * @throws DatosReporteInvalidosException si viene vacio o no es un tipo valido
+	 */
+	public static TipoReporte convertirTipoReporte(String texto) {
+		if (texto == null || texto.trim().isEmpty()) {
+			throw new DatosReporteInvalidosException("El tipo de reporte es obligatorio");
+		}
+		TipoReporte tipo = TipoReporte.buscarPorValor(texto.trim().toLowerCase());
+		if (tipo == null) {
+			StringBuilder validos = new StringBuilder();
+			for (TipoReporte tipoValido : TipoReporte.values()) {
+				if (validos.length() > 0) {
+					validos.append(", ");
+				}
+				validos.append(tipoValido.getValor());
+			}
+			throw new DatosReporteInvalidosException("El tipo de reporte debe ser uno de: " + validos);
+		}
+		return tipo;
+	}
+
+	/**
+	 * Convierte una fecha opcional de los filtros de reporte (formato AAAA-MM-DD).
+	 *
+	 * @param texto           fecha recibida, o null/vacio si no se filtra
+	 * @param nombreParametro "desde" o "hasta", para el mensaje
+	 * @return la fecha, o null si no llego
+	 * @throws DatosReporteInvalidosException si la fecha esta mal escrita
+	 */
+	public static LocalDate convertirFechaReporte(String texto, String nombreParametro) {
+		if (texto == null || texto.trim().isEmpty()) {
+			return null;
+		}
+		try {
+			return LocalDate.parse(texto.trim());
+		} catch (DateTimeParseException e) {
+			throw new DatosReporteInvalidosException(
+					"El parametro " + nombreParametro + " debe ser una fecha con formato AAAA-MM-DD");
+		}
+	}
+
+	/**
+	 * @param desde fecha minima, o null
+	 * @param hasta fecha maxima, o null
+	 * @throws DatosReporteInvalidosException si las dos llegan y desde es posterior a hasta
+	 */
+	public static void verificarRangoFechasReporte(LocalDate desde, LocalDate hasta) {
+		if (desde != null && hasta != null && desde.isAfter(hasta)) {
+			throw new DatosReporteInvalidosException("La fecha desde no puede ser posterior a la fecha hasta");
 		}
 	}
 }
