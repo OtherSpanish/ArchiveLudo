@@ -85,16 +85,13 @@ export class TimelineCustodiaComponent {
 
   /**
    * Convierte la lista de custodias en la lista de hitos que se dibuja.
-   * Primero ordena las custodias de la más antigua a la más reciente,
-   * así la línea de tiempo siempre queda en orden cronológico.
+   * No ordena nada: el back ya entrega las custodias de la más reciente a la
+   * más antigua (la vigente queda arriba).
    */
   get hitos(): Hito[] {
-    const ordenadas = this.custodias.slice();
-    ordenadas.sort(this.compararPorFechaInicio);
-
     const lista: Hito[] = [];
 
-    for (const custodia of ordenadas) {
+    for (const custodia of this.custodias) {
       const vigente = !custodia.fechaFin;
 
       lista.push({
@@ -107,16 +104,6 @@ export class TimelineCustodiaComponent {
     }
 
     return lista;
-  }
-
-  /**
-   * Función de comparación para sort(): devuelve un número negativo si "a"
-   * va antes que "b", cero si empatan y positivo si va después.
-   * Las fechas son texto 'AAAA-MM-DD', y comparadas como texto ya quedan
-   * en orden cronológico.
-   */
-  private compararPorFechaInicio(a: Custodia, b: Custodia): number {
-    return a.fechaInicio.localeCompare(b.fechaInicio);
   }
 
   /**
