@@ -57,8 +57,16 @@ public class ReporteService {
 			return armarReporteEstatus(reporteRepository.buscarEstatus(idVideojuego, desde, hasta));
 		case EVENTOS:
 			return armarReporteEventos(reporteRepository.buscarEventos(idVideojuego, desde, hasta));
-		default:
+		case COPIAS:
 			return armarReporteCopias(reporteRepository.buscarCopias(idVideojuego, desde, hasta));
+		case CUSTODIAS:
+			return armarReporteCustodias(reporteRepository.buscarCustodias(idVideojuego, desde, hasta));
+		case PROYECTOS:
+			return armarReporteProyectos(reporteRepository.buscarProyectos(idVideojuego, desde, hasta));
+		default:
+			// El unico tipo que queda es EXPERTOS
+			return armarReporteExpertos(
+					reporteRepository.buscarParticipacionesExpertos(idVideojuego, desde, hasta));
 		}
 	}
 
@@ -119,6 +127,63 @@ public class ReporteService {
 			filas.add(celdas);
 		}
 		return new ReporteDTO(TipoReporte.COPIAS.getTitulo(), columnas, filas);
+	}
+
+	private ReporteDTO armarReporteCustodias(List<Map<String, Object>> filasBD) {
+		List<String> columnas = Arrays.asList("Copia", "Videojuego", "Institución", "Desde", "Hasta",
+				"Condiciones");
+
+		List<List<String>> filas = new ArrayList<List<String>>();
+		for (Map<String, Object> fila : filasBD) {
+			List<String> celdas = new ArrayList<String>();
+			celdas.add(texto(fila.get("id_copia")));
+			celdas.add(texto(fila.get("titulo")));
+			celdas.add(texto(fila.get("institucion")));
+			celdas.add(fecha(fila.get("fecha_inicio")));
+			celdas.add(fechaOPorDefecto(fila.get("fecha_fin"), "Vigente"));
+			celdas.add(texto(fila.get("condicion_almacenamiento")));
+			filas.add(celdas);
+		}
+		return new ReporteDTO(TipoReporte.CUSTODIAS.getTitulo(), columnas, filas);
+	}
+
+	private ReporteDTO armarReporteProyectos(List<Map<String, Object>> filasBD) {
+		List<String> columnas = Arrays.asList("Proyecto", "Videojuego", "Estado", "Inicio", "Fin", "Herramienta",
+				"N.º de expertos", "Informe final");
+
+		List<List<String>> filas = new ArrayList<List<String>>();
+		for (Map<String, Object> fila : filasBD) {
+			List<String> celdas = new ArrayList<String>();
+			celdas.add(texto(fila.get("nombre")));
+			celdas.add(texto(fila.get("titulo")));
+			celdas.add(textoLegible(fila.get("estado")));
+			celdas.add(fecha(fila.get("fecha_inicio")));
+			celdas.add(fecha(fila.get("fecha_fin")));
+			celdas.add(texto(fila.get("herramienta_emulador")));
+			celdas.add(texto(fila.get("cantidad_expertos")));
+			celdas.add(siNoTexto(fila.get("url_informe")));
+			filas.add(celdas);
+		}
+		return new ReporteDTO(TipoReporte.PROYECTOS.getTitulo(), columnas, filas);
+	}
+
+	private ReporteDTO armarReporteExpertos(List<Map<String, Object>> filasBD) {
+		List<String> columnas = Arrays.asList("Experto", "Especialidad", "Proyecto", "Videojuego", "Rol",
+				"Incorporación", "Salida");
+
+		List<List<String>> filas = new ArrayList<List<String>>();
+		for (Map<String, Object> fila : filasBD) {
+			List<String> celdas = new ArrayList<String>();
+			celdas.add(nombreExperto(fila));
+			celdas.add(texto(fila.get("especialidad")));
+			celdas.add(texto(fila.get("nombre_proyecto")));
+			celdas.add(texto(fila.get("titulo")));
+			celdas.add(texto(fila.get("rol_experto")));
+			celdas.add(fecha(fila.get("fecha_incorporacion")));
+			celdas.add(fechaOPorDefecto(fila.get("fecha_salida"), "Sigue en el proyecto"));
+			filas.add(celdas);
+		}
+		return new ReporteDTO(TipoReporte.EXPERTOS.getTitulo(), columnas, filas);
 	}
 
 	// ──────────────────────────────────────────────
@@ -187,27 +252,21 @@ public class ReporteService {
 	private String detalleCopia(Map<String, Object> fila) {
 		String tipo = texto(fila.get("tipo_copia")).toLowerCase();
 		if (tipo.equals("fisica")) {
-			return unirConPunto(texto(fila.get("tipo_soporte")), texto(fila.get("ubicacion_fisica")));
+			return unir(texto(fila.get("tipo_soporte")), texto(fila.get("ubicacion_fisica")), " · ");
 		}
-		return unirConPunto(texto(fila.get("formato_archivo")), texto(fila.get("tamanio")));
-	}
-
-	private String unirConPunto(String primero, String segundo) {
-		if (primero.isEmpty()) {
-			return segundo;
-		}
-		if (segundo.isEmpty()) {
-			return primero;
-		}
-		return primero + " · " + segundo;
+		return unir(texto(fila.get("formato_archivo")), texto(fila.get("tamanio")), " · ");
 	}
 
 	/**
 	 * Fecha del driver de MySQL (java.sql.Date o LocalDate) a dd/MM/yyyy. Sin fecha, "".
 	 */
 	private String fecha(Object valor) {
+		return fechaOPorDefecto(valor, "");
+	}
+
+	private String fechaOPorDefecto(Object valor, String porDefecto) {
 		if (valor == null) {
-			return "";
+			return porDefecto;
 		}
 		LocalDate fecha;
 		if (valor instanceof Date) {
@@ -231,18 +290,40 @@ public class ReporteService {
 		return "No";
 	}
 
-	private String nombreUsuario(Map<String, Object> fila) {
-		return unirConEspacio(texto(fila.get("primer_nombre")), texto(fila.get("primer_apellido")));
+	/**
+	 * "Sí" si el texto tiene contenido (por ejemplo, el enlace de un informe), "No" si esta vacio.
+	 */
+	private String siNoTexto(Object valor) {
+		if (texto(valor).isEmpty()) {
+			return "No";
+		}
+		return "Sí";
 	}
 
-	private String unirConEspacio(String primero, String segundo) {
+	private String nombreUsuario(Map<String, Object> fila) {
+		return unir(texto(fila.get("primer_nombre")), texto(fila.get("primer_apellido")), " ");
+	}
+
+	/**
+	 * Une las cuatro partes del nombre del experto que tengan contenido.
+	 */
+	private String nombreExperto(Map<String, Object> fila) {
+		String nombres = unir(texto(fila.get("primer_nombre_ex")), texto(fila.get("segundo_nombre_ex")), " ");
+		String apellidos = unir(texto(fila.get("primer_apellido_ex")), texto(fila.get("segundo_apellido_ex")), " ");
+		return unir(nombres, apellidos, " ");
+	}
+
+	/**
+	 * Une dos textos con el separador, saltandose los que esten vacios.
+	 */
+	private String unir(String primero, String segundo, String separador) {
 		if (primero.isEmpty()) {
 			return segundo;
 		}
 		if (segundo.isEmpty()) {
 			return primero;
 		}
-		return primero + " " + segundo;
+		return primero + separador + segundo;
 	}
 
 }
