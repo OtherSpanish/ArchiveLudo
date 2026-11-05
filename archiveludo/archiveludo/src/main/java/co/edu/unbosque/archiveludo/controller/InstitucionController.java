@@ -18,20 +18,25 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import co.edu.unbosque.archiveludo.dto.CopiaDTO;
 import co.edu.unbosque.archiveludo.dto.InstitucionDTO;
 import co.edu.unbosque.archiveludo.exceptions.CampoObligatorioException;
 import co.edu.unbosque.archiveludo.exceptions.DatoInstitucionInvalidoException;
 import co.edu.unbosque.archiveludo.exceptions.IdInvalidoException;
 import co.edu.unbosque.archiveludo.exceptions.InstitucionNoEncontradaException;
 import co.edu.unbosque.archiveludo.exceptions.RegistroAsociadoException;
+import co.edu.unbosque.archiveludo.exceptions.VideojuegoNoEncontradoException;
+import co.edu.unbosque.archiveludo.service.CopiaService;
 import co.edu.unbosque.archiveludo.service.InstitucionService;
 
 /**
- * CRUD de instituciones custodias (con sus telefonos y correos).
+ * CRUD de instituciones custodias (con sus telefonos y correos), mas dos consultas:
+ * las copias que custodia hoy una institucion (/api/instituciones/{id}/copias)
+ * y las instituciones que custodian hoy copias de un videojuego (/api/videojuegos/{id}/instituciones).
  * Leer: cualquier rol. Crear y actualizar: curador o administrador. Eliminar: solo administrador.
  */
 @RestController
-@RequestMapping("/api/instituciones")
+@RequestMapping("/api")
 public class InstitucionController {
 
 	private static final Logger log = LoggerFactory.getLogger(InstitucionController.class);
@@ -39,10 +44,13 @@ public class InstitucionController {
 	@Autowired
 	private InstitucionService institucionService;
 
+	@Autowired
+	private CopiaService copiaService;
+
 	/**
 	 * GET /api/instituciones
 	 */
-	@GetMapping
+	@GetMapping("/instituciones")
 	public ResponseEntity<?> buscarTodas() {
 		try {
 			List<InstitucionDTO> instituciones = institucionService.buscarTodas();
@@ -56,7 +64,7 @@ public class InstitucionController {
 	/**
 	 * GET /api/instituciones/{id}
 	 */
-	@GetMapping("/{id}")
+	@GetMapping("/instituciones/{id}")
 	public ResponseEntity<?> buscarPorId(@PathVariable String id) {
 		try {
 			InstitucionDTO institucion = institucionService.buscarPorId(id);
@@ -72,13 +80,53 @@ public class InstitucionController {
 	}
 
 	/**
+	 * GET /api/instituciones/{id}/copias
+	 * Respuesta: 200 con las copias que la institucion custodia hoy (custodia vigente),
+	 *            cada una con tituloVideojuego, fechaInicioCustodiaActual y condicionAlmacenamientoActual.
+	 */
+	@GetMapping("/instituciones/{id}/copias")
+	public ResponseEntity<?> buscarCopias(@PathVariable String id) {
+		try {
+			List<CopiaDTO> copias = copiaService.buscarPorInstitucion(id);
+			return new ResponseEntity<List<CopiaDTO>>(copias, HttpStatus.OK);
+		} catch (IdInvalidoException e) {
+			return crearRespuestaError(HttpStatus.BAD_REQUEST, e.getMessage());
+		} catch (InstitucionNoEncontradaException e) {
+			return crearRespuestaError(HttpStatus.NOT_FOUND, e.getMessage());
+		} catch (Exception e) {
+			log.error("Error inesperado al buscar las copias de la institucion " + id, e);
+			return crearRespuestaError(HttpStatus.INTERNAL_SERVER_ERROR, "Ocurrio un error interno en el servidor");
+		}
+	}
+
+	/**
+	 * GET /api/videojuegos/{id}/instituciones
+	 * Respuesta: 200 con las instituciones que custodian hoy alguna copia del videojuego,
+	 *            cada una con cantidadCopiasDelVideojuego. Orden alfabetico.
+	 */
+	@GetMapping("/videojuegos/{id}/instituciones")
+	public ResponseEntity<?> buscarPorVideojuego(@PathVariable String id) {
+		try {
+			List<InstitucionDTO> instituciones = institucionService.buscarPorVideojuego(id);
+			return new ResponseEntity<List<InstitucionDTO>>(instituciones, HttpStatus.OK);
+		} catch (IdInvalidoException e) {
+			return crearRespuestaError(HttpStatus.BAD_REQUEST, e.getMessage());
+		} catch (VideojuegoNoEncontradoException e) {
+			return crearRespuestaError(HttpStatus.NOT_FOUND, e.getMessage());
+		} catch (Exception e) {
+			log.error("Error inesperado al buscar las instituciones del videojuego " + id, e);
+			return crearRespuestaError(HttpStatus.INTERNAL_SERVER_ERROR, "Ocurrio un error interno en el servidor");
+		}
+	}
+
+	/**
 	 * POST /api/instituciones
 	 * Cuerpo:    { "nombre": "Museo del Videojuego", "tipo": "museo", "pais": "Colombia",
 	 *               "telefonos": [6015551234],
 	 *              "correos": ["contacto@museovideojuego.org"] }
 	 * Respuesta: 201 con la institucion creada.
 	 */
-	@PostMapping
+	@PostMapping("/instituciones")
 	public ResponseEntity<?> crear(@RequestBody InstitucionDTO institucionDTO) {
 		try {
 			InstitucionDTO institucionCreada = institucionService.crear(institucionDTO);
@@ -98,7 +146,7 @@ public class InstitucionController {
 	 * Cuerpo:    los mismos campos que el POST. Las listas reemplazan a las anteriores.
 	 * Respuesta: 200 con la institucion actualizada.
 	 */
-	@PutMapping("/{id}")
+	@PutMapping("/instituciones/{id}")
 	public ResponseEntity<?> actualizar(@PathVariable String id, @RequestBody InstitucionDTO institucionDTO) {
 		try {
 			InstitucionDTO institucionActualizada = institucionService.actualizar(id, institucionDTO);
@@ -121,7 +169,7 @@ public class InstitucionController {
 	 * DELETE /api/instituciones/{id}
 	 * Respuesta: 204 sin cuerpo si se elimino; 409 si tiene custodias.
 	 */
-	@DeleteMapping("/{id}")
+	@DeleteMapping("/instituciones/{id}")
 	public ResponseEntity<?> eliminar(@PathVariable String id) {
 		try {
 			institucionService.eliminar(id);

@@ -7,6 +7,8 @@ import java.util.List;
  * Datos de una institucion que viajan por HTTP.
  * Ademas de las columnas de INSTITUCION trae sus listas de telefonos y correos (INST_TELEFONO e INST_CORREO)
  * y cantidadCopiasCustodiadas, que el service calcula con las custodias vigentes.
+ * cantidadCopiasDelVideojuego solo se llena en GET /api/videojuegos/{id}/instituciones
+ * (copias de ESE juego que la institucion custodia hoy); en los demas endpoints es null y no sale en el JSON.
  */
 public class InstitucionDTO {
 
@@ -17,6 +19,7 @@ public class InstitucionDTO {
 	private List<Long> telefonos;
 	private List<String> correos;
 	private long cantidadCopiasCustodiadas;
+	private Long cantidadCopiasDelVideojuego;
 
 	public InstitucionDTO() {
 		this.telefonos = new ArrayList<Long>();
@@ -24,7 +27,7 @@ public class InstitucionDTO {
 	}
 
 	public InstitucionDTO(long idInstitucion, String nombre, String tipo, String pais, List<Long> telefonos,
-			List<String> correos, long cantidadCopiasCustodiadas) {
+			List<String> correos, long cantidadCopiasCustodiadas, Long cantidadCopiasDelVideojuego) {
 		super();
 		this.idInstitucion = idInstitucion;
 		this.nombre = nombre;
@@ -33,13 +36,15 @@ public class InstitucionDTO {
 		this.telefonos = telefonos;
 		this.correos = correos;
 		this.cantidadCopiasCustodiadas = cantidadCopiasCustodiadas;
+		this.cantidadCopiasDelVideojuego = cantidadCopiasDelVideojuego;
 	}
 
 	@Override
 	public String toString() {
 		return "InstitucionDTO [idInstitucion=" + idInstitucion + ", nombre=" + nombre + ", tipo=" + tipo
 				+ ", pais=" + pais + ", telefonos=" + telefonos + ", correos=" + correos
-				+ ", cantidadCopiasCustodiadas=" + cantidadCopiasCustodiadas + "]";
+				+ ", cantidadCopiasCustodiadas=" + cantidadCopiasCustodiadas + ", cantidadCopiasDelVideojuego="
+				+ cantidadCopiasDelVideojuego + "]";
 	}
 
 	public long getIdInstitucion() {
@@ -96,6 +101,14 @@ public class InstitucionDTO {
 
 	public void setCantidadCopiasCustodiadas(long cantidadCopiasCustodiadas) {
 		this.cantidadCopiasCustodiadas = cantidadCopiasCustodiadas;
+	}
+
+	public Long getCantidadCopiasDelVideojuego() {
+		return cantidadCopiasDelVideojuego;
+	}
+
+	public void setCantidadCopiasDelVideojuego(Long cantidadCopiasDelVideojuego) {
+		this.cantidadCopiasDelVideojuego = cantidadCopiasDelVideojuego;
 	}
 
 }

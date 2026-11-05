@@ -30,7 +30,8 @@ import co.edu.unbosque.archiveludo.repository.VideojuegoRepository;
 /**
  * Logica de negocio de las copias (fisicas y digitales) de los videojuegos.
  * Una copia vive en dos tablas: COPIA (datos comunes) y su tabla hija (COPIA_FISICA o COPIA_DIGITAL).
- * Cada copia que sale hacia el front lleva la institucion de su custodia vigente, si tiene.
+ * Cada copia que sale hacia el front lleva los datos de su custodia vigente, si tiene
+ * (institucion, fecha de inicio y condicion de almacenamiento).
  */
 @Service
 public class CopiaService {
@@ -73,6 +74,37 @@ public class CopiaService {
 		List<CopiaDTO> copiasDTO = new ArrayList<CopiaDTO>();
 		for (Copia copia : copias) {
 			copiasDTO.add(convertirADTO(copia));
+		}
+		return copiasDTO;
+	}
+
+	/**
+	 * Devuelve las copias que una institucion custodia hoy (custodia vigente),
+	 * de la custodia mas reciente a la mas antigua. Cada copia trae el titulo de su videojuego.
+	 *
+	 * @param idTexto id de la institucion tal como llego en la URL
+	 * @return copias custodiadas hoy por la institucion (vacio si no custodia ninguna)
+	 * @throws IdInvalidoException              si el id no es un numero mayor que cero
+	 * @throws InstitucionNoEncontradaException si no existe la institucion
+	 */
+	public List<CopiaDTO> buscarPorInstitucion(String idTexto) {
+		long idInstitucion = LanzadorException.convertirId(idTexto, "institucion");
+
+		Institucion institucion = institucionRepository.buscarPorId(idInstitucion);
+		LanzadorException.verificarInstitucionExiste(institucion, idInstitucion);
+
+		List<CopiaDTO> copiasDTO = new ArrayList<CopiaDTO>();
+		for (Custodia custodia : custodiaRepository.buscarVigentesPorIdInstitucion(idInstitucion)) {
+			Copia copia = copiaRepository.buscarPorId(custodia.getIdCopia());
+			if (copia != null) {
+				CopiaDTO copiaDTO = convertirADTO(copia);
+
+				Videojuego videojuego = videojuegoRepository.buscarPorId(copia.getIdVideojuego());
+				if (videojuego != null) {
+					copiaDTO.setTituloVideojuego(videojuego.getTitulo());
+				}
+				copiasDTO.add(copiaDTO);
+			}
 		}
 		return copiasDTO;
 	}
@@ -269,7 +301,7 @@ public class CopiaService {
 	/**
 	 * Convierte la entity al DTO de su mismo subtipo.
 	 * El tipo de copia y el estado de integridad se pasan a su texto ("fisica", "dañada"),
-	 * y se completa la institucion de la custodia vigente.
+	 * y se completan los datos de la custodia vigente.
 	 */
 	private CopiaDTO convertirADTO(Copia copia) {
 		CopiaDTO copiaDTO;
@@ -286,21 +318,24 @@ public class CopiaService {
 			copiaDTO.setEstadoIntegridad(copia.getEstadoIntegridad().getValor());
 		}
 
-		completarInstitucionActual(copiaDTO, copia.getIdCopia());
+		completarCustodiaActual(copiaDTO, copia.getIdCopia());
 		return copiaDTO;
 	}
 
 	/**
-	 * Si la copia tiene custodia vigente, pone en el DTO el id y el nombre de esa institucion.
-	 * Si no tiene, los dos campos quedan en null y no salen en el JSON.
+	 * Si la copia tiene custodia vigente, pone en el DTO la institucion (id y nombre),
+	 * la fecha de inicio y la condicion de almacenamiento de esa custodia.
+	 * Si no tiene, esos campos quedan en null y no salen en el JSON.
 	 */
-	private void completarInstitucionActual(CopiaDTO copiaDTO, long idCopia) {
+	private void completarCustodiaActual(CopiaDTO copiaDTO, long idCopia) {
 		Custodia custodiaVigente = custodiaRepository.buscarVigentePorIdCopia(idCopia);
 		if (custodiaVigente == null) {
 			return;
 		}
 
 		copiaDTO.setIdInstitucionActual(custodiaVigente.getIdInstitucion());
+		copiaDTO.setFechaInicioCustodiaActual(custodiaVigente.getFechaInicio());
+		copiaDTO.setCondicionAlmacenamientoActual(custodiaVigente.getCondicionAlmacenamiento());
 
 		Institucion institucion = institucionRepository.buscarPorId(custodiaVigente.getIdInstitucion());
 		if (institucion != null) {
