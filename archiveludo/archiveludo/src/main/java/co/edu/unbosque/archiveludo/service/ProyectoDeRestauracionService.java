@@ -56,10 +56,16 @@ public class ProyectoDeRestauracionService {
 
 
 	/**
-	 * @return todos los proyectos, del mas reciente al mas antiguo, cada uno con sus participaciones
+	 * @param estadoTexto estado a filtrar ("activo", "pausado" o "finalizado"), o null/vacio para todos
+	 * @return los proyectos, del mas reciente al mas antiguo, cada uno con sus participaciones
+	 * @throws DatoProyectoInvalidoException si el estado no es valido
 	 */
-	public List<ProyectoDeRestauracionDTO> buscarTodos() {
-		return convertirListaADTO(proyectoRepository.buscarTodos());
+	public List<ProyectoDeRestauracionDTO> buscarTodos(String estadoTexto) {
+		if (estadoTexto == null || estadoTexto.trim().isEmpty()) {
+			return convertirListaADTO(proyectoRepository.buscarTodos());
+		}
+		EstadoProyecto estado = LanzadorException.convertirEstadoProyecto(estadoTexto);
+		return convertirListaADTO(proyectoRepository.buscarPorEstado(estado));
 	}
 
 	/**
@@ -105,6 +111,7 @@ public class ProyectoDeRestauracionService {
 	 * @throws IdInvalidoException             si el id del videojuego o de un experto no es valido
 	 * @throws VideojuegoNoEncontradoException si no existe el videojuego
 	 * @throws ExpertoNoEncontradoException    si no existe alguno de los expertos
+	 * @throws ExpertoRepetidoException        si un experto viene repetido en la lista
 	 * @throws DatoProyectoInvalidoException   si los datos del proyecto o de una participacion no son validos
 	 * @throws CredencialInvalidaException     si el usuario del token ya no existe
 	 */
@@ -145,7 +152,7 @@ public class ProyectoDeRestauracionService {
 	 * Si el proyecto ya tiene informe final, debe seguir finalizado.
 	 *
 	 * @param idTexto     id del proyecto tal como llego en la URL
-	 * @param proyectoDTO datos nuevos del proyecto; si trae "participaciones" o "tieneInforme", se ignoran
+	 * @param proyectoDTO datos nuevos del proyecto; los campos derivados y las participaciones se ignoran
 	 * @return el proyecto actualizado, con sus participaciones
 	 * @throws IdInvalidoException           si el id no es un numero mayor que cero
 	 * @throws ProyectoNoEncontradoException si no existe
@@ -182,8 +189,8 @@ public class ProyectoDeRestauracionService {
 	 * El PDF se borra al final: si Cloudinary falla, la transaccion se revierte y el proyecto sigue completo.
 	 *
 	 * @param idTexto id del proyecto tal como llego en la URL
-	 * @throws IdInvalidoException            si el id no es un numero mayor que cero
-	 * @throws ProyectoNoEncontradoException  si no existe
+	 * @throws IdInvalidoException             si el id no es un numero mayor que cero
+	 * @throws ProyectoNoEncontradoException   si no existe
 	 * @throws AlmacenamientoArchivosException si no se pudo borrar el PDF en Cloudinary
 	 */
 	@Transactional
@@ -288,13 +295,19 @@ public class ProyectoDeRestauracionService {
 	}
 
 	/**
-	 * Convierte la entity a DTO: el estado pasa a su texto ("activo"), se agregan sus participaciones
-	 * y se indica si tiene informe final (sin exponer el enlace).
+	 * Convierte la entity a DTO: el estado pasa a su texto ("activo"), se agregan sus participaciones,
+	 * el titulo y la plataforma del videojuego, y si tiene informe final (sin exponer el enlace).
 	 */
 	private ProyectoDeRestauracionDTO convertirADTO(ProyectoDeRestauracion proyecto) {
 		ProyectoDeRestauracionDTO proyectoDTO = mapper.map(proyecto, ProyectoDeRestauracionDTO.class);
 		if (proyecto.getEstado() != null) {
 			proyectoDTO.setEstado(proyecto.getEstado().getValor());
+		}
+
+		Videojuego videojuego = videojuegoRepository.buscarPorId(proyecto.getIdVideojuego());
+		if (videojuego != null) {
+			proyectoDTO.setTituloVideojuego(videojuego.getTitulo());
+			proyectoDTO.setPlataformaVideojuego(videojuego.getPlataformaOriginal());
 		}
 
 		List<ParticipacionDTO> participacionesDTO = new ArrayList<ParticipacionDTO>();
