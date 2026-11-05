@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 import co.edu.unbosque.archiveludo.dto.ParticipacionDTO;
 import co.edu.unbosque.archiveludo.exceptions.DatoProyectoInvalidoException;
 import co.edu.unbosque.archiveludo.exceptions.ExpertoNoEncontradoException;
+import co.edu.unbosque.archiveludo.exceptions.ExpertoRepetidoException;
 import co.edu.unbosque.archiveludo.exceptions.IdInvalidoException;
 import co.edu.unbosque.archiveludo.exceptions.ParticipacionNoEncontradaException;
 import co.edu.unbosque.archiveludo.exceptions.ProyectoNoEncontradoException;
@@ -64,7 +65,7 @@ public class ParticipacionController {
 	/**
 	 * POST /api/proyectos/{id}/participaciones
 	 * Cuerpo:    { "idExperto": 5, "rolExperto": "Restauradora de cartuchos", "fechaIncorporacion": "2026-03-01" }
-	 * Respuesta: 201 con la participacion creada.
+	 * Respuesta: 201 con la participacion creada; 409 si el experto ya participa en el proyecto.
 	 */
 	@PostMapping("/proyectos/{id}/participaciones")
 	public ResponseEntity<?> crear(@PathVariable String id, @RequestBody ParticipacionDTO participacionDTO) {
@@ -77,6 +78,8 @@ public class ParticipacionController {
 			return crearRespuestaError(HttpStatus.NOT_FOUND, e.getMessage());
 		} catch (ExpertoNoEncontradoException e) {
 			return crearRespuestaError(HttpStatus.NOT_FOUND, e.getMessage());
+		} catch (ExpertoRepetidoException e) {
+			return crearRespuestaError(HttpStatus.CONFLICT, e.getMessage());
 		} catch (DatoProyectoInvalidoException e) {
 			return crearRespuestaError(HttpStatus.BAD_REQUEST, e.getMessage());
 		} catch (Exception e) {
