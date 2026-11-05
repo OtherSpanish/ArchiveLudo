@@ -8,7 +8,10 @@ public enum TipoReporte {
 
 	ESTATUS("estatus", "Reporte de estatus legal"),
 	EVENTOS("eventos", "Reporte de eventos de riesgo"),
-	COPIAS("copias", "Reporte de copias");
+	COPIAS("copias", "Reporte de copias"),
+	CUSTODIAS("custodias", "Reporte de custodias"),
+	PROYECTOS("proyectos", "Reporte de proyectos de restauración"),
+	EXPERTOS("expertos", "Reporte de participación de expertos");
 
 	private final String valor;
 	private final String titulo;
