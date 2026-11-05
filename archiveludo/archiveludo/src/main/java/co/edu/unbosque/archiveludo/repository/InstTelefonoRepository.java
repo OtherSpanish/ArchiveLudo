@@ -11,14 +11,15 @@ import co.edu.unbosque.archiveludo.entity.InstTelefono;
 
 /**
  * Acceso a datos de la tabla INST_TELEFONO (telefonos de las instituciones) con SQL escrito a mano.
+ * La columna se llama numero_telefono; en Java el atributo de InstTelefono sigue siendo "telefono".
  */
 @Repository
 public class InstTelefonoRepository {
 
-	private static final String SQL_BUSCAR_POR_INSTITUCION = "SELECT id_institucion, telefono FROM INST_TELEFONO "
-			+ "WHERE id_institucion = ? ORDER BY telefono ASC";
+	private static final String SQL_BUSCAR_POR_INSTITUCION = "SELECT id_institucion, numero_telefono "
+			+ "FROM INST_TELEFONO WHERE id_institucion = ? ORDER BY numero_telefono ASC";
 
-	private static final String SQL_INSERTAR = "INSERT INTO INST_TELEFONO (id_institucion, telefono) "
+	private static final String SQL_INSERTAR = "INSERT INTO INST_TELEFONO (id_institucion, numero_telefono) "
 			+ "VALUES (?, ?)";
 
 	private static final String SQL_ELIMINAR_POR_INSTITUCION = "DELETE FROM INST_TELEFONO WHERE id_institucion = ?";
@@ -60,12 +61,12 @@ public class InstTelefonoRepository {
 	}
 
 	/**
-	 * La columna telefono es NUMERIC(15, 0): el driver la entrega como BigDecimal,
+	 * La columna numero_telefono es DECIMAL(15, 0): el driver la entrega como BigDecimal,
 	 * que tambien es un Number, asi que se convierte a long igual que los ids.
 	 */
 	private InstTelefono convertirFilaATelefono(Map<String, Object> fila) {
 		Number idInstitucion = (Number) fila.get("id_institucion");
-		Number telefono = (Number) fila.get("telefono");
+		Number telefono = (Number) fila.get("numero_telefono");
 
 		return new InstTelefono(idInstitucion.longValue(), telefono.longValue());
 	}

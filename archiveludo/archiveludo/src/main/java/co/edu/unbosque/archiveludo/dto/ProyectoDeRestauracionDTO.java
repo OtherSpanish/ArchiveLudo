@@ -8,13 +8,16 @@ import java.util.List;
  * Datos de un proyecto de restauracion que viajan por HTTP.
  * Tiene los mismos atributos que ProyectoDeRestauracion (con el estado como texto)
  * y ademas la lista de sus participaciones, que el service guarda y lee en la tabla PARTICIPACION.
- * tieneInforme es un campo derivado: el enlace del PDF solo se entrega por /api/proyectos/{id}/informe,
- * que no es visible para el rol consulta.
+ * Campos derivados (los llena el back, se ignoran si llegan en un POST o PUT):
+ * tituloVideojuego y plataformaVideojuego, para que el front no tenga que pedir cada videojuego;
+ * tieneInforme, porque el enlace del PDF solo se entrega por /api/proyectos/{id}/informe.
  */
 public class ProyectoDeRestauracionDTO {
 
 	private long idProyecto;
 	private long idVideojuego;
+	private String tituloVideojuego;
+	private String plataformaVideojuego;
 	private long idUsuario;
 	private String nombre;
 	private String descripcion;
@@ -29,12 +32,15 @@ public class ProyectoDeRestauracionDTO {
 		this.participaciones = new ArrayList<ParticipacionDTO>();
 	}
 
-	public ProyectoDeRestauracionDTO(long idProyecto, long idVideojuego, long idUsuario, String nombre,
-			String descripcion, String herramientaEmulador, String estado, LocalDate fechaInicio, LocalDate fechaFin,
-			boolean tieneInforme, List<ParticipacionDTO> participaciones) {
+	public ProyectoDeRestauracionDTO(long idProyecto, long idVideojuego, String tituloVideojuego,
+			String plataformaVideojuego, long idUsuario, String nombre, String descripcion,
+			String herramientaEmulador, String estado, LocalDate fechaInicio, LocalDate fechaFin, boolean tieneInforme,
+			List<ParticipacionDTO> participaciones) {
 		super();
 		this.idProyecto = idProyecto;
 		this.idVideojuego = idVideojuego;
+		this.tituloVideojuego = tituloVideojuego;
+		this.plataformaVideojuego = plataformaVideojuego;
 		this.idUsuario = idUsuario;
 		this.nombre = nombre;
 		this.descripcion = descripcion;
@@ -49,6 +55,7 @@ public class ProyectoDeRestauracionDTO {
 	@Override
 	public String toString() {
 		return "ProyectoDeRestauracionDTO [idProyecto=" + idProyecto + ", idVideojuego=" + idVideojuego
+				+ ", tituloVideojuego=" + tituloVideojuego + ", plataformaVideojuego=" + plataformaVideojuego
 				+ ", idUsuario=" + idUsuario + ", nombre=" + nombre + ", descripcion=" + descripcion
 				+ ", herramientaEmulador=" + herramientaEmulador + ", estado=" + estado + ", fechaInicio="
 				+ fechaInicio + ", fechaFin=" + fechaFin + ", tieneInforme=" + tieneInforme + ", participaciones="
@@ -69,6 +76,22 @@ public class ProyectoDeRestauracionDTO {
 
 	public void setIdVideojuego(long idVideojuego) {
 		this.idVideojuego = idVideojuego;
+	}
+
+	public String getTituloVideojuego() {
+		return tituloVideojuego;
+	}
+
+	public void setTituloVideojuego(String tituloVideojuego) {
+		this.tituloVideojuego = tituloVideojuego;
+	}
+
+	public String getPlataformaVideojuego() {
+		return plataformaVideojuego;
+	}
+
+	public void setPlataformaVideojuego(String plataformaVideojuego) {
+		this.plataformaVideojuego = plataformaVideojuego;
 	}
 
 	public long getIdUsuario() {

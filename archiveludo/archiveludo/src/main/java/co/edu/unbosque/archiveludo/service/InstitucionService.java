@@ -2,6 +2,7 @@ package co.edu.unbosque.archiveludo.service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -10,12 +11,14 @@ import co.edu.unbosque.archiveludo.dto.InstitucionDTO;
 import co.edu.unbosque.archiveludo.entity.InstCorreo;
 import co.edu.unbosque.archiveludo.entity.InstTelefono;
 import co.edu.unbosque.archiveludo.entity.Institucion;
+import co.edu.unbosque.archiveludo.entity.Videojuego;
 import co.edu.unbosque.archiveludo.exceptions.LanzadorException;
 import co.edu.unbosque.archiveludo.model.TipoInstitucion;
 import co.edu.unbosque.archiveludo.repository.CustodiaRepository;
 import co.edu.unbosque.archiveludo.repository.InstCorreoRepository;
 import co.edu.unbosque.archiveludo.repository.InstTelefonoRepository;
 import co.edu.unbosque.archiveludo.repository.InstitucionRepository;
+import co.edu.unbosque.archiveludo.repository.VideojuegoRepository;
 
 /**
  * Logica de negocio de las instituciones custodias (CRUD).
@@ -31,14 +34,16 @@ public class InstitucionService {
 	private final InstTelefonoRepository instTelefonoRepository;
 	private final InstCorreoRepository instCorreoRepository;
 	private final CustodiaRepository custodiaRepository;
+	private final VideojuegoRepository videojuegoRepository;
 
 	public InstitucionService(InstitucionRepository institucionRepository,
 			InstTelefonoRepository instTelefonoRepository, InstCorreoRepository instCorreoRepository,
-			CustodiaRepository custodiaRepository) {
+			CustodiaRepository custodiaRepository, VideojuegoRepository videojuegoRepository) {
 		this.institucionRepository = institucionRepository;
 		this.instTelefonoRepository = instTelefonoRepository;
 		this.instCorreoRepository = instCorreoRepository;
 		this.custodiaRepository = custodiaRepository;
+		this.videojuegoRepository = videojuegoRepository;
 	}
 
 
@@ -68,6 +73,35 @@ public class InstitucionService {
 		LanzadorException.verificarInstitucionExiste(institucion, idInstitucion);
 
 		return convertirADTO(institucion);
+	}
+
+	/**
+	 * Instituciones que hoy custodian al menos una copia del videojuego, en orden alfabetico.
+	 * Cada una trae cantidadCopiasDelVideojuego (copias de ESE juego que custodia hoy).
+	 *
+	 * @param idTexto id del videojuego tal como llego en la URL
+	 * @return las instituciones custodias del videojuego (vacio si ninguna copia tiene custodia vigente)
+	 * @throws IdInvalidoException             si el id no es un numero mayor que cero
+	 * @throws VideojuegoNoEncontradoException si no existe el videojuego
+	 */
+	public List<InstitucionDTO> buscarPorVideojuego(String idTexto) {
+		long idVideojuego = LanzadorException.convertirId(idTexto, "videojuego");
+
+		Videojuego videojuego = videojuegoRepository.buscarPorId(idVideojuego);
+		LanzadorException.verificarVideojuegoExiste(videojuego, idVideojuego);
+
+		Map<Long, Long> cantidades = custodiaRepository.contarVigentesPorInstitucionDeVideojuego(idVideojuego);
+
+		List<InstitucionDTO> institucionesDTO = new ArrayList<InstitucionDTO>();
+		for (Map.Entry<Long, Long> entrada : cantidades.entrySet()) {
+			Institucion institucion = institucionRepository.buscarPorId(entrada.getKey());
+			if (institucion != null) {
+				InstitucionDTO institucionDTO = convertirADTO(institucion);
+				institucionDTO.setCantidadCopiasDelVideojuego(entrada.getValue());
+				institucionesDTO.add(institucionDTO);
+			}
+		}
+		return institucionesDTO;
 	}
 
 	/**

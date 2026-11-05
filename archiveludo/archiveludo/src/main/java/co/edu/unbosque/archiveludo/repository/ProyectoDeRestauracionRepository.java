@@ -28,6 +28,8 @@ public class ProyectoDeRestauracionRepository {
 
 	private static final String SQL_BUSCAR_TODOS = SQL_SELECCIONAR + ORDEN;
 
+	private static final String SQL_BUSCAR_POR_ESTADO = SQL_SELECCIONAR + "WHERE estado = ? " + ORDEN;
+
 	private static final String SQL_BUSCAR_POR_VIDEOJUEGO = SQL_SELECCIONAR + "WHERE id_videojuego = ? " + ORDEN;
 
 	private static final String SQL_BUSCAR_POR_ID = SQL_SELECCIONAR + "WHERE id_proyecto = ?";
@@ -63,6 +65,15 @@ public class ProyectoDeRestauracionRepository {
 	 */
 	public List<ProyectoDeRestauracion> buscarTodos() {
 		List<Map<String, Object>> filas = jdbcTemplate.queryForList(SQL_BUSCAR_TODOS);
+		return convertirFilas(filas);
+	}
+
+	/**
+	 * @param estado estado a filtrar
+	 * @return los proyectos con ese estado, del mas reciente al mas antiguo (vacio si no hay)
+	 */
+	public List<ProyectoDeRestauracion> buscarPorEstado(EstadoProyecto estado) {
+		List<Map<String, Object>> filas = jdbcTemplate.queryForList(SQL_BUSCAR_POR_ESTADO, estado.getValor());
 		return convertirFilas(filas);
 	}
 

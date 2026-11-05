@@ -7,6 +7,7 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import co.edu.unbosque.archiveludo.dto.ProyectoDeRestauracionDTO;
@@ -48,14 +50,21 @@ public class ProyectoDeRestauracionController {
 	private ProyectoDeRestauracionService proyectoService;
 
 	/**
-	 * GET /api/proyectos
-	 * Respuesta: 200 con todos los proyectos, del mas reciente al mas antiguo, con sus participaciones.
+	 * GET /api/proyectos?estado=activo|pausado|finalizado
+	 * El filtro es opcional: sin el, salen todos los proyectos.
+	 * Respuesta: 200 con los proyectos, del mas reciente al mas antiguo, con sus participaciones,
+	 *            y la cabecera X-Total-Count con la cantidad. 400 si el estado no es valido.
 	 */
 	@GetMapping("/proyectos")
-	public ResponseEntity<?> buscarTodos() {
+	public ResponseEntity<?> buscarTodos(@RequestParam(name = "estado", required = false) String estado) {
 		try {
-			List<ProyectoDeRestauracionDTO> proyectos = proyectoService.buscarTodos();
-			return new ResponseEntity<List<ProyectoDeRestauracionDTO>>(proyectos, HttpStatus.OK);
+			List<ProyectoDeRestauracionDTO> proyectos = proyectoService.buscarTodos(estado);
+
+			HttpHeaders cabeceras = new HttpHeaders();
+			cabeceras.add("X-Total-Count", String.valueOf(proyectos.size()));
+			return new ResponseEntity<List<ProyectoDeRestauracionDTO>>(proyectos, cabeceras, HttpStatus.OK);
+		} catch (DatoProyectoInvalidoException e) {
+			return crearRespuestaError(HttpStatus.BAD_REQUEST, e.getMessage());
 		} catch (Exception e) {
 			log.error("Error inesperado al buscar los proyectos", e);
 			return crearRespuestaError(HttpStatus.INTERNAL_SERVER_ERROR, "Ocurrio un error interno en el servidor");
