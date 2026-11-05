@@ -20,15 +20,15 @@ Esta carpeta contiene los scripts que transforman el modelo lógico
 ---------------------------------------------------------------------
   Archivo                           Tipo        Qué hace
   --------------------------------  ----------  -------------------------------------------
-  00_eliminar_objetos.sql           Varios      Borra vistas y tablas (reinstalación limpia)
-  01_creacion_objetos.sql           Creación    Crea la BD y las 17 tablas con PK, FK,
+  00-eliminarobjetos.sql           Varios      Borra vistas y tablas (reinstalación limpia)
+  01-creacionobjetos.sql           Creación    Crea la BD y las 17 tablas con PK, FK,
                                                 UNIQUE, CHECK y ENUM
-  02_insercion_registros.sql        Inserción   Inserta los 168 registros de demostración
-  03_usuarios_permisos.sql          Varios      Crea usuarios del motor con mínimo privilegio
-  04_restricciones_adicionales.sql  Varios      Agrega CHECK y UNIQUE de los supuestos
-  05_vistas.sql                     Varios      Vistas de consulta (OPCIONAL)
-  06_verificacion.sql               Varios      Verificación de solo lectura
-  07_pruebas_restricciones.sql      Varios      Pruebas negativas (deben fallar; ROLLBACK)
+  02-insercionregistros.sql        Inserción   Inserta los 168 registros de demostración
+  03-usuariospermisos.sql          Varios      Crea usuarios del motor con mínimo privilegio
+  04-restriccionesadicionales.sql  Varios      Agrega CHECK y UNIQUE de los supuestos
+  05-vistas.sql                     Varios      Vistas de consulta (OPCIONAL)
+  06-verificacion.sql               Varios      Verificación de solo lectura
+  07-pruebasrestricciones.sql      Varios      Pruebas negativas (deben fallar; ROLLBACK)
 
 3. REQUISITOS
 ---------------------------------------------------------------------
@@ -81,7 +81,7 @@ También puede ejecutarse desde una sesión abierta de mysqlsh:
   07  Cada sentencia falla con el error indicado en su comentario
       (1062, 1452, 1451, 3819 o 1265). Ejecútelo con --force para que
       MySQL Shell continúe después de cada error:
-        mysqlsh --sql -u adminbd -h 127.0.0.1 -P 3307 --force --file=07_pruebas_restricciones.sql
+        mysqlsh --sql -u adminbd -h 127.0.0.1 -P 3307 --force --file=07-pruebasrestricciones.sql
       Termina con ROLLBACK: no deja cambios.
 
 7. COPIA DE SEGURIDAD
