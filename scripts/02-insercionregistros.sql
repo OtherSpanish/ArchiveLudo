@@ -1,15 +1,9 @@
--- =====================================================================
--- ArchiveLudo - Bases de Datos 1 - Universidad El Bosque
--- Script 02: inserción de registros
--- Carga 168 registros coherentes en las 17 tablas, en orden de dependencia.
--- Títulos, estudios y editoras son reales; instituciones, expertos y los
--- registros del archivo (copias, custodias, proyectos) son ficticios pero
--- consistentes entre sí y con las restricciones del modelo.
--- Los identificadores se insertan de forma explícita para conservar las
--- relaciones; AUTO_INCREMENT continúa desde el mayor id insertado.
--- Todo se ejecuta en una sola transacción.
--- Requisito: haber ejecutado 01_creacion_objetos.sql (base vacía).
--- =====================================================================
+-- ArchiveLudo - Bases de Datos 1
+-- 02: datos de demostracion (168 registros)
+-- Los juegos, estudios y editoras son reales. Las instituciones, los
+-- expertos, las copias y los proyectos son inventados pero coherentes.
+-- Los ids van explicitos para que las llaves foraneas cuadren.
+-- Se ejecuta despues del 01, con la base vacia.
 
 SET NAMES utf8mb4;
 USE archiveludo;
@@ -17,13 +11,13 @@ USE archiveludo;
 START TRANSACTION;
 
 
--- USUARIO (3 registros): Usuarios del equipo: uno por rol. Se conservan correo y hash, por lo que la contraseña no cambia.
+-- USUARIO (3) - uno por rol, con su hash de siempre
 INSERT INTO USUARIO (id_usuario, primer_nombre, segundo_nombre, primer_apellido, segundo_apellido, correo, hash_contrasenia, rol, fecha_creacion) VALUES
   (1, 'Tomas', NULL, 'Triana', 'Galvis', 'tomas@gmail.com', '$2a$10$O2Wj/eEGjlTWkmLuQFjFG.KLcyUD6voWOK2AQZAkHpyfFNgx0mMDa', 'administrador', '2026-11-02'),
   (2, 'Esteban', NULL, 'Puerto', 'Rojas', 'Esteban@gmail.com', '$2a$10$GYlnyQvbDA//k44mzKYXRehV./B4rAXnScGjNDZ0m4652ldX1U7x6', 'curador', '2026-11-01'),
   (3, 'Nataly', 'Vanessa', 'Rengifo', 'Bautista', 'natalyrengifo707@gmail.com', '$2a$10$G4Z3dOUyvWNL1WdEu36DueLTHfhHnDwFd/HyjQxO6f1kkA7kKBNaq', 'consulta', '2026-11-01');
 
--- ESTUDIO (10 registros): Estudios desarrolladores (Estudio Pixel Andino es un caso ficticio de estudio colombiano desaparecido).
+-- ESTUDIO (10)
 INSERT INTO ESTUDIO (id_estudio, nombre, pais, anio_fundacion, anio_cierre, estado_actual) VALUES
   (1, 'Looking Glass Studios', 'Estados Unidos', 1990, 2000, 'desaparecido'),
   (2, 'Westwood Studios', 'Estados Unidos', 1985, 2003, 'desaparecido'),
@@ -36,7 +30,7 @@ INSERT INTO ESTUDIO (id_estudio, nombre, pais, anio_fundacion, anio_cierre, esta
   (9, 'Nintendo EAD', 'Japón', 1983, 2015, 'desaparecido'),
   (10, 'Estudio Pixel Andino', 'Colombia', 2003, 2011, 'desaparecido');
 
--- COMPANIA_EDITORA (10 registros): Compañías editoras.
+-- COMPANIA_EDITORA (10)
 INSERT INTO COMPANIA_EDITORA (id_editora, nombre, pais) VALUES
   (1, 'Origin Systems', 'Estados Unidos'),
   (2, 'Eidos Interactive', 'Reino Unido'),
@@ -49,7 +43,7 @@ INSERT INTO COMPANIA_EDITORA (id_editora, nombre, pais) VALUES
   (9, 'Sega', 'Japón'),
   (10, 'Nintendo', 'Japón');
 
--- INSTITUCION (5 registros): Instituciones custodias (ficticias). El Museo del Píxel aún no custodia copias (S-I5).
+-- INSTITUCION (5)
 INSERT INTO INSTITUCION (id_institucion, nombre, tipo, pais) VALUES
   (1, 'Museo Nacional del Videojuego', 'museo', 'Colombia'),
   (2, 'Archivo Digital Universitario', 'universidad', 'Colombia'),
@@ -57,7 +51,7 @@ INSERT INTO INSTITUCION (id_institucion, nombre, tipo, pais) VALUES
   (4, 'Colección Retro Andina', 'coleccion privada', 'Colombia'),
   (5, 'Museo del Píxel', 'museo', 'México');
 
--- EXPERTO (5 registros): Expertos en preservación (ficticios).
+-- EXPERTO (5)
 INSERT INTO EXPERTO (id_experto, primer_nombre_ex, segundo_nombre_ex, primer_apellido_ex, segundo_apellido_ex, especialidad, afiliacion, correo) VALUES
   (1, 'Mariana', NULL, 'Quintero', 'López', 'Emulación de consolas', 'Archivo Digital Universitario', 'mariana.quintero@expertos-ludo.org'),
   (2, 'Andrés', 'Felipe', 'Moreno', NULL, 'Recuperación de medios ópticos y magnéticos', 'Museo Nacional del Videojuego', 'andres.moreno@expertos-ludo.org'),
@@ -65,7 +59,7 @@ INSERT INTO EXPERTO (id_experto, primer_nombre_ex, segundo_nombre_ex, primer_ape
   (4, 'Santiago', 'José', 'Herrera', 'Gil', 'Derecho de propiedad intelectual', 'Colección Retro Andina', 'santiago.herrera@expertos-ludo.org'),
   (5, 'Camila', NULL, 'Ortiz', NULL, 'Restauración de cartuchos', NULL, 'camila.ortiz@expertos-ludo.org');
 
--- VIDEOJUEGO (13 registros): Catálogo. Crónicas de Ámbar y Rutas del Café son títulos ficticios; el resto son títulos reales.
+-- VIDEOJUEGO (13) - Cronicas de Ambar y Rutas del Cafe son inventados
 INSERT INTO VIDEOJUEGO (id_videojuego, titulo, genero, plataforma_original, descripcion, anio_lanzamiento, estado_conservacion, id_estudio, id_usuario, url_imagen) VALUES
   (1, 'System Shock', 'Rol y acción', 'MS-DOS', 'Juego de rol y acción en primera persona ambientado en la estación espacial Citadel, controlada por la inteligencia artificial SHODAN.', 1994, 'en riesgo', 1, 1, NULL),
   (2, 'Thief: The Dark Project', 'Sigilo', 'Windows', 'Juego de sigilo en primera persona en el que el ladrón Garrett recorre una ciudad de estética medieval y steampunk.', 1998, 'restaurado', 1, 1, NULL),
@@ -81,7 +75,7 @@ INSERT INTO VIDEOJUEGO (id_videojuego, titulo, genero, plataforma_original, desc
   (12, 'Crónicas de Ámbar', 'Rol', 'Windows', 'Juego de rol independiente colombiano del que no se conserva ninguna copia funcional.', 2006, 'totalmente perdido', 10, 2, NULL),
   (13, 'Rutas del Café', 'Aventura', 'Windows', 'Aventura gráfica independiente colombiana ambientada en el Eje Cafetero, liberada al dominio público por sus autores.', 2004, 'en riesgo', 10, 2, NULL);
 
--- COMPED_VID (13 registros): Relación N:M videojuego-editora. Command & Conquer y The Witcher tienen dos editoras; los títulos ficticios no tienen editora registrada (S-ED4).
+-- COMPED_VID (13) - C&C y The Witcher tienen dos editoras
 INSERT INTO COMPED_VID (id_videojuego, id_editora) VALUES
   (1, 1),
   (2, 2),
@@ -97,7 +91,7 @@ INSERT INTO COMPED_VID (id_videojuego, id_editora) VALUES
   (10, 10),
   (11, 10);
 
--- COPIA (19 registros): Supertipo de la especialización: 11 copias físicas y 8 digitales.
+-- COPIA (19) - 11 fisicas y 8 digitales
 INSERT INTO COPIA (id_copia, id_videojuego, id_usuario, tipo_copia, estado_integridad, fecha_registro) VALUES
   (1, 1, 2, 'fisica', 'deteriorada', '2026-11-02'),
   (2, 1, 2, 'digital', 'buena', '2026-11-02'),
@@ -119,7 +113,7 @@ INSERT INTO COPIA (id_copia, id_videojuego, id_usuario, tipo_copia, estado_integ
   (18, 13, 2, 'fisica', 'dañada', '2026-11-05'),
   (19, 13, 2, 'digital', 'irrecuperable', '2026-11-05');
 
--- COPIA_FISICA (11 registros): Subtipo físico. La copia 18 no tiene número de serie legible (S-C6).
+-- COPIA_FISICA (11) - la 18 no tiene numero de serie
 INSERT INTO COPIA_FISICA (id_copia, numero_serie, ubicacion_fisica, tipo_soporte) VALUES
   (1, 'ORI-SS-1994-0187', 'Estante 2, caja 7', 'disquete'),
   (3, 'EID-TH-1998-0042', 'Vitrina 3, nivel 2', 'CD-ROM'),
@@ -133,7 +127,7 @@ INSERT INTO COPIA_FISICA (id_copia, numero_serie, ubicacion_fisica, tipo_soporte
   (16, 'NGEE-0193344', 'Vitrina 1, nivel 1', 'cartucho'),
   (18, NULL, 'Estante 4, caja 9', 'CD-ROM');
 
--- COPIA_DIGITAL (8 registros): Subtipo digital: tamaño en bytes y hash SHA-256 de verificación (el archivo vive fuera del sistema, S-G1).
+-- COPIA_DIGITAL (8) - tamanio en bytes y hash SHA-256
 INSERT INTO COPIA_DIGITAL (id_copia, formato_archivo, tamanio, hash_verificacion) VALUES
   (2, 'iso', 403701760, '28a7f672cd77be5c9bb855a223dddef25dd78a1e58c02e669854011396a5c21a'),
   (4, 'iso', 681574400, '6d1fb2b9b4289dbcf82b946b184555a7448bdac289f86e072de0d5edf3912d07'),
@@ -144,7 +138,7 @@ INSERT INTO COPIA_DIGITAL (id_copia, formato_archivo, tamanio, hash_verificacion
   (17, 'z64', 12582912, '656742a42d90ad28830bef8418df5fe27634864011b10028e0727a6b79a5dc36'),
   (19, 'zip', 52428800, '5b80f115b154e86ccb2bdd8add4795aede64cf214c43737f2ae615aa1062e357');
 
--- INST_CORREO (6 registros): Correos de contacto (1FN).
+-- INST_CORREO (6)
 INSERT INTO INST_CORREO (id_institucion, correo) VALUES
   (1, 'colecciones@museovideojuego.org'),
   (1, 'contacto@museovideojuego.org'),
@@ -153,7 +147,7 @@ INSERT INTO INST_CORREO (id_institucion, correo) VALUES
   (4, 'coleccionretroandina@gmail.com'),
   (5, 'contacto@museodelpixel.mx');
 
--- INST_TELEFONO (6 registros): Teléfonos de contacto con indicativo, sin signos ni espacios (1FN).
+-- INST_TELEFONO (6)
 INSERT INTO INST_TELEFONO (id_institucion, numero_telefono) VALUES
   (1, 3005550102),
   (1, 6015550101),
@@ -162,7 +156,7 @@ INSERT INTO INST_TELEFONO (id_institucion, numero_telefono) VALUES
   (4, 3105550401),
   (5, 525555500101);
 
--- CUSTODIA (22 registros): Toda copia tiene una custodia vigente (fecha_fin NULL); las copias 1, 3 y 13 conservan su historial de custodias sin solapamientos.
+-- CUSTODIA (22) - cada copia tiene una vigente (fecha_fin NULL)
 INSERT INTO CUSTODIA (id_custodia, id_copia, id_institucion, fecha_inicio, fecha_fin, condicion_almacenamiento) VALUES
   (1, 1, 3, '2019-03-01', '2023-08-31', 'Caja sellada a temperatura ambiente'),
   (2, 1, 4, '2023-09-01', NULL, 'Caja antiestática con control de humedad'),
@@ -187,7 +181,7 @@ INSERT INTO CUSTODIA (id_custodia, id_copia, id_institucion, fecha_inicio, fecha
   (21, 18, 4, '2022-06-30', NULL, 'Caja sellada con desecante'),
   (22, 19, 2, '2026-11-05', NULL, 'Disco de respaldo externo');
 
--- ESTATUS_LEGAL (17 registros): Historial de estatus legal; el vigente es el de fecha de determinación más reciente (todos los títulos tienen al menos uno, S-L7).
+-- ESTATUS_LEGAL (17) - el vigente es el de fecha mas reciente
 INSERT INTO ESTATUS_LEGAL (id_estatus, id_videojuego, id_usuario, estatus, fecha_determinacion, observacion) VALUES
   (1, 1, 1, 'protegido', '2025-02-10', 'Derechos vigentes; el título se sigue comercializando en ediciones posteriores.'),
   (2, 2, 1, 'protegido', '2025-02-10', 'Derechos vigentes de su titular actual.'),
@@ -207,7 +201,7 @@ INSERT INTO ESTATUS_LEGAL (id_estatus, id_videojuego, id_usuario, estatus, fecha
   (16, 13, 2, 'protegido', '2004-11-01', 'Derechos del estudio desarrollador al momento del lanzamiento.'),
   (17, 13, 2, 'dominio publico', '2015-02-02', 'Liberado al dominio público por sus autores.');
 
--- EVENTO_DE_RIESGO (7 registros): Bitácora de eventos de riesgo.
+-- EVENTO_DE_RIESGO (7)
 INSERT INTO EVENTO_DE_RIESGO (id_evento, id_videojuego, id_usuario, tipo_evento, fecha_evento, descripcion, fuente) VALUES
   (1, 7, 2, 'cierre de servidores', '2014-05-31', 'El cierre del servicio GameSpy deja sin modo multijugador en línea a la versión original.', 'Anuncio de cierre de GameSpy Technology'),
   (2, 12, 2, 'perdida de codigo fuente', '2011-09-30', 'Al cerrar el estudio se pierden el código fuente y los instaladores del juego.', 'Testimonio de un exintegrante del estudio'),
@@ -217,7 +211,7 @@ INSERT INTO EVENTO_DE_RIESGO (id_evento, id_videojuego, id_usuario, tipo_evento,
   (6, 3, 2, 'deterioro de medios', '2026-05-12', 'El disquete de la copia física presenta pérdida de magnetización en varios sectores.', 'Informe del Archivo Ibérico del Videojuego'),
   (7, 9, 2, 'deterioro de medios', '2025-08-20', 'El GD-ROM de la copia física presenta rayones y desgaste en la superficie de lectura.', 'Informe de inspección del Museo Nacional del Videojuego');
 
--- PROYECTO_DE_RESTAURACION (5 registros): Proyectos de restauración: dos finalizados (títulos restaurados) y tres activos.
+-- PROYECTO_DE_RESTAURACION (5)
 INSERT INTO PROYECTO_DE_RESTAURACION (id_proyecto, id_videojuego, id_usuario, nombre, descripcion, herramienta_emulador, estado, fecha_inicio, fecha_fin, url_informe) VALUES
   (1, 2, 1, 'Restauración de Thief: The Dark Project', 'Creación y verificación de una imagen completa del CD-ROM original y pruebas de ejecución en un entorno emulado.', 'PCem', 'finalizado', '2023-02-01', '2024-05-30', NULL),
   (2, 11, 1, 'Restauración de GoldenEye 007', 'Volcado del cartucho original, verificación del volcado y pruebas en emulador.', 'Project64', 'finalizado', '2023-01-10', '2024-08-30', NULL),
@@ -225,7 +219,7 @@ INSERT INTO PROYECTO_DE_RESTAURACION (id_proyecto, id_videojuego, id_usuario, no
   (4, 1, 2, 'Recuperación de System Shock en disquete', 'Lectura sector a sector de los disquetes deteriorados para reconstruir una imagen íntegra.', 'DOSBox', 'activo', '2026-02-15', NULL, NULL),
   (5, 3, 2, 'Rescate de Dune II', 'Recuperación de los sectores desmagnetizados del disquete original.', 'DOSBox', 'activo', '2026-06-01', NULL, NULL);
 
--- PARTICIPACION (8 registros): Participaciones: las de proyectos finalizados tienen fecha de salida; las de proyectos activos siguen abiertas.
+-- PARTICIPACION (8) - en proyectos finalizados ya tienen fecha de salida
 INSERT INTO PARTICIPACION (id_participacion, id_proyecto, id_experto, rol_experto, fecha_incorporacion, fecha_salida) VALUES
   (1, 1, 2, 'Líder de recuperación', '2023-02-01', '2024-05-30'),
   (2, 1, 3, 'Ingeniera inversa', '2023-03-01', '2024-04-15'),

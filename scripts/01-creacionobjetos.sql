@@ -1,12 +1,7 @@
--- =====================================================================
--- ArchiveLudo - Bases de Datos 1 - Universidad El Bosque
--- Script 01: creación de objetos (modelo físico)
--- RDBMS: MySQL (MySQL HeatWave en OCI, versión 26.10.0-cloud)
--- Crea la base de datos archiveludo y sus 17 tablas con llaves primarias,
--- llaves foráneas, restricciones UNIQUE, CHECK y dominios ENUM.
--- Las tablas se crean en orden de dependencia (primero las referenciadas).
--- Ejecutar con un usuario con privilegio CREATE (por ejemplo, adminbd).
--- =====================================================================
+-- ArchiveLudo - Bases de Datos 1
+-- 01: creacion de la base de datos y de las 17 tablas
+-- Las tablas van en orden: primero las que no dependen de otras.
+-- Ejecutar con adminbd.
 
 SET NAMES utf8mb4;
 
@@ -16,9 +11,7 @@ CREATE DATABASE IF NOT EXISTS archiveludo
 
 USE archiveludo;
 
--- ------------------------------------------------------------------
--- USUARIO: usuarios de la plataforma y su rol (autenticación en la aplicación).
--- ------------------------------------------------------------------
+-- USUARIO: usuarios de la aplicacion
 CREATE TABLE USUARIO (
   id_usuario bigint NOT NULL AUTO_INCREMENT,
   primer_nombre varchar(50) NOT NULL,
@@ -33,9 +26,7 @@ CREATE TABLE USUARIO (
   UNIQUE KEY uq_usuario_correo (correo)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- ------------------------------------------------------------------
--- ESTUDIO: estudios desarrolladores de videojuegos.
--- ------------------------------------------------------------------
+-- ESTUDIO: estudios desarrolladores
 CREATE TABLE ESTUDIO (
   id_estudio bigint NOT NULL AUTO_INCREMENT,
   nombre varchar(150) NOT NULL,
@@ -48,9 +39,7 @@ CREATE TABLE ESTUDIO (
   CONSTRAINT ck_estudio_cierre_estado CHECK ((((estado_actual = 'activo') and (anio_cierre is null)) or ((estado_actual = 'desaparecido') and (anio_cierre is not null))))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- ------------------------------------------------------------------
--- COMPANIA_EDITORA: compañías editoras (publicadoras) de videojuegos.
--- ------------------------------------------------------------------
+-- COMPANIA_EDITORA: editoras
 CREATE TABLE COMPANIA_EDITORA (
   id_editora bigint NOT NULL AUTO_INCREMENT,
   nombre varchar(150) NOT NULL,
@@ -58,9 +47,7 @@ CREATE TABLE COMPANIA_EDITORA (
   PRIMARY KEY (id_editora)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- ------------------------------------------------------------------
--- INSTITUCION: instituciones que custodian copias.
--- ------------------------------------------------------------------
+-- INSTITUCION: instituciones que guardan copias
 CREATE TABLE INSTITUCION (
   id_institucion bigint NOT NULL AUTO_INCREMENT,
   nombre varchar(150) NOT NULL,
@@ -69,9 +56,7 @@ CREATE TABLE INSTITUCION (
   PRIMARY KEY (id_institucion)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- ------------------------------------------------------------------
--- EXPERTO: expertos que participan en proyectos de restauración.
--- ------------------------------------------------------------------
+-- EXPERTO: expertos de los proyectos
 CREATE TABLE EXPERTO (
   id_experto bigint NOT NULL AUTO_INCREMENT,
   primer_nombre_ex varchar(60) NOT NULL,
@@ -85,9 +70,7 @@ CREATE TABLE EXPERTO (
   UNIQUE KEY uq_experto_correo (correo)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- ------------------------------------------------------------------
--- VIDEOJUEGO: catálogo de títulos (la obra, no cada copia).
--- ------------------------------------------------------------------
+-- VIDEOJUEGO: catalogo de juegos
 CREATE TABLE VIDEOJUEGO (
   id_videojuego bigint NOT NULL AUTO_INCREMENT,
   titulo varchar(200) NOT NULL,
@@ -106,9 +89,7 @@ CREATE TABLE VIDEOJUEGO (
   CONSTRAINT fk_videojuego_usuario FOREIGN KEY (id_usuario) REFERENCES USUARIO (id_usuario)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- ------------------------------------------------------------------
--- COMPED_VID: relación N:M entre videojuego y compañía editora.
--- ------------------------------------------------------------------
+-- COMPED_VID: relacion N:M juego - editora
 CREATE TABLE COMPED_VID (
   id_videojuego bigint NOT NULL,
   id_editora bigint NOT NULL,
@@ -118,9 +99,7 @@ CREATE TABLE COMPED_VID (
   CONSTRAINT fk_comped_vid_videojuego FOREIGN KEY (id_videojuego) REFERENCES VIDEOJUEGO (id_videojuego) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- ------------------------------------------------------------------
--- COPIA: supertipo de la especialización: datos comunes de cada copia.
--- ------------------------------------------------------------------
+-- COPIA: datos comunes de la copia (supertipo)
 CREATE TABLE COPIA (
   id_copia bigint NOT NULL AUTO_INCREMENT,
   id_videojuego bigint NOT NULL,
@@ -137,9 +116,7 @@ CREATE TABLE COPIA (
   CONSTRAINT ck_copia_tipo CHECK ((tipo_copia in ('fisica','digital')))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- ------------------------------------------------------------------
--- COPIA_FISICA: subtipo de COPIA para ejemplares físicos (relación 1:1).
--- ------------------------------------------------------------------
+-- COPIA_FISICA: subtipo fisico
 CREATE TABLE COPIA_FISICA (
   id_copia bigint NOT NULL,
   numero_serie varchar(60) DEFAULT NULL,
@@ -149,9 +126,7 @@ CREATE TABLE COPIA_FISICA (
   CONSTRAINT fk_copia_fisica_copia FOREIGN KEY (id_copia) REFERENCES COPIA (id_copia)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- ------------------------------------------------------------------
--- COPIA_DIGITAL: subtipo de COPIA para respaldos digitales (relación 1:1).
--- ------------------------------------------------------------------
+-- COPIA_DIGITAL: subtipo digital
 CREATE TABLE COPIA_DIGITAL (
   id_copia bigint NOT NULL,
   formato_archivo varchar(20) NOT NULL,
@@ -161,9 +136,7 @@ CREATE TABLE COPIA_DIGITAL (
   CONSTRAINT fk_copia_digital_copia FOREIGN KEY (id_copia) REFERENCES COPIA (id_copia)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- ------------------------------------------------------------------
--- INST_CORREO: correos de contacto de cada institución (atributo multivaluado, 1FN).
--- ------------------------------------------------------------------
+-- INST_CORREO: correos de la institucion
 CREATE TABLE INST_CORREO (
   id_institucion bigint NOT NULL,
   correo varchar(150) NOT NULL,
@@ -171,9 +144,7 @@ CREATE TABLE INST_CORREO (
   CONSTRAINT fk_inst_correo_institucion FOREIGN KEY (id_institucion) REFERENCES INSTITUCION (id_institucion)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- ------------------------------------------------------------------
--- INST_TELEFONO: teléfonos de contacto de cada institución (atributo multivaluado, 1FN).
--- ------------------------------------------------------------------
+-- INST_TELEFONO: telefonos de la institucion
 CREATE TABLE INST_TELEFONO (
   id_institucion bigint NOT NULL,
   numero_telefono decimal(15,0) NOT NULL,
@@ -181,9 +152,7 @@ CREATE TABLE INST_TELEFONO (
   CONSTRAINT fk_inst_telefono_institucion FOREIGN KEY (id_institucion) REFERENCES INSTITUCION (id_institucion)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- ------------------------------------------------------------------
--- CUSTODIA: periodos en que una copia estuvo bajo resguardo de una institución.
--- ------------------------------------------------------------------
+-- CUSTODIA: historial de custodias de cada copia
 CREATE TABLE CUSTODIA (
   id_custodia bigint NOT NULL AUTO_INCREMENT,
   id_copia bigint NOT NULL,
@@ -199,9 +168,7 @@ CREATE TABLE CUSTODIA (
   CONSTRAINT ck_custodia_fechas CHECK (((fecha_fin is null) or (fecha_fin >= fecha_inicio)))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- ------------------------------------------------------------------
--- ESTATUS_LEGAL: historial del estatus legal de cada videojuego.
--- ------------------------------------------------------------------
+-- ESTATUS_LEGAL: historial del estatus legal
 CREATE TABLE ESTATUS_LEGAL (
   id_estatus bigint NOT NULL AUTO_INCREMENT,
   id_videojuego bigint NOT NULL,
@@ -217,9 +184,7 @@ CREATE TABLE ESTATUS_LEGAL (
   CONSTRAINT ck_estatus_legal_estatus CHECK ((estatus in ('protegido','dominio publico','huerfano','abandonware')))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- ------------------------------------------------------------------
--- EVENTO_DE_RIESGO: bitácora de eventos que ponen en riesgo un videojuego.
--- ------------------------------------------------------------------
+-- EVENTO_DE_RIESGO: eventos de riesgo
 CREATE TABLE EVENTO_DE_RIESGO (
   id_evento bigint NOT NULL AUTO_INCREMENT,
   id_videojuego bigint NOT NULL,
@@ -236,9 +201,7 @@ CREATE TABLE EVENTO_DE_RIESGO (
   CONSTRAINT ck_evento_de_riesgo_tipo CHECK ((tipo_evento in ('cierre de servidores','perdida de codigo fuente','retiro de tienda digital','deterioro de medios','disputa legal')))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- ------------------------------------------------------------------
--- PROYECTO_DE_RESTAURACION: proyectos de restauración de un videojuego.
--- ------------------------------------------------------------------
+-- PROYECTO_DE_RESTAURACION: proyectos de restauracion
 CREATE TABLE PROYECTO_DE_RESTAURACION (
   id_proyecto bigint NOT NULL AUTO_INCREMENT,
   id_videojuego bigint NOT NULL,
@@ -259,9 +222,7 @@ CREATE TABLE PROYECTO_DE_RESTAURACION (
   CONSTRAINT ck_proyecto_fechas CHECK (((fecha_fin is null) or (fecha_fin >= fecha_inicio)))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- ------------------------------------------------------------------
--- PARTICIPACION: participación de un experto en un proyecto (relación N:M con atributos).
--- ------------------------------------------------------------------
+-- PARTICIPACION: expertos en cada proyecto
 CREATE TABLE PARTICIPACION (
   id_participacion bigint NOT NULL AUTO_INCREMENT,
   id_proyecto bigint NOT NULL,

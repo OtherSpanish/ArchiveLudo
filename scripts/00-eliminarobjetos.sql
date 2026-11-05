@@ -1,23 +1,18 @@
--- =====================================================================
--- ArchiveLudo - Bases de Datos 1 - Universidad El Bosque
--- Script 00: eliminación de objetos
--- ADVERTENCIA: borra las vistas y TODAS las tablas de archiveludo con
--- sus datos. Úsese solo para reinstalar desde cero (instalación limpia)
--- y después de sacar una copia de seguridad (ver README.txt).
--- Las tablas se eliminan en orden inverso de dependencia, de modo que
--- ninguna llave foránea impide el borrado.
--- =====================================================================
+-- ArchiveLudo - Bases de Datos 1
+-- 00: borra las vistas y todas las tablas (con sus datos)
+-- Solo para reinstalar desde cero. Sacar un respaldo antes.
+-- Las tablas se borran al reves del orden de creacion por las llaves foraneas.
 
 USE archiveludo;
 
--- Vistas (script 05)
+-- vistas del script 05
 DROP VIEW IF EXISTS v_estatus_legal_vigente;
 DROP VIEW IF EXISTS v_custodia_vigente;
 DROP VIEW IF EXISTS v_titulos_sin_copias;
 DROP VIEW IF EXISTS v_estudios_desaparecidos_sin_proyecto;
 DROP VIEW IF EXISTS v_instituciones_piezas_en_riesgo;
 
--- Tablas dependientes
+-- tablas que dependen de otras
 DROP TABLE IF EXISTS PARTICIPACION;
 DROP TABLE IF EXISTS PROYECTO_DE_RESTAURACION;
 DROP TABLE IF EXISTS EVENTO_DE_RIESGO;
@@ -31,7 +26,7 @@ DROP TABLE IF EXISTS COPIA;
 DROP TABLE IF EXISTS COMPED_VID;
 DROP TABLE IF EXISTS VIDEOJUEGO;
 
--- Tablas independientes
+-- tablas independientes
 DROP TABLE IF EXISTS EXPERTO;
 DROP TABLE IF EXISTS INSTITUCION;
 DROP TABLE IF EXISTS COMPANIA_EDITORA;
