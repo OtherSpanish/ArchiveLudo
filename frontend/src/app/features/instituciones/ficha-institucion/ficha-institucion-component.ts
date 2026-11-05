@@ -1,13 +1,13 @@
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { ActivatedRoute, ParamMap } from '@angular/router';
 import { Institucion } from '../../../shared/models/custodia-model';
-import { CopiaCustodiada } from '../../../shared/models/api-model';
+import { Copia } from '../../../shared/models/copia-model';
 import { ArchiveludoApiService } from '../../../core/archiveludo-api-service';
 
 /**
  * Pantalla de la ficha de una institución (/instituciones/:id).
- * Muestra sus datos y sus teléfonos y correos. Las copias que custodia
- * llegarán cuando el back tenga custodias.
+ * Muestra sus datos, sus teléfonos y correos y las copias que custodia hoy
+ * (GET /api/instituciones/{id}/copias).
  */
 @Component({
   selector: 'app-ficha-institucion',
@@ -28,7 +28,10 @@ export class FichaInstitucionComponent implements OnInit {
   correos: string[] = [];
 
   /** Copias que esta institución custodia ahora mismo. */
-  copias: CopiaCustodiada[] = [];
+  copias: Copia[] = [];
+
+  /** true si no se pudieron cargar las copias (el resto de la ficha se sigue mostrando). */
+  errorCopias: boolean = false;
 
   /**
    * true mientras se espera la respuesta. Evita mostrar "No encontramos esa
@@ -55,11 +58,28 @@ export class FichaInstitucionComponent implements OnInit {
       next: (institucion) => this.alRecibirInstitucion(institucion),
       error: (error) => this.mostrarError(error)
     });
+
+    // GET /api/instituciones/{id}/copias: un error aquí NO debe ocultar la ficha.
+    this.api.obtenerCopiasDeInstitucion(id).subscribe({
+      next: (copias) => this.alRecibirCopias(copias),
+      error: (error) => this.alFallarCopias(error)
+    });
+  }
+
+  private alRecibirCopias(copias: Copia[]): void {
+    this.copias = copias;
+    this.cambios.markForCheck();
+  }
+
+  private alFallarCopias(error: unknown): void {
+    console.error('No se pudieron cargar las copias de la institución', error);
+    this.errorCopias = true;
+    this.cambios.markForCheck();
   }
 
   /**
    * Guarda la institución. Los teléfonos llegan como números y aquí se
-   * pasan a texto para mostrarlos. Las copias quedan vacías por ahora.
+   * pasan a texto para mostrarlos.
    */
   private alRecibirInstitucion(institucion: Institucion): void {
     this.institucion = institucion;
@@ -109,6 +129,7 @@ export class FichaInstitucionComponent implements OnInit {
     this.telefonos = [];
     this.correos = [];
     this.copias = [];
+    this.errorCopias = false;
     this.cargando = true;
   }
 
@@ -150,16 +171,16 @@ export class FichaInstitucionComponent implements OnInit {
     return 'DIGITAL';
   }
 
-  /** "Plataforma · año" de un videojuego: "Arcade · 1994" */
-  plataformaYAnio(copia: CopiaCustodiada): string {
-    return copia.videojuego.plataformaOriginal + ' · ' + copia.videojuego.anioLanzamiento;
-  }
-
   /**
    * Convierte '2019-08-05' en '05/08/2019'.
    * split('-') parte el texto en tres pedazos: año, mes y día.
+   * La fecha es opcional en el modelo: si no viene, devuelve vacío.
    */
-  formatearFecha(fecha: string): string {
+  formatearFecha(fecha?: string): string {
+    if (!fecha) {
+      return '';
+    }
+
     const partes = fecha.split('-');
     if (partes.length !== 3) {
       return fecha;

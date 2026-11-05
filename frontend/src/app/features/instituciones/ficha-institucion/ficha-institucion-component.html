@@ -78,26 +78,25 @@
             </div>
 
             <!-- Videojuego al que pertenece; lleva a su ficha: /videojuegos/:id -->
-            <a class="enlace-juego" [routerLink]="['/videojuegos', copia.videojuego.idVideojuego]">
-              {{ copia.videojuego.titulo }}
+            <a class="enlace-juego" [routerLink]="['/videojuegos', copia.idVideojuego]">
+              {{ copia.tituloVideojuego }}
             </a>
 
-            <p class="detalle">{{ plataformaYAnio(copia) }}</p>
-
-            <p class="detalle">En custodia desde {{ formatearFecha(copia.fechaInicio) }}</p>
+            <p class="detalle">En custodia desde {{ formatearFecha(copia.fechaInicioCustodiaActual) }}</p>
 
             <!-- La condición de almacenamiento es opcional: solo se muestra si viene -->
-            @if (copia.condicionAlmacenamiento) {
-              <p class="detalle">Almacenamiento: {{ copia.condicionAlmacenamiento }}</p>
+            @if (copia.condicionAlmacenamientoActual) {
+              <p class="detalle">Almacenamiento: {{ copia.condicionAlmacenamientoActual }}</p>
             }
 
           </article>
 
         } @empty {
-          <p class="mensaje">
-            El detalle de cada copia aún no está disponible en el servidor.
-            Puedes ver sus custodias desde la ficha de cada videojuego.
-          </p>
+          @if (errorCopias) {
+            <p class="mensaje">No pudimos cargar las copias de esta institución. Intenta de nuevo más tarde.</p>
+          } @else {
+            <p class="mensaje">Esta institución no custodia copias actualmente.</p>
+          }
         }
       </div>
 

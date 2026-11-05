@@ -275,13 +275,13 @@
           </div>
 
           <div class="lista">
-            @for (item of instituciones; track item.institucion.idInstitucion) {
+            @for (item of instituciones; track item.idInstitucion) {
               <app-institucion-card
-                [institucion]="item.institucion"
-                [numeroCopias]="item.numeroCopias">
+                [institucion]="item"
+                [numeroCopias]="item.cantidadCopiasDelVideojuego">
               </app-institucion-card>
             } @empty {
-              <p class="provisional">Ninguna institución custodia copias de este juego.</p>
+              <p class="provisional">Ninguna institución custodia hoy copias de este juego.</p>
             }
           </div>
 

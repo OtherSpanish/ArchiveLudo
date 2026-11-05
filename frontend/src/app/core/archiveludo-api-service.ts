@@ -18,8 +18,6 @@ import { CredencialesLogin, UsuarioLogin } from '../shared/models/sesion-model';
 import { Usuario, UsuarioNuevo } from '../shared/models/usuario-model';
 import {
   DatosFicha,
-  DatosInstitucion,
-  InstitucionConCopias,
   ListaProyectos,
   PaginaVideojuegos
 } from '../shared/models/api-model';
@@ -286,6 +284,25 @@ export class ArchiveludoApiService {
   /** GET /api/instituciones: lista de instituciones (con teléfonos y correos). */
   obtenerInstituciones(): Observable<Institucion[]> {
     return this.http.get<Institucion[]>(this.urlBase + '/instituciones');
+  }
+
+  /**
+   * GET /api/videojuegos/{id}/instituciones: las instituciones que HOY custodian al menos
+   * una copia del videojuego, en orden alfabético. Cada una trae cantidadCopiasDelVideojuego.
+   * Si ninguna copia tiene custodia vigente llega []; si el juego no existe, 404.
+   */
+  obtenerInstitucionesDelVideojuego(idVideojuego: number): Observable<Institucion[]> {
+    return this.http.get<Institucion[]>(this.urlBase + '/videojuegos/' + idVideojuego + '/instituciones');
+  }
+
+  /**
+   * GET /api/instituciones/{id}/copias: las copias que la institución custodia HOY, de la
+   * custodia más reciente a la más antigua. Cada una trae tituloVideojuego,
+   * fechaInicioCustodiaActual y condicionAlmacenamientoActual.
+   * Si no custodia nada llega []; si la institución no existe, 404.
+   */
+  obtenerCopiasDeInstitucion(idInstitucion: number): Observable<Copia[]> {
+    return this.http.get<Copia[]>(this.urlBase + '/instituciones/' + idInstitucion + '/copias');
   }
 
   /** POST /api/instituciones (curador o administrador): responde 201 con la institución creada. */

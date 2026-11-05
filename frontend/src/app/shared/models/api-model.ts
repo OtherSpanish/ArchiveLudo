@@ -1,7 +1,5 @@
 import { Videojuego } from './videojuego-model';
 import { ProyectoDeRestauracion } from './proyecto-model';
-import { EstadoIntegridad, TipoCopia } from './copia-model';
-import { Institucion } from './custodia-model';
 
 /**
  * CONTRATO CON EL BACK.
@@ -69,46 +67,3 @@ export interface DatosFicha {
  * No necesita un tipo propio: devuelve una lista de Custodia
  * (historial completo, con fechaInicio y fechaFin).
  */
-
-/**
- * Una copia que una institución custodia ahora mismo, junto con el
- * videojuego al que pertenece. Se usa en la ficha de institución.
- *  - fechaInicio y condicionAlmacenamiento: los de la custodia vigente
- *    de esa copia en esa institución.
- */
-export interface CopiaCustodiada {
-  idCopia: number;
-  tipoCopia: TipoCopia;
-  estadoIntegridad: EstadoIntegridad;
-  videojuego: Videojuego;
-  fechaInicio: string;
-  condicionAlmacenamiento?: string;
-}
-
-/**
- * GET /api/instituciones/{id}
- * Ficha de una institución.
- *  - telefonos y correos: las listas completas, de las tablas
- *    INST_TELEFONO e INST_CORREO. Pueden venir vacías.
- *  - copias: las copias con custodia vigente en esta institución
- *    (custodias sin fechaFin), de cualquier videojuego.
- */
-export interface DatosInstitucion {
-  institucion: Institucion;
-  telefonos: string[];
-  correos: string[];
-  copias: CopiaCustodiada[];
-}
-
-/**
- * GET /api/instituciones
- * Lista de la pantalla /instituciones: una fila por institución.
- *  - numeroCopias: cuántas copias custodia ahora mismo (custodias sin
- *    fechaFin). Lo calcula el backend. Si no custodia ninguna, es 0.
- * Es un arreglo simple, sin paginación: se espera que haya pocas instituciones.
- * Orden: alfabético por nombre.
- */
-export interface InstitucionConCopias {
-  institucion: Institucion;
-  numeroCopias: number;
-}
