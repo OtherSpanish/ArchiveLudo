@@ -13,16 +13,17 @@ import { EstatusLegal, EstatusLegalNuevo } from '../shared/models/estatus-legal-
 import { EventoRiesgo, EventoRiesgoNuevo } from '../shared/models/evento-riesgo-model';
 import { CompaniaEditora, EditoraNueva } from '../shared/models/compania-editora-model';
 import { Estudio, EstudioNuevo, Videojuego, VideojuegoNuevo } from '../shared/models/videojuego-model';
-import { ReporteTabla, TipoReporte } from '../shared/models/reporte-model';
+import { FiltrosReporte, Reporte, TipoReporte } from '../shared/models/reporte-model';
 import { CredencialesLogin, UsuarioLogin } from '../shared/models/sesion-model';
 import { Usuario, UsuarioNuevo } from '../shared/models/usuario-model';
 import {
   DatosFicha,
   DatosInstitucion,
   InstitucionConCopias,
-  PaginaVideojuegos,
-  ResumenInicio
+  ListaProyectos,
+  PaginaVideojuegos
 } from '../shared/models/api-model';
+import { ResumenInicio } from '../shared/models/resumen-inicio-model';
 
 /**
  * Servicio que concentra TODAS las llamadas a la API de Spring Boot.
@@ -59,7 +60,7 @@ export class ArchiveludoApiService {
     return this.http.post<UsuarioLogin>(this.urlBase + '/auth/login', credenciales, { observe: 'response' });
   }
 
-  /** GET /api/inicio/resumen: contadores y banner de prioridad. */
+  /** GET /api/inicio/resumen: contadores, prioridad de intervención y las tres listas del Inicio. */
   obtenerResumenInicio(): Observable<ResumenInicio> {
     return this.http.get<ResumenInicio>(this.urlBase + '/inicio/resumen');
   }
@@ -223,14 +224,33 @@ export class ArchiveludoApiService {
   }
 
   /**
-   * GET /api/proyectos: TODOS los proyectos de restauración, de cualquier
-   * videojuego, cada uno con sus participaciones y su idVideojuego (el título
-   * del juego se busca aparte). Del más reciente al más antiguo (por
-   * fechaInicio). Es para la pantalla global de Proyectos; el filtro por
-   * estado se hace en el front.
+   * GET /api/proyectos?estado=activo: los proyectos de restauración de todos los
+   * videojuegos, del más reciente al más antiguo, cada uno con sus participaciones,
+   * el título y la plataforma de su juego. El back hace el filtro:
+   *   - "estado" es opcional (activo, pausado o finalizado): si viene vacío no se
+   *     manda y salen todos.
+   * La cantidad llega en la cabecera X-Total-Count; aquí se junta con el cuerpo.
    */
-  obtenerTodosLosProyectos(): Observable<ProyectoDeRestauracion[]> {
-    return this.http.get<ProyectoDeRestauracion[]>(this.urlBase + '/proyectos');
+  obtenerTodosLosProyectos(estado: string): Observable<ListaProyectos> {
+    let parametros = new HttpParams();
+
+    if (estado) {
+      parametros = parametros.set('estado', estado);
+    }
+
+    return this.http
+      .get<ProyectoDeRestauracion[]>(this.urlBase + '/proyectos', { params: parametros, observe: 'response' })
+      .pipe(map((respuesta) => this.armarListaProyectos(respuesta)));
+  }
+
+  /** Junta el cuerpo (arreglo) y la cabecera X-Total-Count en un solo objeto. */
+  private armarListaProyectos(respuesta: HttpResponse<ProyectoDeRestauracion[]>): ListaProyectos {
+    const proyectos = respuesta.body || [];
+    const cabecera = respuesta.headers.get('X-Total-Count');
+    // Si por algún motivo falta la cabecera, se usa la cantidad recibida.
+    const total = cabecera !== null ? Number(cabecera) : proyectos.length;
+
+    return { total: total, proyectos: proyectos };
   }
 
   /**
@@ -320,22 +340,27 @@ export class ArchiveludoApiService {
 
   /**
    * GET /api/reportes/{tipo}?idVideojuego=8&desde=2025-01-01&hasta=2025-12-31
-   * Reporte de trazabilidad de un videojuego, a partir de las tablas de
-   * historial del back. "desde" y "hasta" son opcionales (yyyy-MM-dd): si
-   * vienen vacíos no se mandan y el reporte sale completo.
+   * Reporte del archivo como tabla lista para pintar ({ titulo, columnas, filas }).
+   * Los tres filtros son opcionales: los que vienen vacíos no se mandan.
+   * Con filtros inválidos el back responde 400 (o 404 si el videojuego no existe)
+   * con { estado, mensaje }.
    */
-  obtenerReporte(tipo: TipoReporte, idVideojuego: number, desde: string, hasta: string): Observable<ReporteTabla> {
-    let parametros = new HttpParams().set('idVideojuego', idVideojuego);
+  obtenerReporte(tipo: TipoReporte, filtros: FiltrosReporte): Observable<Reporte> {
+    let parametros = new HttpParams();
 
-    if (desde) {
-      parametros = parametros.set('desde', desde);
+    if (filtros.idVideojuego) {
+      parametros = parametros.set('idVideojuego', filtros.idVideojuego);
     }
 
-    if (hasta) {
-      parametros = parametros.set('hasta', hasta);
+    if (filtros.desde) {
+      parametros = parametros.set('desde', filtros.desde);
     }
 
-    return this.http.get<ReporteTabla>(this.urlBase + '/reportes/' + tipo, { params: parametros });
+    if (filtros.hasta) {
+      parametros = parametros.set('hasta', filtros.hasta);
+    }
+
+    return this.http.get<Reporte>(this.urlBase + '/reportes/' + tipo, { params: parametros });
   }
 
   // ---------- Eventos de riesgo (crear, editar, eliminar) ----------

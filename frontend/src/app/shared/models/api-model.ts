@@ -1,4 +1,5 @@
 import { Videojuego } from './videojuego-model';
+import { ProyectoDeRestauracion } from './proyecto-model';
 import { EstadoIntegridad, TipoCopia } from './copia-model';
 import { Institucion } from './custodia-model';
 
@@ -8,23 +9,6 @@ import { Institucion } from './custodia-model';
  * endpoint de Spring Boot. Los nombres de los campos tienen que coincidir
  * exactamente con los del DTO de Java. Pásaselo a quien arme la API.
  */
-
-/**
- * GET /api/inicio/resumen
- * Datos de los 4 contadores y del banner de prioridad.
- *
- * El párrafo del banner sale de videojuegoPrioritario.descripcion (el campo
- * "descripcion" de VIDEOJUEGO en el MER), por eso no viene aparte.
- * criteriosPrioritario son los tres criterios de riesgo que cumple, como texto.
- */
-export interface ResumenInicio {
-  totalTitulos: number;
-  totalEnRiesgo: number;
-  totalPerdidos: number;
-  totalConProyectoActivo: number;
-  videojuegoPrioritario: Videojuego;
-  criteriosPrioritario: string[];
-}
 
 /**
  * Un videojuego junto con su línea de "meta" (nº de copias, estatus legal, etc.).
@@ -49,6 +33,15 @@ export interface JuegoConMeta {
 export interface PaginaVideojuegos {
   total: number;
   juegos: Videojuego[];
+}
+
+/**
+ * Respuesta de GET /api/proyectos: el arreglo de proyectos en el cuerpo y su
+ * cantidad en la cabecera X-Total-Count; el servicio los junta en este objeto.
+ */
+export interface ListaProyectos {
+  total: number;
+  proyectos: ProyectoDeRestauracion[];
 }
 
 export interface JuegosPorEstado {

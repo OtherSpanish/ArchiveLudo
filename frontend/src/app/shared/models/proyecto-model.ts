@@ -21,6 +21,10 @@ export type EstadoProyecto = 'activo' | 'pausado' | 'finalizado';
 export interface ProyectoDeRestauracion {
   idProyecto: number;
   idVideojuego: number;
+  /** Título del videojuego del proyecto (lo llena el back; no se envía). */
+  tituloVideojuego: string;
+  /** Plataforma original del videojuego (lo llena el back; no se envía). */
+  plataformaVideojuego: string;
   idUsuario: number;
   nombre: string;
   descripcion?: string;
