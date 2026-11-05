@@ -37,7 +37,7 @@ import co.edu.unbosque.archiveludo.model.ResultadoInforme;
  * y de los expertos que participaron. El enlace al documento no va dentro del PDF.
  */
 @Service
-public class GeneradorInformePdf {
+public class GeneradorInformePdfService {
 
 	private static final DateTimeFormatter FORMATO_FECHA = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 	private static final DateTimeFormatter FORMATO_FECHA_HORA = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");

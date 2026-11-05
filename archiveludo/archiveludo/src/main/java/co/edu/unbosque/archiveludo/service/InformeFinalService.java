@@ -37,14 +37,14 @@ public class InformeFinalService {
 	private final VideojuegoRepository videojuegoRepository;
 	private final ExpertoRepository expertoRepository;
 	private final UsuarioRepository usuarioRepository;
-	private final GeneradorInformePdf generadorInformePdf;
+	private final GeneradorInformePdfService generadorInformePdf;
 	private final AlmacenamientoArchivosService almacenamientoArchivosService;
 	private final ModelMapper mapper;
 
 	public InformeFinalService(ProyectoDeRestauracionService proyectoService,
 			ProyectoDeRestauracionRepository proyectoRepository, VideojuegoRepository videojuegoRepository,
 			ExpertoRepository expertoRepository, UsuarioRepository usuarioRepository,
-			GeneradorInformePdf generadorInformePdf, AlmacenamientoArchivosService almacenamientoArchivosService,
+			GeneradorInformePdfService generadorInformePdf, AlmacenamientoArchivosService almacenamientoArchivosService,
 			ModelMapper mapper) {
 		this.proyectoService = proyectoService;
 		this.proyectoRepository = proyectoRepository;
