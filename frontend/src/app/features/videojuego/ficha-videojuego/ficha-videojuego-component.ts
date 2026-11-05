@@ -9,7 +9,6 @@ import { EstatusLegal, EstatusLegalNuevo } from '../../../shared/models/estatus-
 import { EventoRiesgo } from '../../../shared/models/evento-riesgo-model';
 import { CompaniaEditora } from '../../../shared/models/compania-editora-model';
 import { ArchiveludoApiService } from '../../../core/archiveludo-api-service';
-import { InstitucionConCopias } from '../../../shared/models/api-model';
 import { Experto } from '../../../shared/models/experto-model';
 import { ProyectoDeRestauracion } from '../../../shared/models/proyecto-model';
 
@@ -59,11 +58,11 @@ export class FichaVideojuegoComponent implements OnInit {
   copias: Copia[] = [];
 
   /**
-   * Instituciones que custodian copias de este juego (columna derecha).
-   * Se arman en el front: se cuentan las copias por idInstitucionActual y se
-   * cruzan con GET /api/instituciones (ver agruparInstituciones).
+   * Instituciones que custodian hoy copias de este juego (columna derecha).
+   * Las entrega el back (GET /api/videojuegos/{id}/instituciones), cada una con
+   * cantidadCopiasDelVideojuego.
    */
-  instituciones: InstitucionConCopias[] = [];
+  instituciones: Institucion[] = [];
 
   /**
    * Copia cuyo historial de custodia se muestra abajo. Al cargar es la
@@ -256,6 +255,9 @@ export class FichaVideojuegoComponent implements OnInit {
       error: (error) => this.mostrarError(error)
     });
 
+    // GET /api/videojuegos/{id}/instituciones (columna derecha)
+    this.cargarInstitucionesDelJuego(id);
+
     // GET /api/videojuegos/{id}/proyectos
     // Si el servidor aún no tiene este servicio, la pestaña queda vacía; un
     // error aquí NO debe ocultar toda la ficha (por eso no usa mostrarError).
@@ -388,14 +390,12 @@ export class FichaVideojuegoComponent implements OnInit {
   }
 
   /**
-   * Llegan las copias. Si alguna tiene custodia vigente, se pide la lista de
-   * instituciones para armar la columna derecha, y se carga el historial de
-   * la primera copia.
+   * Llegan las copias: si hay, se carga el historial de custodia de una
+   * y el catálogo de instituciones para el formulario de custodia.
    */
   private alRecibirCopias(copias: Copia[]): void {
     this.copias = copias;
     this.numeroCopias = copias.length;
-    this.instituciones = [];
     this.cambios.markForCheck();
 
     // Se conserva la copia elegida si sigue existiendo; si no, se usa la primera.
@@ -406,9 +406,9 @@ export class FichaVideojuegoComponent implements OnInit {
         this.verHistorialCustodia(copias[0].idCopia);
       }
 
-      // GET /api/instituciones (columna derecha y selector del formulario de custodia)
+      // GET /api/instituciones (selector del formulario de custodia)
       this.api.obtenerInstituciones().subscribe({
-        next: (lista) => this.alRecibirInstituciones(lista),
+        next: (lista) => this.alRecibirCatalogoInstituciones(lista),
         error: (error) => console.error('No se pudieron cargar las instituciones', error)
       });
     } else {
@@ -557,6 +557,9 @@ export class FichaVideojuegoComponent implements OnInit {
       next: (copias) => this.alRecibirCopias(copias),
       error: (error) => this.mostrarError(error)
     });
+
+    // Al cambiar una custodia, cambia también quién custodia el juego hoy.
+    this.cargarInstitucionesDelJuego(this.videojuego.idVideojuego);
   }
 
   /** Abre el formulario vacío para registrar (trasladar) una custodia. */
@@ -640,10 +643,22 @@ export class FichaVideojuegoComponent implements OnInit {
     return false;
   }
 
-  /** Llega el catálogo de instituciones: se guarda y se arma la columna derecha. */
-  private alRecibirInstituciones(catalogo: Institucion[]): void {
+  /** Pide las instituciones que custodian hoy copias de este juego. */
+  private cargarInstitucionesDelJuego(idVideojuego: number): void {
+    this.api.obtenerInstitucionesDelVideojuego(idVideojuego).subscribe({
+      next: (lista) => this.alRecibirInstitucionesDelJuego(lista),
+      error: (error) => console.error('No se pudieron cargar las instituciones del juego', error)
+    });
+  }
+
+  private alRecibirInstitucionesDelJuego(lista: Institucion[]): void {
+    this.instituciones = lista;
+    this.cambios.markForCheck();
+  }
+
+  /** Llega el catálogo de instituciones: se guarda para el selector del formulario de custodia. */
+  private alRecibirCatalogoInstituciones(catalogo: Institucion[]): void {
     this.catalogoInstituciones = catalogo;
-    this.instituciones = this.agruparInstituciones(this.copias, catalogo);
     this.cambios.markForCheck();
   }
 
@@ -786,68 +801,6 @@ export class FichaVideojuegoComponent implements OnInit {
     this.expertos = [];
     this.historialLegal = [];
     this.eventos = [];
-  }
-
-  /**
-   * Arma la lista de instituciones custodias a partir de las copias.
-   * Recorre las copias, y por cada una:
-   *   - si no tiene institución actual, la salta
-   *   - si su institución ya está en la lista, suma 1 a su contador
-   *   - si no está, la busca en el catálogo y la agrega con contador 1
-   * Ejemplo: copias del Museo, la Universidad y el Museo ->
-   *   [ Museo (2 copias), Universidad (1 copia) ]
-   */
-  private agruparInstituciones(copias: Copia[], catalogo: Institucion[]): InstitucionConCopias[] {
-    const lista: InstitucionConCopias[] = [];
-
-    for (const copia of copias) {
-      const idInstitucion = copia.idInstitucionActual;
-
-      if (idInstitucion === undefined) {
-        continue;
-      }
-
-      let existente: InstitucionConCopias | undefined = undefined;
-
-      for (const entrada of lista) {
-        if (entrada.institucion.idInstitucion === idInstitucion) {
-          existente = entrada;
-        }
-      }
-
-      if (existente) {
-        existente.numeroCopias++;
-      } else {
-        lista.push({
-          institucion: this.buscarInstitucion(idInstitucion, copia.nombreInstitucionActual, catalogo),
-          numeroCopias: 1
-        });
-      }
-    }
-
-    return lista;
-  }
-
-  /**
-   * Busca una institución por id en el catálogo. Si no aparece, arma una
-   * mínima con el nombre que trae la copia, para que la tarjeta no quede vacía.
-   */
-  private buscarInstitucion(id: number, nombre: string | undefined, catalogo: Institucion[]): Institucion {
-    for (const institucion of catalogo) {
-      if (institucion.idInstitucion === id) {
-        return institucion;
-      }
-    }
-
-    return {
-      idInstitucion: id,
-      nombre: nombre || 'Institución ' + id,
-      tipo: '—',
-      pais: '—',
-      telefonos: [],
-      correos: [],
-      cantidadCopiasCustodiadas: 0
-    };
   }
 
   /** Primer paso: pide confirmación antes de eliminar. */

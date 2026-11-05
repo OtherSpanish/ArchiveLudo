@@ -16,6 +16,11 @@ export interface Institucion {
   correos: string[];
   /** Cuántas copias guarda hoy (custodias vigentes). La calcula el back; siempre llega. */
   cantidadCopiasCustodiadas: number;
+  /**
+   * Cuántas copias de UN videojuego custodia hoy. Solo llega en
+   * GET /api/videojuegos/{id}/instituciones; en los demás endpoints no viene.
+   */
+  cantidadCopiasDelVideojuego?: number;
 }
 
 /**

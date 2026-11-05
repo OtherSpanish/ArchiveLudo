@@ -1,7 +1,7 @@
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { Experto } from '../../../shared/models/experto-model';
+import { ListaProyectos } from '../../../shared/models/api-model';
 import { ProyectoDeRestauracion } from '../../../shared/models/proyecto-model';
-import { Videojuego } from '../../../shared/models/videojuego-model';
 
 import { ArchiveludoApiService } from '../../../core/archiveludo-api-service';
 
@@ -16,12 +16,10 @@ interface FiltroProyecto {
  * videojuegos. Cada tarjeta muestra el nombre del juego (con enlace a su
  * ficha) y debajo la tarjeta del proyecto con sus expertos.
  *
- * GET /api/proyectos solo trae el idVideojuego de cada proyecto: los títulos
- * se piden aparte (uno por videojuego distinto) y los nombres de los expertos
- * salen de GET /api/expertos.
- *
- * El back entrega la lista completa y el filtro por estado se hace aquí,
- * en el front, porque son pocos proyectos.
+ * GET /api/proyectos?estado=... ya trae el título y la plataforma del juego
+ * de cada proyecto, y el back hace el filtro por estado. La cantidad sale de
+ * la cabecera X-Total-Count. Solo los nombres de los expertos se cruzan con
+ * GET /api/expertos.
  */
 @Component({
   selector: 'app-proyectos',
@@ -42,11 +40,11 @@ export class ProyectosComponent implements OnInit {
   /** Filtro elegido. Vacío significa "todos". */
   filtroActivo: string = '';
 
-  /** Todos los proyectos que llegaron (sin filtrar). */
+  /** Los proyectos que llegaron del back para el filtro elegido. */
   proyectos: ProyectoDeRestauracion[] = [];
 
-  /** Videojuegos de esos proyectos, por id. Mientras llegan, se muestra "Videojuego #id". */
-  juegos: Record<number, Videojuego> = {};
+  /** Cantidad de proyectos del filtro elegido (cabecera X-Total-Count). */
+  total: number = 0;
 
   /** Catálogo de expertos, para los nombres de cada tarjeta. */
   expertos: Experto[] = [];
@@ -66,15 +64,9 @@ export class ProyectosComponent implements OnInit {
     private cambios: ChangeDetectorRef
   ) { }
 
-  /** GET /api/proyectos y GET /api/expertos. */
-  private cargarProyectos(): void {
-    this.cargando = true;
-    this.hayError = false;
-
-    this.api.obtenerTodosLosProyectos().subscribe({
-      next: (respuesta) => this.alRecibirProyectos(respuesta),
-      error: (error) => this.alFallar(error)
-    });
+  /** Al abrir la pantalla se piden los proyectos y los expertos. */
+  ngOnInit(): void {
+    this.cargarProyectos();
 
     // Si falla, las tarjetas muestran "Experto #id" en lugar del nombre.
     this.api.obtenerExpertos().subscribe({
@@ -83,12 +75,22 @@ export class ProyectosComponent implements OnInit {
     });
   }
 
-  private alRecibirProyectos(proyectos: ProyectoDeRestauracion[]): void {
-    this.proyectos = proyectos;
+  /** GET /api/proyectos?estado=... con el filtro elegido. */
+  private cargarProyectos(): void {
+    this.cargando = true;
+    this.hayError = false;
+
+    this.api.obtenerTodosLosProyectos(this.filtroActivo).subscribe({
+      next: (lista) => this.alRecibirProyectos(lista),
+      error: (error) => this.alFallar(error)
+    });
+  }
+
+  private alRecibirProyectos(lista: ListaProyectos): void {
+    this.proyectos = lista.proyectos;
+    this.total = lista.total;
     this.cargando = false;
     this.cambios.markForCheck();
-
-    this.cargarJuegos(proyectos);
   }
 
   private alRecibirExpertos(expertos: Experto[]): void {
@@ -96,58 +98,14 @@ export class ProyectosComponent implements OnInit {
     this.cambios.markForCheck();
   }
 
-  /**
-   * Pide cada videojuego distinto una sola vez (GET /api/videojuegos/{id}).
-   * Si un juego falla, solo ese título queda como "Videojuego #id".
-   */
-  private cargarJuegos(proyectos: ProyectoDeRestauracion[]): void {
-    const pedidos: number[] = [];
-
-    for (const proyecto of proyectos) {
-      if (!pedidos.includes(proyecto.idVideojuego)) {
-        pedidos.push(proyecto.idVideojuego);
-      }
-    }
-
-    for (const idVideojuego of pedidos) {
-      this.api.obtenerVideojuego(idVideojuego).subscribe({
-        next: (juego) => this.alRecibirJuego(juego),
-        error: (error) => console.error('No se pudo cargar el videojuego ' + idVideojuego, error)
-      });
-    }
-  }
-
-  private alRecibirJuego(juego: Videojuego): void {
-    this.juegos[juego.idVideojuego] = juego;
-    this.cambios.markForCheck();
-  }
-
-  /** Título del videojuego de un proyecto. */
-  tituloJuego(proyecto: ProyectoDeRestauracion): string {
-    const juego = this.juegos[proyecto.idVideojuego];
-
-    if (juego) {
-      return juego.titulo;
-    }
-    return 'Videojuego #' + proyecto.idVideojuego;
-  }
-
-  /** Plataforma y año, o vacío si el juego aún no llegó. */
-  detalleJuego(proyecto: ProyectoDeRestauracion): string {
-    const juego = this.juegos[proyecto.idVideojuego];
-
-    if (juego) {
-      return juego.plataformaOriginal + ' · ' + juego.anioLanzamiento;
-    }
-    return '';
-  }
-
-  /** 404: el servidor todavía no tiene este servicio. Otro código: fallo general. */
-  private alFallar(error: { status?: number }): void {
+  /** Mensaje del back si lo trae ({ estado, mensaje }); 404: el servidor aún no tiene el servicio. */
+  private alFallar(error: { status?: number; error?: { mensaje?: string } }): void {
     console.error('No se pudieron cargar los proyectos', error);
 
     if (error.status === 404) {
       this.mensajeError = 'Los proyectos de restauración aún no están disponibles en el servidor.';
+    } else if (error.error && error.error.mensaje) {
+      this.mensajeError = error.error.mensaje;
     }
 
     this.cargando = false;
@@ -155,43 +113,13 @@ export class ProyectosComponent implements OnInit {
     this.cambios.markForCheck();
   }
 
-  /** Al abrir la pantalla se piden los proyectos. */
-  ngOnInit(): void {
-    this.cargarProyectos();
-  }
-
-  /** Cambia el filtro al pulsar un botón. */
+  /** Cambia el filtro al pulsar un botón y vuelve a pedir los proyectos al back. */
   seleccionarFiltro(valor: string): void {
+    if (valor === this.filtroActivo) {
+      return;
+    }
+
     this.filtroActivo = valor;
-  }
-
-  /** Los proyectos que se dibujan: todos, o solo los del estado elegido. */
-  get proyectosVisibles(): ProyectoDeRestauracion[] {
-    if (this.filtroActivo === '') {
-      return this.proyectos;
-    }
-
-    const resultado: ProyectoDeRestauracion[] = [];
-    for (const item of this.proyectos) {
-      if (item.estado === this.filtroActivo) {
-        resultado.push(item);
-      }
-    }
-    return resultado;
-  }
-
-  /** Cuántos proyectos hay de un estado ('' cuenta todos). Va en los botones de filtro. */
-  contar(valor: string): number {
-    if (valor === '') {
-      return this.proyectos.length;
-    }
-
-    let cantidad = 0;
-    for (const item of this.proyectos) {
-      if (item.estado === valor) {
-        cantidad = cantidad + 1;
-      }
-    }
-    return cantidad;
+    this.cargarProyectos();
   }
 }

@@ -249,7 +249,7 @@ export class GestionExpertosComponent {
     this.cambios.markForCheck();
   }
 
-  /** 400/404: el back explica qué pasó (por ejemplo, experto repetido). */
+  /** 400/404/409: el back explica qué pasó (por ejemplo, 409 si el experto ya está en el proyecto). */
   private alFallar(error: HttpErrorResponse): void {
     console.error('No se pudo guardar la participación', error);
     this.guardando = false;

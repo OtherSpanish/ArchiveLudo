@@ -9,17 +9,16 @@ import { Videojuego } from '../../models/videojuego-model';
  *   <app-banner-prioridad
  *     [videojuego]="juegoPrioritario"
  *     [descripcion]="textoDescripcion"
+ *     [nombreEstudio]="nombreDelEstudio"
  *     [criterios]="listaDeCriterios">
  *   </app-banner-prioridad>
  *
- * Recibe tres datos del componente padre:
+ * Recibe cuatro datos del componente padre:
  *   - videojuego: el juego en prioridad (título, plataforma, año y estudio)
  *   - descripcion: párrafo que explica por qué es prioridad
- *   - criterios: los tres criterios de riesgo que cumple, como textos cortos
- *     (por ejemplo "Sin copias físicas registradas")
- *
- * Los tres criterios salen de la propuesta del proyecto: sin copias físicas,
- * sin proyecto de restauración activo y estudio desarrollador desaparecido.
+ *   - nombreEstudio: estudio desarrollador, para el subtítulo
+ *   - criterios: los motivos que entrega el back, como textos cortos
+ *     (por ejemplo "Ninguna copia bajo custodia vigente")
  */
 @Component({
   selector: 'app-banner-prioridad',
@@ -35,19 +34,20 @@ export class BannerPrioridadComponent {
 
   @Input() criterios: string[] = [];
 
+  /** Nombre del estudio desarrollador (opcional). El estado del estudio ya viene dentro de los criterios. */
+  @Input() nombreEstudio: string = '';
+
   /**
    * Línea de subtítulo, por ejemplo:
-   * "PC · 2007 · Estudio: Foro Digital (desaparecido)"
+   * "PC · 2007 · Estudio: Foro Digital"
    *
-   * El estudio es opcional en el modelo (lleva "?"), así que primero
-   * revisamos que exista antes de usar su nombre.
+   * El estudio es opcional, así que primero revisamos que exista.
    */
   get subtitulo(): string {
     let texto = this.videojuego.plataformaOriginal + ' · ' + this.videojuego.anioLanzamiento;
 
-    if (this.videojuego.estudio) {
-      texto += ' · Estudio: ' + this.videojuego.estudio.nombre;
-      texto += ' (' + this.videojuego.estudio.estadoActual + ')';
+    if (this.nombreEstudio) {
+      texto += ' · Estudio: ' + this.nombreEstudio;
     }
 
     return texto;

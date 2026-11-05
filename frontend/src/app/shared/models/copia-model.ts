@@ -24,6 +24,11 @@ export interface Copia {
   // Custodia vigente: los calcula el back, solo salen si la copia tiene una.
   idInstitucionActual?: number;
   nombreInstitucionActual?: string;
+  fechaInicioCustodiaActual?: string;
+  condicionAlmacenamientoActual?: string;
+
+  /** Solo llega en GET /api/instituciones/{id}/copias (ahí no se sabe de qué juego es cada copia). */
+  tituloVideojuego?: string;
 
   // Campos de COPIA_FISICA (solo si tipoCopia es 'fisica')
   tipoSoporte?: string;
