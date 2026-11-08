@@ -47,9 +47,6 @@ public class VideojuegoService {
 		this.mapper = mapper;
 	}
 
-	// ──────────────────────────────────────────────
-	// Lectura
-	// ──────────────────────────────────────────────
 
 	/**
 	 * Busca un videojuego por el id que llega en la URL.
@@ -149,9 +146,6 @@ public class VideojuegoService {
 		return convertirListaADTO(videojuegos);
 	}
 
-	// ──────────────────────────────────────────────
-	// Escritura
-	// ──────────────────────────────────────────────
 
 	/**
 	 * Crea un videojuego con su estudio y sus editoras. Nace sin imagen (se sube despues).
@@ -234,9 +228,7 @@ public class VideojuegoService {
 		almacenamientoArchivosService.eliminarArchivo(videojuego.getUrlImagen());
 	}
 
-	// ──────────────────────────────────────────────
-	// Imagen
-	// ──────────────────────────────────────────────
+
 
 	/**
 	 * Sube (o reemplaza) la imagen de un videojuego en Cloudinary y guarda su URL.
@@ -309,10 +301,6 @@ public class VideojuegoService {
 		}
 	}
 
-	// ──────────────────────────────────────────────
-	// Validaciones
-	// ──────────────────────────────────────────────
-
 	/**
 	 * Valida todos los datos que llegan del front (comunes a crear y actualizar)
 	 * y los copia a la entity. urlImagen no se toma del cuerpo: solo cambia con su endpoint.
@@ -365,9 +353,6 @@ public class VideojuegoService {
 		return idsSinRepetir;
 	}
 
-	// ──────────────────────────────────────────────
-	// Utilidades
-	// ──────────────────────────────────────────────
 
 	/**
 	 * En el catalogo el estado es opcional: si viene vacio se devuelven todos los estados.
