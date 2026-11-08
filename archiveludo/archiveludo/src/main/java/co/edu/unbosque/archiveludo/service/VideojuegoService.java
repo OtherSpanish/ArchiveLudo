@@ -41,7 +41,11 @@ public class VideojuegoService {
 		this.mapper = mapper;
 	}
 
+<<<<<<< Updated upstream
 	
+=======
+
+>>>>>>> Stashed changes
 	/**
 	 * Busca un videojuego por el id que llega en la URL.
 	 *
@@ -140,6 +144,10 @@ public class VideojuegoService {
 		return convertirListaADTO(videojuegos);
 	}
 
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
 	/**
 	 * Crea un videojuego con su estudio y sus editoras.
 	 * El usuario que lo registra sale del token, no del cuerpo.
@@ -217,6 +225,81 @@ public class VideojuegoService {
 		videojuegoRepository.eliminar(idVideojuego);
 	}
 
+<<<<<<< Updated upstream
+=======
+
+	/**
+	 * Sube (o reemplaza) la imagen de un videojuego en Cloudinary y guarda su URL.
+	 *
+	 * @param idTexto id del videojuego tal como llego en la URL
+	 * @param imagen  archivo recibido en el campo "imagen"
+	 * @return el videojuego con su urlImagen
+	 * @throws IdInvalidoException             si el id no es un numero mayor que cero
+	 * @throws VideojuegoNoEncontradoException si el videojuego no existe
+	 * @throws ArchivoInvalidoException        si falta el archivo, no es jpg/png/webp o pasa de 5 MB
+	 * @throws AlmacenamientoArchivosException si Cloudinary no recibio la imagen
+	 */
+	@Transactional
+	public VideojuegoDTO subirImagen(String idTexto, MultipartFile imagen) {
+		long idVideojuego = LanzadorException.convertirId(idTexto, "videojuego");
+
+		Videojuego videojuego = videojuegoRepository.buscarPorId(idVideojuego);
+		LanzadorException.verificarVideojuegoExiste(videojuego, idVideojuego);
+
+		boolean estaVacia = (imagen == null || imagen.isEmpty());
+		String tipo = null;
+		long tamanio = 0;
+		if (!estaVacia) {
+			tipo = imagen.getContentType();
+			tamanio = imagen.getSize();
+		}
+		LanzadorException.verificarImagenValida(estaVacia, tipo, tamanio);
+
+		String urlImagen = almacenamientoArchivosService.subirImagenVideojuego(idVideojuego, leerBytes(imagen));
+
+		videojuegoRepository.actualizarUrlImagen(idVideojuego, urlImagen);
+		videojuego.setUrlImagen(urlImagen);
+		return convertirADTO(videojuego);
+	}
+
+	/**
+	 * Quita la imagen de un videojuego: la borra de Cloudinary y deja url_imagen en NULL.
+	 * Si el videojuego no tenia imagen, no hace nada.
+	 *
+	 * @param idTexto id del videojuego tal como llego en la URL
+	 * @throws IdInvalidoException             si el id no es un numero mayor que cero
+	 * @throws VideojuegoNoEncontradoException si el videojuego no existe
+	 * @throws AlmacenamientoArchivosException si no se pudo borrar la imagen en Cloudinary
+	 */
+	@Transactional
+	public void eliminarImagen(String idTexto) {
+		long idVideojuego = LanzadorException.convertirId(idTexto, "videojuego");
+
+		Videojuego videojuego = videojuegoRepository.buscarPorId(idVideojuego);
+		LanzadorException.verificarVideojuegoExiste(videojuego, idVideojuego);
+
+		if (videojuego.getUrlImagen() == null) {
+			return;
+		}
+
+		videojuegoRepository.actualizarUrlImagen(idVideojuego, null);
+		almacenamientoArchivosService.eliminarArchivo(videojuego.getUrlImagen());
+	}
+
+	/**
+	 * Lee los bytes del archivo recibido.
+	 *
+	 * @throws ArchivoInvalidoException si el archivo no se pudo leer
+	 */
+	private byte[] leerBytes(MultipartFile archivo) {
+		try {
+			return archivo.getBytes();
+		} catch (IOException e) {
+			throw new ArchivoInvalidoException("No se pudo leer el archivo enviado");
+		}
+	}
+
+>>>>>>> Stashed changes
 	/**
 	 * Valida todos los datos que llegan del front (comunes a crear y actualizar)
 	 * y los copia a la entity.
@@ -269,6 +352,10 @@ public class VideojuegoService {
 		return idsSinRepetir;
 	}
 
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
 	/**
 	 * En el catalogo el estado es opcional: si viene vacio se devuelven todos los estados.
 	 */

@@ -80,9 +80,6 @@ public class EstatusLegalService {
 		return convertirADTOConVigencia(estatusLegal);
 	}
 
-	// ──────────────────────────────────────────────
-	// Escritura
-	// ──────────────────────────────────────────────
 
 	/**
 	 * Registra un estatus legal nuevo para un videojuego. Registrar uno nuevo NO modifica los anteriores:
