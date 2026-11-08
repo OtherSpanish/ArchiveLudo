@@ -1,6 +1,6 @@
 import { Component, Input } from '@angular/core';
 
-/*
+/**
  * Describe cómo se ve un estado: qué texto muestra y de qué color es el punto.
  * "color" solo puede ser una de estas cuatro opciones, y cada una
  * corresponde a una clase en el archivo CSS del componente.
@@ -10,7 +10,7 @@ interface Apariencia {
   color: 'ok' | 'warn' | 'bad' | 'neutral';
 }
 
-/*
+/**
  * Componente reutilizable que muestra un estado como "punto de color + texto".
  *
  * Uso en cualquier HTML:
@@ -31,13 +31,13 @@ interface Apariencia {
 })
 export class EstadoBadgeComponent {
 
-  /*
+  /**
    * @Input significa que el componente padre le pasa este valor desde su HTML.
    * Aquí llega el valor tal cual está en la base de datos, por ejemplo 'en riesgo'.
    */
   @Input() estado: string = '';
 
-  /*
+  /**
    * Mapa de "valor en la base de datos" -> "apariencia".
    * Sale de la sección 2 de la guía de diseño.
    * Es un objeto normal: se busca por la llave, por ejemplo
@@ -58,10 +58,11 @@ export class EstadoBadgeComponent {
     'irrecuperable': { texto: 'Irrecuperable', color: 'bad' },
 
     // estado (PROYECTO_DE_RESTAURACION). 'activo' ya está más arriba.
+    'pausado': { texto: 'Pausado', color: 'warn' },
     'finalizado': { texto: 'Finalizado', color: 'ok' }
   };
 
-  /*
+  /**
    * Devuelve la apariencia del estado actual.
    * Si llega un valor que no está en el mapa (por ejemplo, un estado nuevo
    * que agregue el backend), no se rompe: muestra el texto original en gris.
@@ -74,12 +75,12 @@ export class EstadoBadgeComponent {
     return { texto: this.estado, color: 'neutral' };
   }
 
-  /* Texto que se muestra al lado del punto. */
+  /** Texto que se muestra al lado del punto. */
   get texto(): string {
     return this.obtenerApariencia().texto;
   }
 
-  /* Nombre de la clase CSS del color: 'ok', 'warn', 'bad' o 'neutral'. */
+  /** Nombre de la clase CSS del color: 'ok', 'warn', 'bad' o 'neutral'. */
   get color(): string {
     return this.obtenerApariencia().color;
   }

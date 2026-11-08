@@ -4,7 +4,7 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ArchiveludoApiService } from '../../../core/archiveludo-api-service';
 import { CompaniaEditora, EditoraNueva } from '../../../shared/models/compania-editora-model';
 
-/*
+/**
  * Pantalla de administración de compañías editoras (/administracion/editoras).
  * Igual que la de estudios, pero más simple: una editora solo tiene nombre y país.
  * Curador y administrador pueden crear y editar; solo el administrador elimina.
@@ -19,29 +19,29 @@ import { CompaniaEditora, EditoraNueva } from '../../../shared/models/compania-e
 })
 export class AdminEditorasComponent implements OnInit {
 
-  /* Editoras de la lista. */
+  /** Editoras de la lista. */
   editoras: CompaniaEditora[] = [];
 
   cargando: boolean = true;
   hayError: boolean = false;
 
-  /* true cuando el formulario está desplegado. */
+  /** true cuando el formulario está desplegado. */
   mostrarFormulario: boolean = false;
 
-  /* Editora que se edita. Es undefined cuando se está creando una nueva. */
+  /** Editora que se edita. Es undefined cuando se está creando una nueva. */
   editando?: CompaniaEditora;
 
   formulario: FormGroup;
 
-  /* true después del primer intento de guardar. */
+  /** true después del primer intento de guardar. */
   enviado: boolean = false;
 
   guardando: boolean = false;
 
-  /* Mensaje de error del guardado o de la eliminación. */
+  /** Mensaje de error del guardado o de la eliminación. */
   errorMensaje: string = '';
 
-  /* Id de la editora que está pidiendo confirmación para eliminarse (0 = ninguna). */
+  /** Id de la editora que está pidiendo confirmación para eliminarse (0 = ninguna). */
   idConfirmandoEliminar: number = 0;
 
   constructor(
@@ -59,7 +59,7 @@ export class AdminEditorasComponent implements OnInit {
     this.cargarEditoras();
   }
 
-  /* GET /api/editoras */
+  /** GET /api/editoras */
   private cargarEditoras(): void {
     this.api.obtenerEditoras().subscribe({
       next: (lista) => this.alRecibirLista(lista),
@@ -67,7 +67,7 @@ export class AdminEditorasComponent implements OnInit {
     });
   }
 
-  /* Guarda la lista ordenada alfabéticamente por nombre. */
+  /** Guarda la lista ordenada alfabéticamente por nombre. */
   private alRecibirLista(lista: CompaniaEditora[]): void {
     const ordenada = lista.slice();
     ordenada.sort((a, b) => a.nombre.localeCompare(b.nombre));
@@ -84,14 +84,14 @@ export class AdminEditorasComponent implements OnInit {
     this.cambios.markForCheck();
   }
 
-  /* Abre el formulario vacío para crear una editora. */
+  /** Abre el formulario vacío para crear una editora. */
   abrirNueva(): void {
     this.editando = undefined;
     this.formulario.reset({ nombre: '', pais: '' });
     this.abrirFormulario();
   }
 
-  /* Abre el formulario con los datos de la editora que se va a editar. */
+  /** Abre el formulario con los datos de la editora que se va a editar. */
   abrirEditar(editora: CompaniaEditora): void {
     this.editando = editora;
     this.formulario.reset({ nombre: editora.nombre, pais: editora.pais });
@@ -109,13 +109,13 @@ export class AdminEditorasComponent implements OnInit {
     this.mostrarFormulario = false;
   }
 
-  /* Dice si hay que mostrar el error de un campo. */
+  /** Dice si hay que mostrar el error de un campo. */
   mostrarError(nombre: string): boolean {
     const control = this.formulario.controls[nombre];
     return control.invalid && (control.touched || this.enviado);
   }
 
-  /* Texto del error de un campo, según qué validación falló. */
+  /** Texto del error de un campo, según qué validación falló. */
   textoError(nombre: string): string {
     const control = this.formulario.controls[nombre];
 
@@ -128,7 +128,7 @@ export class AdminEditorasComponent implements OnInit {
     return '';
   }
 
-  /* Valida y envía POST (crear) o PUT (editar). */
+  /** Valida y envía POST (crear) o PUT (editar). */
   guardar(): void {
     this.enviado = true;
     this.errorMensaje = '';
@@ -159,14 +159,14 @@ export class AdminEditorasComponent implements OnInit {
     }
   }
 
-  /* Se guardó: se cierra el formulario y se vuelve a pedir la lista. */
+  /** Se guardó: se cierra el formulario y se vuelve a pedir la lista. */
   private alGuardar(): void {
     this.guardando = false;
     this.mostrarFormulario = false;
     this.cargarEditoras();
   }
 
-  /* Primer paso de eliminar: pide confirmación en la misma fila. */
+  /** Primer paso de eliminar: pide confirmación en la misma fila. */
   pedirEliminar(editora: CompaniaEditora): void {
     this.errorMensaje = '';
     this.idConfirmandoEliminar = editora.idEditora;
@@ -176,7 +176,7 @@ export class AdminEditorasComponent implements OnInit {
     this.idConfirmandoEliminar = 0;
   }
 
-  /* Segundo paso: DELETE /api/editoras/{id}. */
+  /** Segundo paso: DELETE /api/editoras/{id}. */
   confirmarEliminar(editora: CompaniaEditora): void {
     this.api.eliminarEditora(editora.idEditora).subscribe({
       next: () => this.alEliminar(),
@@ -189,7 +189,7 @@ export class AdminEditorasComponent implements OnInit {
     this.cargarEditoras();
   }
 
-  /*
+  /**
    * Muestra el error según el código:
    *  - 400 / 404 / 409: el back explica qué pasó (error.error.mensaje)
    *  - 403: el rol no puede

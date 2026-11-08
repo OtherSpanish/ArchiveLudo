@@ -18,13 +18,15 @@
 
 <!--
   Banner de prioridad: el juego que más urgentemente necesita intervención.
-  El @if evita dibujarlo mientras el juego todavía no ha llegado del back.
+  El @if evita dibujarlo mientras no llega el resumen, o si no hay juegos en riesgo
+  (en ese caso el back no envía la prioridad).
 -->
-@if (juegoPrioritario) {
+@if (resumen && resumen.prioridadIntervencion) {
   <app-banner-prioridad
-    [videojuego]="juegoPrioritario"
-    [descripcion]="descripcionPrioritario"
-    [criterios]="criteriosPrioritario">
+    [videojuego]="resumen.prioridadIntervencion.videojuego"
+    [descripcion]="resumen.prioridadIntervencion.videojuego.descripcion || ''"
+    [nombreEstudio]="resumen.prioridadIntervencion.nombreEstudio || ''"
+    [criterios]="resumen.prioridadIntervencion.motivos">
   </app-banner-prioridad>
 }
 

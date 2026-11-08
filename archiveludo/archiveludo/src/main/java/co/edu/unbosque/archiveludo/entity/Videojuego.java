@@ -6,12 +6,7 @@ import java.util.Objects;
 
 import co.edu.unbosque.archiveludo.model.EstadoConservacion;
 
-/**
- * Entity de Videojuego (tabla VIDEOJUEGO).
- * idEstudio: estudio desarrollador (FK, obligatorio).
- * idUsuario: usuario que registro el videojuego (FK).
- * idsEditoras: companias editoras del juego; es la relacion N:M que se guarda en COMPED_VID.
- */
+
 public class Videojuego {
 
 	private long idVideojuego;
@@ -23,6 +18,7 @@ public class Videojuego {
 	private EstadoConservacion estadoConservacion;
 	private long idEstudio;
 	private long idUsuario;
+	private String urlImagen;
 	private List<Long> idsEditoras;
 
 	public Videojuego() {
@@ -31,7 +27,7 @@ public class Videojuego {
 
 	public Videojuego(String titulo, String genero, String plataformaOriginal, String descripcion,
 			int anioLanzamiento, EstadoConservacion estadoConservacion, long idEstudio, long idUsuario,
-			List<Long> idsEditoras) {
+			String urlImagen, List<Long> idsEditoras) {
 		super();
 		this.titulo = titulo;
 		this.genero = genero;
@@ -41,12 +37,13 @@ public class Videojuego {
 		this.estadoConservacion = estadoConservacion;
 		this.idEstudio = idEstudio;
 		this.idUsuario = idUsuario;
+		this.urlImagen = urlImagen;
 		this.idsEditoras = idsEditoras;
 	}
 
 	public Videojuego(long idVideojuego, String titulo, String genero, String plataformaOriginal,
 			String descripcion, int anioLanzamiento, EstadoConservacion estadoConservacion, long idEstudio,
-			long idUsuario, List<Long> idsEditoras) {
+			long idUsuario, String urlImagen, List<Long> idsEditoras) {
 		super();
 		this.idVideojuego = idVideojuego;
 		this.titulo = titulo;
@@ -57,6 +54,7 @@ public class Videojuego {
 		this.estadoConservacion = estadoConservacion;
 		this.idEstudio = idEstudio;
 		this.idUsuario = idUsuario;
+		this.urlImagen = urlImagen;
 		this.idsEditoras = idsEditoras;
 	}
 
@@ -82,7 +80,8 @@ public class Videojuego {
 		return "Videojuego [idVideojuego=" + idVideojuego + ", titulo=" + titulo + ", genero=" + genero
 				+ ", plataformaOriginal=" + plataformaOriginal + ", descripcion=" + descripcion
 				+ ", anioLanzamiento=" + anioLanzamiento + ", estadoConservacion=" + estadoConservacion
-				+ ", idEstudio=" + idEstudio + ", idUsuario=" + idUsuario + ", idsEditoras=" + idsEditoras + "]";
+				+ ", idEstudio=" + idEstudio + ", idUsuario=" + idUsuario + ", urlImagen=" + urlImagen
+				+ ", idsEditoras=" + idsEditoras + "]";
 	}
 
 	public long getIdVideojuego() {
@@ -155,6 +154,14 @@ public class Videojuego {
 
 	public void setIdUsuario(long idUsuario) {
 		this.idUsuario = idUsuario;
+	}
+
+	public String getUrlImagen() {
+		return urlImagen;
+	}
+
+	public void setUrlImagen(String urlImagen) {
+		this.urlImagen = urlImagen;
 	}
 
 	public List<Long> getIdsEditoras() {

@@ -1,6 +1,6 @@
 import { Component, Input } from '@angular/core';
 
-/*
+/**
  * Tarjeta de contador de la parte de arriba de Inicio.
  *
  * Uso:

@@ -15,6 +15,7 @@ import co.edu.unbosque.archiveludo.model.EstadoProyecto;
 /**
  * Acceso a datos de la tabla PROYECTO_DE_RESTAURACION con SQL escrito a mano (Spring JDBC).
  * Sus participaciones las maneja ParticipacionRepository.
+ * El enlace del informe final (url_informe) se lee y se escribe con sus propios metodos.
  */
 @Repository
 public class ProyectoDeRestauracionRepository {
@@ -26,6 +27,8 @@ public class ProyectoDeRestauracionRepository {
 	private static final String ORDEN = "ORDER BY fecha_inicio DESC, id_proyecto DESC";
 
 	private static final String SQL_BUSCAR_TODOS = SQL_SELECCIONAR + ORDEN;
+
+	private static final String SQL_BUSCAR_POR_ESTADO = SQL_SELECCIONAR + "WHERE estado = ? " + ORDEN;
 
 	private static final String SQL_BUSCAR_POR_VIDEOJUEGO = SQL_SELECCIONAR + "WHERE id_videojuego = ? " + ORDEN;
 
@@ -42,6 +45,12 @@ public class ProyectoDeRestauracionRepository {
 	private static final String SQL_ACTUALIZAR = "UPDATE PROYECTO_DE_RESTAURACION SET nombre = ?, descripcion = ?, "
 			+ "herramienta_emulador = ?, estado = ?, fecha_inicio = ?, fecha_fin = ? WHERE id_proyecto = ?";
 
+	private static final String SQL_BUSCAR_URL_INFORME = "SELECT url_informe FROM PROYECTO_DE_RESTAURACION "
+			+ "WHERE id_proyecto = ?";
+
+	private static final String SQL_ACTUALIZAR_URL_INFORME = "UPDATE PROYECTO_DE_RESTAURACION SET url_informe = ? "
+			+ "WHERE id_proyecto = ?";
+
 	private static final String SQL_ELIMINAR = "DELETE FROM PROYECTO_DE_RESTAURACION WHERE id_proyecto = ?";
 
 	private final JdbcTemplate jdbcTemplate;
@@ -56,6 +65,15 @@ public class ProyectoDeRestauracionRepository {
 	 */
 	public List<ProyectoDeRestauracion> buscarTodos() {
 		List<Map<String, Object>> filas = jdbcTemplate.queryForList(SQL_BUSCAR_TODOS);
+		return convertirFilas(filas);
+	}
+
+	/**
+	 * @param estado estado a filtrar
+	 * @return los proyectos con ese estado, del mas reciente al mas antiguo (vacio si no hay)
+	 */
+	public List<ProyectoDeRestauracion> buscarPorEstado(EstadoProyecto estado) {
+		List<Map<String, Object>> filas = jdbcTemplate.queryForList(SQL_BUSCAR_POR_ESTADO, estado.getValor());
 		return convertirFilas(filas);
 	}
 
@@ -79,6 +97,23 @@ public class ProyectoDeRestauracionRepository {
 			return null;
 		}
 		return convertirFilaAProyecto(filas.get(0));
+	}
+
+	/**
+	 * @param idProyecto id del proyecto
+	 * @return el enlace del PDF del informe final, o null si el proyecto no tiene informe (o no existe)
+	 */
+	public String buscarUrlInforme(long idProyecto) {
+		List<Map<String, Object>> filas = jdbcTemplate.queryForList(SQL_BUSCAR_URL_INFORME, idProyecto);
+
+		if (filas.isEmpty()) {
+			return null;
+		}
+		Object valor = filas.get(0).get("url_informe");
+		if (valor == null || valor.toString().trim().isEmpty()) {
+			return null;
+		}
+		return valor.toString().trim();
 	}
 
 
@@ -117,6 +152,16 @@ public class ProyectoDeRestauracionRepository {
 				Date.valueOf(proyecto.getFechaInicio()),
 				convertirAFechaSql(proyecto.getFechaFin()),
 				proyecto.getIdProyecto());
+	}
+
+	/**
+	 * Guarda (o quita, con null) el enlace del PDF del informe final en Cloudinary.
+	 *
+	 * @param idProyecto id del proyecto
+	 * @param urlInforme enlace del PDF, o null para dejar el proyecto sin informe
+	 */
+	public void actualizarUrlInforme(long idProyecto, String urlInforme) {
+		jdbcTemplate.update(SQL_ACTUALIZAR_URL_INFORME, urlInforme, idProyecto);
 	}
 
 	/**

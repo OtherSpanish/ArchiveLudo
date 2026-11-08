@@ -1,7 +1,7 @@
 import { Component, Input } from '@angular/core';
 import { Videojuego } from '../../models/videojuego-model';
 
-/*
+/**
  * Tarjeta de un videojuego para los carruseles de la pantalla Inicio.
  *
  * Uso:
@@ -20,20 +20,20 @@ import { Videojuego } from '../../models/videojuego-model';
   standalone: false,
 })
 export class JuegoCardComponent {
-  /* El "!" le dice a TypeScript: "el padre siempre me va a pasar este valor". */
+  /** El "!" le dice a TypeScript: "el padre siempre me va a pasar este valor". */
   @Input() videojuego!: Videojuego;
 
   @Input() indice: number = 0;
 
   @Input() meta: string = '';
 
-  /*
+  /**
    * Cuántos colores de relleno hay definidos en styles.css
    * (--portada-1 hasta --portada-6).
    */
   private totalColoresPortada: number = 6;
 
-  /*
+  /**
    * Devuelve el color de la portada según la posición de la tarjeta.
    * Los colores NO están aquí: viven en styles.css como variables.
    * Este código solo elige el número y devuelve el nombre de la variable,
@@ -47,7 +47,7 @@ export class JuegoCardComponent {
     return 'var(--portada-' + numero + ')';
   }
 
-  /*
+  /**
    * Saca las iniciales del título: "Torre de Ámbar Online" -> "TD".
    * Toma la primera letra de las dos primeras palabras.
    */
@@ -64,7 +64,7 @@ export class JuegoCardComponent {
     return resultado;
   }
 
-  /* Línea de subtítulo: "PC · 2007" */
+  /** Línea de subtítulo: "PC · 2007" */
   get subtitulo(): string {
     return this.videojuego.plataformaOriginal + ' · ' + this.videojuego.anioLanzamiento;
   }

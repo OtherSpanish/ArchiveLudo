@@ -7,6 +7,7 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -18,12 +19,15 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import co.edu.unbosque.archiveludo.dto.ProyectoDeRestauracionDTO;
+import co.edu.unbosque.archiveludo.exceptions.AlmacenamientoArchivosException;
 import co.edu.unbosque.archiveludo.exceptions.CredencialInvalidaException;
 import co.edu.unbosque.archiveludo.exceptions.DatoProyectoInvalidoException;
 import co.edu.unbosque.archiveludo.exceptions.ExpertoNoEncontradoException;
+import co.edu.unbosque.archiveludo.exceptions.ExpertoRepetidoException;
 import co.edu.unbosque.archiveludo.exceptions.IdInvalidoException;
 import co.edu.unbosque.archiveludo.exceptions.ProyectoNoEncontradoException;
 import co.edu.unbosque.archiveludo.exceptions.VideojuegoNoEncontradoException;
@@ -34,6 +38,7 @@ import co.edu.unbosque.archiveludo.service.ProyectoDeRestauracionService;
  * El listado general va por /api/proyectos; los de un juego y la creacion, por el videojuego
  * (/api/videojuegos/{id}/proyectos); ver, editar y eliminar, por el id del proyecto (/api/proyectos/{id}).
  * Leer: cualquier rol. Crear y actualizar: curador o administrador. Eliminar: solo administrador.
+ * El informe final tiene su propio controller (InformeFinalController).
  */
 @RestController
 @RequestMapping("/api")
@@ -45,14 +50,21 @@ public class ProyectoDeRestauracionController {
 	private ProyectoDeRestauracionService proyectoService;
 
 	/**
-	 * GET /api/proyectos
-	 * Respuesta: 200 con todos los proyectos, del mas reciente al mas antiguo, con sus participaciones.
+	 * GET /api/proyectos?estado=activo|pausado|finalizado
+	 * El filtro es opcional: sin el, salen todos los proyectos.
+	 * Respuesta: 200 con los proyectos, del mas reciente al mas antiguo, con sus participaciones,
+	 *            y la cabecera X-Total-Count con la cantidad. 400 si el estado no es valido.
 	 */
 	@GetMapping("/proyectos")
-	public ResponseEntity<?> buscarTodos() {
+	public ResponseEntity<?> buscarTodos(@RequestParam(name = "estado", required = false) String estado) {
 		try {
-			List<ProyectoDeRestauracionDTO> proyectos = proyectoService.buscarTodos();
-			return new ResponseEntity<List<ProyectoDeRestauracionDTO>>(proyectos, HttpStatus.OK);
+			List<ProyectoDeRestauracionDTO> proyectos = proyectoService.buscarTodos(estado);
+
+			HttpHeaders cabeceras = new HttpHeaders();
+			cabeceras.add("X-Total-Count", String.valueOf(proyectos.size()));
+			return new ResponseEntity<List<ProyectoDeRestauracionDTO>>(proyectos, cabeceras, HttpStatus.OK);
+		} catch (DatoProyectoInvalidoException e) {
+			return crearRespuestaError(HttpStatus.BAD_REQUEST, e.getMessage());
 		} catch (Exception e) {
 			log.error("Error inesperado al buscar los proyectos", e);
 			return crearRespuestaError(HttpStatus.INTERNAL_SERVER_ERROR, "Ocurrio un error interno en el servidor");
@@ -103,6 +115,7 @@ public class ProyectoDeRestauracionController {
 	 *              "fechaInicio": "2026-09-01",
 	 *              "participaciones": [ { "idExperto": 3, "rolExperto": "...", "fechaIncorporacion": "2026-09-01" } ] }
 	 * Respuesta: 201 con el proyecto creado y sus participaciones. El usuario que lo crea sale del token.
+	 *            409 si un experto viene repetido en la lista.
 	 */
 	@PostMapping("/videojuegos/{id}/proyectos")
 	public ResponseEntity<?> crear(@PathVariable String id, @RequestBody ProyectoDeRestauracionDTO proyectoDTO,
@@ -117,6 +130,8 @@ public class ProyectoDeRestauracionController {
 			return crearRespuestaError(HttpStatus.NOT_FOUND, e.getMessage());
 		} catch (ExpertoNoEncontradoException e) {
 			return crearRespuestaError(HttpStatus.NOT_FOUND, e.getMessage());
+		} catch (ExpertoRepetidoException e) {
+			return crearRespuestaError(HttpStatus.CONFLICT, e.getMessage());
 		} catch (DatoProyectoInvalidoException e) {
 			return crearRespuestaError(HttpStatus.BAD_REQUEST, e.getMessage());
 		} catch (CredencialInvalidaException e) {
@@ -131,6 +146,7 @@ public class ProyectoDeRestauracionController {
 	 * PUT /api/proyectos/{id}
 	 * Cuerpo:    los datos del proyecto (como el POST). Las participaciones se ignoran aqui.
 	 * Respuesta: 200 con el proyecto actualizado y sus participaciones.
+	 *            400 si se intenta pasar a activo o pausado un proyecto que ya tiene informe final.
 	 */
 	@PutMapping("/proyectos/{id}")
 	public ResponseEntity<?> actualizar(@PathVariable String id, @RequestBody ProyectoDeRestauracionDTO proyectoDTO) {
@@ -151,7 +167,8 @@ public class ProyectoDeRestauracionController {
 
 	/**
 	 * DELETE /api/proyectos/{id}
-	 * Respuesta: 204 sin cuerpo si se elimino (junto con sus participaciones).
+	 * Respuesta: 204 sin cuerpo si se elimino (junto con sus participaciones y su informe final).
+	 *            502 si no se pudo borrar el PDF en Cloudinary (en ese caso no se borra nada).
 	 */
 	@DeleteMapping("/proyectos/{id}")
 	public ResponseEntity<?> eliminar(@PathVariable String id) {
@@ -162,6 +179,8 @@ public class ProyectoDeRestauracionController {
 			return crearRespuestaError(HttpStatus.BAD_REQUEST, e.getMessage());
 		} catch (ProyectoNoEncontradoException e) {
 			return crearRespuestaError(HttpStatus.NOT_FOUND, e.getMessage());
+		} catch (AlmacenamientoArchivosException e) {
+			return crearRespuestaError(HttpStatus.BAD_GATEWAY, e.getMessage());
 		} catch (Exception e) {
 			log.error("Error inesperado al eliminar el proyecto " + id, e);
 			return crearRespuestaError(HttpStatus.INTERNAL_SERVER_ERROR, "Ocurrio un error interno en el servidor");

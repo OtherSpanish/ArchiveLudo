@@ -1,7 +1,7 @@
 import { Component, Input } from '@angular/core';
 import { Institucion } from '../../models/custodia-model';
 
-/*
+/**
  * Tarjeta de una institución custodia, para la columna derecha de la
  * pestaña "Copias" de la ficha.
  *
@@ -19,29 +19,45 @@ import { Institucion } from '../../models/custodia-model';
   standalone: false,
 })
 export class InstitucionCardComponent {
-  /* El "!" le dice a TypeScript: "el padre siempre me va a pasar este valor". */
+  /** El "!" le dice a TypeScript: "el padre siempre me va a pasar este valor". */
   @Input() institucion!: Institucion;
 
-  /* Opcional: el back aún no calcula cuántas copias custodia cada institución. */
+  /**
+   * Opcional: cuántas copias de ESTE videojuego custodia la institución (ficha
+   * del juego). Si no viene, se usa el total que calcula el back en
+   * institucion.cantidadCopiasCustodiadas (lista de instituciones).
+   */
   @Input() numeroCopias?: number;
 
-  /* Línea de tipo y país: "Museo · Colombia" */
+  /** Línea de tipo y país: "Museo · Colombia" */
   get tipoYPais(): string {
     return this.institucion.tipo + ' · ' + this.institucion.pais;
   }
 
-  /* Texto de copias, en singular o plural: "Custodia 1 copia" / "Custodia 2 copias" */
+  /** Texto de copias, en singular o plural: "Custodia 1 copia" / "Custodia 2 copias" */
   get textoCopias(): string {
-    if (this.numeroCopias === undefined) {
+    if (this.numeroCopias !== undefined) {
+      if (this.numeroCopias === 1) {
+        return 'Custodia 1 copia de este juego';
+      }
+      return 'Custodia ' + this.numeroCopias + ' copias de este juego';
+    }
+
+    const total = this.institucion.cantidadCopiasCustodiadas;
+
+    if (total === undefined || total === null) {
       return '';
     }
-    if (this.numeroCopias === 1) {
-      return 'Custodia 1 copia de este juego';
+    if (total === 0) {
+      return 'No custodia copias por ahora';
     }
-    return 'Custodia ' + this.numeroCopias + ' copias de este juego';
+    if (total === 1) {
+      return 'Custodia 1 copia';
+    }
+    return 'Custodia ' + total + ' copias';
   }
 
-  /*
+  /**
    * Contacto de la institución: el primer correo, o si no hay, el primer
    * teléfono. Si tiene más de uno, se avisa con "(+N más)".
    */

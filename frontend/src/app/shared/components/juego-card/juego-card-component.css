@@ -29,6 +29,14 @@
   outline-offset: 2px;
 }
 
+/* Imagen real del juego: mismo alto que la portada de relleno, recortada para llenar el espacio */
+.imagen {
+  display: block;
+  width: 100%;
+  height: 128px;
+  object-fit: cover;
+}
+
 /* Portada de relleno: 128 px de alto, iniciales abajo a la izquierda */
 .portada {
   display: flex;

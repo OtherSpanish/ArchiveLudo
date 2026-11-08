@@ -10,7 +10,8 @@
 <!--
   Filtros por estado. Son botones porque cambian lo que se ve en esta misma
   pantalla (no llevan a otra URL). aria-pressed le dice a los lectores de
-  pantalla cuál está elegido. Cada botón muestra cuántos proyectos tiene.
+  pantalla cuál está elegido. Al pulsar uno, el back devuelve ya filtrados
+  los proyectos de ese estado.
 -->
 <div class="filtros" role="group" aria-label="Filtrar por estado">
   @for (filtro of filtros; track filtro.valor) {
@@ -19,23 +20,28 @@
             [class.activo]="filtroActivo === filtro.valor"
             [attr.aria-pressed]="filtroActivo === filtro.valor"
             (click)="seleccionarFiltro(filtro.valor)">
-      {{ filtro.etiqueta }} ({{ contar(filtro.valor) }})
+      {{ filtro.etiqueta }}
     </button>
   }
 </div>
 
+<!-- Cantidad de proyectos del filtro elegido (cabecera X-Total-Count) -->
+@if (!cargando && !hayError) {
+  <p class="cantidad">{{ total }} {{ total === 1 ? 'proyecto' : 'proyectos' }}</p>
+}
+
 <!-- Cuadrícula: una columna por proyecto. Arriba el juego, debajo la tarjeta del proyecto. -->
 <section class="resultados" aria-label="Proyectos">
-  @for (item of proyectosVisibles; track item.detalle.proyecto.idProyecto) {
+  @for (item of proyectos; track item.idProyecto) {
     <article class="item">
 
       <!-- Enlace a la ficha del videojuego al que pertenece el proyecto -->
-      <a class="juego" [routerLink]="['/videojuegos', item.videojuego.idVideojuego]">
-        {{ item.videojuego.titulo }}
-        <span class="plataforma">{{ item.videojuego.plataformaOriginal }} · {{ item.videojuego.anioLanzamiento }}</span>
+      <a class="juego" [routerLink]="['/videojuegos', item.idVideojuego]">
+        {{ item.tituloVideojuego }}
+        <span class="plataforma">{{ item.plataformaVideojuego }}</span>
       </a>
 
-      <app-proyecto-card [detalle]="item.detalle"></app-proyecto-card>
+      <app-proyecto-card [proyecto]="item" [expertos]="expertos"></app-proyecto-card>
 
     </article>
   }
@@ -50,6 +56,6 @@
   <p class="mensaje">{{ mensajeError }}</p>
 }
 
-@if (!cargando && !hayError && proyectosVisibles.length === 0) {
+@if (!cargando && !hayError && proyectos.length === 0) {
   <p class="mensaje">No hay proyectos con ese filtro.</p>
 }

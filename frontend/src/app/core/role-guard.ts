@@ -3,7 +3,7 @@ import { CanActivateFn, Router } from '@angular/router';
 import { Rol } from '../shared/models/sesion-model';
 import { AuthService } from './auth-service';
 
-/*
+/**
  * Guard de rol: deja pasar solo a quien tiene uno de los roles que la ruta
  * declara en su "data". Si no lo tiene, lo manda al Inicio.
  *

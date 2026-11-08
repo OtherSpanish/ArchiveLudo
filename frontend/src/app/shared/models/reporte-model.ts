@@ -1,43 +1,38 @@
-/*
- * Los seis reportes de trazabilidad. El valor es la parte de la URL del back:
+/**
+ * Los seis reportes del archivo. El valor es la parte de la URL del back:
  * GET /api/reportes/{tipo}
  */
 export type TipoReporte =
-  | 'estatus-legal'
-  | 'eventos-riesgo'
-  | 'proyectos'
+  | 'estatus'
+  | 'eventos'
   | 'copias'
   | 'custodias'
+  | 'proyectos'
   | 'expertos';
 
-/* Una opción del selector de reportes: su valor, su nombre y qué responde. */
+/** Una opción del selector de reportes: su valor, su nombre y qué responde. */
 export interface OpcionReporte {
   valor: TipoReporte;
   etiqueta: string;
   descripcion: string;
 }
 
-/* Los reportes disponibles, en el orden en que se muestran en el selector. */
+/** Los reportes disponibles, en el orden en que se muestran en el selector. */
 export const OPCIONES_REPORTE: OpcionReporte[] = [
   {
-    valor: 'estatus-legal',
+    valor: 'estatus',
     etiqueta: 'Estatus legal',
-    descripcion: 'Cómo ha cambiado el estatus legal del juego a lo largo del tiempo.'
+    descripcion: 'Cómo ha cambiado el estatus legal de los videojuegos a lo largo del tiempo.'
   },
   {
-    valor: 'eventos-riesgo',
+    valor: 'eventos',
     etiqueta: 'Eventos de riesgo',
-    descripcion: 'Los eventos de riesgo que ha sufrido el juego.'
-  },
-  {
-    valor: 'proyectos',
-    etiqueta: 'Proyectos de restauración',
-    descripcion: 'Los proyectos de restauración que ha habido sobre el juego.'
+    descripcion: 'Los eventos de riesgo que han sufrido los videojuegos.'
   },
   {
     valor: 'copias',
-    etiqueta: 'Copias en el tiempo',
-    descripcion: 'Cuántas copias ha tenido el juego a lo largo del tiempo.'
+    etiqueta: 'Copias',
+    descripcion: 'Las copias registradas, con su estado de integridad y la institución que las custodia hoy.'
   },
   {
     valor: 'custodias',
@@ -45,23 +40,38 @@ export const OPCIONES_REPORTE: OpcionReporte[] = [
     descripcion: 'En qué institución ha estado cada copia, desde cuándo y hasta cuándo.'
   },
   {
+    valor: 'proyectos',
+    etiqueta: 'Proyectos de restauración',
+    descripcion: 'Los proyectos de restauración, con su estado y si ya tienen informe final.'
+  },
+  {
     valor: 'expertos',
     etiqueta: 'Participación de expertos',
-    descripcion: 'Qué expertos participaron en la restauración del juego en el rango elegido.'
+    descripcion: 'Qué expertos participaron en cada proyecto, con su rol y sus fechas.'
   }
 ];
 
-/*
- * GET /api/reportes/{tipo}?idVideojuego=8&desde=2025-01-01&hasta=2025-12-31
- * Un reporte como tabla genérica: los nombres de las columnas y las filas,
- * donde cada celda es un texto.
- *  - "desde" y "hasta" son opcionales; si no vienen, el reporte es completo.
- *  - Las fechas viajan como yyyy-MM-dd y la pantalla las formatea sola.
- *  - Una celda vacía se muestra como "—". Para algo en curso, el back
- *    manda un texto como "Vigente".
+/**
+ * Filtros opcionales de GET /api/reportes/{tipo}. Los que no se usan no se envían.
+ *  - idVideojuego: solo ese videojuego
+ *  - desde / hasta: rango de fechas, en formato AAAA-MM-DD
+ */
+export interface FiltrosReporte {
+  idVideojuego?: number;
+  desde?: string;
+  hasta?: string;
+}
+
+/**
+ * GET /api/reportes/{tipo}
+ * Un reporte como tabla genérica, igual para los seis tipos.
+ *  - Cada fila trae un texto por columna, en el mismo orden de "columnas".
+ *  - Todo llega ya formateado por el back (fechas dd/MM/yyyy, "Sí", "Vigente"...);
+ *    una celda vacía llega como "".
  *  - Si no hay registros, "filas" viene vacía (las columnas siempre vienen).
  */
-export interface ReporteTabla {
+export interface Reporte {
+  titulo: string;
   columnas: string[];
   filas: string[][];
 }

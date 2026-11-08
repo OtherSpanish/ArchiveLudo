@@ -5,7 +5,7 @@ import { ReactiveFormsModule } from '@angular/forms';
 
 import { LoginComponent } from './login/login-component';
 
-/*
+/**
  * Módulo de autenticación. Por ahora solo tiene la pantalla de login.
  * /login es la única ruta pública de la app: no lleva guards.
  * ReactiveFormsModule da las herramientas del formulario.

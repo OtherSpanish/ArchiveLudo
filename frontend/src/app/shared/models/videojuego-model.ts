@@ -31,9 +31,16 @@ export interface Videojuego {
   idEstudio?: number;
   idUsuario?: number;
   idsEditoras?: number[];
+
+  /**
+   * Enlace de la imagen (portada) guardada en Cloudinary. Si el videojuego
+   * no tiene imagen, el back no manda este campo y la pantalla muestra la
+   * portada de relleno (color con las iniciales).
+   */
+  urlImagen?: string;
 }
 
-/*
+/**
  * Cuerpo de POST /api/videojuegos y PUT /api/videojuegos/{id}.
  * No lleva idVideojuego (va en la URL) ni idUsuario (sale del token).
  *  - anioLanzamiento: entre 1950 y el año actual.
@@ -50,7 +57,7 @@ export interface VideojuegoNuevo {
   idsEditoras: number[];
 }
 
-/*
+/**
  * Cuerpo de POST /api/estudios y PUT /api/estudios/{id}.
  *  - estadoActual: 'activo' o 'desaparecido'.
  *  - anioFundacion: entre 1800 y el año actual.

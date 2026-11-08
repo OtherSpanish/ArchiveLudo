@@ -1,0 +1,82 @@
+<!--
+  Formulario de custodia (registrar o editar).
+  Registrar = trasladar la copia a una institución: cierra la custodia anterior.
+-->
+<form class="formulario" [formGroup]="formulario" (ngSubmit)="guardar()" novalidate>
+
+  <h3 class="titulo-formulario">{{ esEdicion ? 'Editar custodia' : 'Registrar custodia' }}</h3>
+
+  @if (!esEdicion) {
+    <p class="aviso">
+      Si la copia tiene una custodia vigente, se cerrará con la fecha de inicio de esta.
+    </p>
+  }
+
+  <div class="grupo">
+    <label class="etiqueta" for="campo-institucion-custodia">Institución</label>
+    <select id="campo-institucion-custodia"
+            class="campo"
+            formControlName="idInstitucion"
+            [class.invalido]="hayError('idInstitucion')">
+      <option [ngValue]="null">Selecciona una institución</option>
+      @for (institucion of instituciones; track institucion.idInstitucion) {
+        <option [ngValue]="institucion.idInstitucion">{{ institucion.nombre }}</option>
+      }
+    </select>
+    @if (hayError('idInstitucion')) {
+      <p class="error">{{ textoError('idInstitucion') }}</p>
+    }
+  </div>
+
+  <div class="grupo">
+    <label class="etiqueta" for="campo-inicio-custodia">Fecha de inicio</label>
+    <input id="campo-inicio-custodia"
+           class="campo"
+           type="date"
+           formControlName="fechaInicio"
+           [class.invalido]="hayError('fechaInicio')">
+    @if (hayError('fechaInicio')) {
+      <p class="error">{{ textoError('fechaInicio') }}</p>
+    }
+  </div>
+
+  <!-- La fecha de fin solo se puede escribir al editar -->
+  @if (esEdicion) {
+    <div class="grupo">
+      <label class="etiqueta" for="campo-fin-custodia">Fecha de fin <span class="opcional">(opcional)</span></label>
+      <input id="campo-fin-custodia"
+             class="campo"
+             type="date"
+             formControlName="fechaFin">
+    </div>
+  }
+
+  <div class="grupo">
+    <label class="etiqueta" for="campo-condicion-custodia">Condiciones de almacenamiento</label>
+    <input id="campo-condicion-custodia"
+           class="campo"
+           type="text"
+           formControlName="condicionAlmacenamiento"
+           placeholder="Ej.: Vitrina con control de humedad"
+           [class.invalido]="hayError('condicionAlmacenamiento')">
+    @if (hayError('condicionAlmacenamiento')) {
+      <p class="error">{{ textoError('condicionAlmacenamiento') }}</p>
+    }
+  </div>
+
+  @if (errorGeneral) {
+    <p class="error-general" role="alert">{{ errorGeneral }}</p>
+  }
+
+  <div class="botones">
+    <button type="button" class="boton-secundario" (click)="cancelar()">Cancelar</button>
+    <button type="submit" class="boton-principal" [disabled]="guardando">
+      @if (guardando) {
+        Guardando…
+      } @else {
+        Guardar custodia
+      }
+    </button>
+  </div>
+
+</form>

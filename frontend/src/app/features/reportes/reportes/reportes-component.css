@@ -201,6 +201,42 @@
   background: var(--bg-card);
 }
 
+/* ---------- Cabecera del resultado (título + botón Imprimir) ---------- */
+.cabecera-resultado {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.boton-imprimir {
+  flex-shrink: 0;
+}
+
+/* ---------- Impresión: solo el título y la tabla ---------- */
+@media print {
+  .encabezado,
+  .formulario,
+  .mensaje,
+  .boton-imprimir {
+    display: none;
+  }
+
+  .titulo-resultado,
+  .juego-resultado,
+  .conteo,
+  .tabla th,
+  .tabla td {
+    color: #000;
+  }
+
+  .tabla th,
+  .tabla td {
+    border-color: #999;
+  }
+}
+
 /* ---------- Móvil ---------- */
 @media (max-width: 600px) {
   .titulo {

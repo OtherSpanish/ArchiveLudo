@@ -3,28 +3,25 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, ParamMap, Router } from '@angular/router';
 import { Estudio, Videojuego } from '../../../shared/models/videojuego-model';
-import { Custodia } from '../../../shared/models/custodia-model';
+import { Custodia, Institucion } from '../../../shared/models/custodia-model';
 import { Copia } from '../../../shared/models/copia-model';
 import { EstatusLegal, EstatusLegalNuevo } from '../../../shared/models/estatus-legal-model';
 import { EventoRiesgo } from '../../../shared/models/evento-riesgo-model';
 import { CompaniaEditora } from '../../../shared/models/compania-editora-model';
 import { ArchiveludoApiService } from '../../../core/archiveludo-api-service';
-import {
-  CopiaConCustodia,
-  InstitucionConCopias,
-  ProyectoConDetalle
-} from '../../../shared/models/api-model';
+import { Experto } from '../../../shared/models/experto-model';
+import { ProyectoDeRestauracion } from '../../../shared/models/proyecto-model';
 
-/*
+/**
  * Las cuatro pestañas de la ficha. Cada valor es el identificador interno
  * de la pestaña; el texto que ve el usuario se arma en el HTML.
  */
 type Pestana = 'copias' | 'proyectos' | 'legal' | 'eventos';
 
-/* Los cuatro estatus legales que acepta el back (texto legible). */
+/** Los cuatro estatus legales que acepta el back (texto legible). */
 const ESTATUS_OPCIONES: string[] = ['Protegido', 'Dominio público', 'Huérfano', 'Abandonware'];
 
-/*
+/**
  * Pantalla de la ficha de un videojuego (/videojuegos/:id).
  * Incluye: cabecera, pestañas, pestaña Copias, historial de custodia,
  * pestaña Proyectos, pestaña Estatus legal y pestaña Eventos de riesgo.
@@ -37,99 +34,176 @@ const ESTATUS_OPCIONES: string[] = ['Protegido', 'Dominio público', 'Huérfano'
 })
 export class FichaVideojuegoComponent implements OnInit {
 
-  /*
+  /**
    * El juego que se está mostrando. Empieza sin valor (undefined) y se llena
    * cuando se carga. El "?" indica que puede no tener valor: si el id de la URL
    * no existe, se queda así y el HTML muestra un mensaje de "no encontrado".
    */
   videojuego?: Videojuego;
 
-  /* Nombres de las editoras del juego (se cruzan idsEditoras con GET /api/editoras). */
+  /** Nombres de las editoras del juego (se cruzan idsEditoras con GET /api/editoras). */
   nombresEditoras: string[] = [];
 
-  /* true cuando el back respondió que el juego no existe o falló la carga. */
+  /** true cuando el back respondió que el juego no existe o falló la carga. */
   hayError: boolean = false;
 
   numeroCopias: number = 0;
 
   numeroProyectos: number = 0;
 
-  /* Copias del juego, cada una con su custodia vigente (pestaña Copias, columna izquierda). */
-  copias: CopiaConCustodia[] = [];
-
-  /*
-   * Instituciones que custodian copias de este juego (columna derecha).
-   * Se arman en el front a partir de las custodias vigentes de las copias
-   * (ver agruparInstituciones); no vienen del back.
+  /**
+   * Copias del juego (pestaña Copias, columna izquierda). Cada una trae
+   * idInstitucionActual y nombreInstitucionActual si tiene custodia vigente.
    */
-  instituciones: InstitucionConCopias[] = [];
+  copias: Copia[] = [];
 
-  /*
-   * Copia cuyo historial de custodia se muestra abajo. Por ahora siempre es
-   * la primera de la lista. Vale 0 mientras el juego no tenga copias.
+  /**
+   * Instituciones que custodian hoy copias de este juego (columna derecha).
+   * Las entrega el back (GET /api/videojuegos/{id}/instituciones), cada una con
+   * cantidadCopiasDelVideojuego.
+   */
+  instituciones: Institucion[] = [];
+
+  /**
+   * Copia cuyo historial de custodia se muestra abajo. Al cargar es la
+   * primera de la lista; el botón "Ver historial de custodia" de cada tarjeta
+   * la cambia. Vale 0 mientras el juego no tenga copias.
    */
   idCopiaHistorial: number = 0;
 
-  /* Periodos de custodia de esa copia, para la línea de tiempo. */
+  /** Periodos de custodia de esa copia, para la línea de tiempo. */
   custodiasHistorial: Custodia[] = [];
 
-  /* Proyectos de restauración del juego, con sus expertos (pestaña Proyectos). */
-  proyectos: ProyectoConDetalle[] = [];
+  /** Proyectos de restauración del juego, con sus participaciones (pestaña Proyectos). */
+  proyectos: ProyectoDeRestauracion[] = [];
 
-  /*
+  /** Catálogo de expertos: sirve para mostrar el nombre de cada participación. */
+  expertos: Experto[] = [];
+
+  /**
    * Historial de estatus legal (pestaña Estatus legal), del más reciente al
    * más antiguo. El primero es el vigente: el HTML lo marca con $first.
    */
   historialLegal: EstatusLegal[] = [];
 
-  /* Bitácora de eventos de riesgo (pestaña Eventos de riesgo), del más reciente al más antiguo. */
+  /** Bitácora de eventos de riesgo (pestaña Eventos de riesgo), del más reciente al más antiguo. */
   eventos: EventoRiesgo[] = [];
+
+  // ---- Eventos de riesgo: agregar, editar y eliminar ----
+
+  /** true cuando el formulario de evento está desplegado. */
+  mostrarFormularioEvento: boolean = false;
+
+  /** Evento que se edita. Undefined cuando el formulario agrega uno nuevo. */
+  eventoEditando?: EventoRiesgo;
+
+  /** Id del evento que pide confirmación para eliminarse (0 = ninguno). */
+  idConfirmandoEliminarEvento: number = 0;
+
+  /** Mensaje si el back rechaza eliminar un evento. */
+  errorEvento: string = '';
+
+  // ---- Copias: eliminar (editar lleva a otra pantalla) ----
+
+  /** Id de la copia que pide confirmación para eliminarse (0 = ninguna). */
+  idConfirmandoEliminarCopia: number = 0;
+
+  /** Mensaje si el back rechaza eliminar una copia (por ejemplo, 409 si tiene custodias). */
+  errorCopia: string = '';
+
+  // ---- Historial de custodia: registrar, editar y eliminar ----
+
+  /** Catálogo completo de instituciones (selector del formulario de custodia). */
+  catalogoInstituciones: Institucion[] = [];
+
+  /** true cuando el formulario de custodia está desplegado. */
+  mostrarFormularioCustodia: boolean = false;
+
+  /** Custodia que se edita. Undefined cuando el formulario registra una nueva. */
+  custodiaEditando?: Custodia;
+
+  /** Id de la custodia que pide confirmación para eliminarse (0 = ninguna). */
+  idConfirmandoEliminarCustodia: number = 0;
+
+  /** Mensaje si el back rechaza una acción de custodia. */
+  errorCustodia: string = '';
+
+  // ---- Pestaña Proyectos: crear, editar, eliminar y gestionar expertos ----
+
+  /** true cuando el formulario de proyecto está desplegado. */
+  mostrarFormularioProyecto: boolean = false;
+
+  /** Proyecto que se edita. Undefined cuando el formulario crea uno nuevo. */
+  proyectoEditando?: ProyectoDeRestauracion;
+
+  /** Id del proyecto cuyos expertos se están gestionando (0 = ninguno). */
+  idProyectoGestionando: number = 0;
+
+  /** Id del proyecto que pide confirmación para eliminarse (0 = ninguno). */
+  idConfirmandoEliminarProyecto: number = 0;
+
+  /** Mensaje si el back rechaza eliminar un proyecto. */
+  errorProyecto: string = '';
 
   // ---- Eliminar el videojuego (solo administrador) ----
 
-  /* true cuando se pidió eliminar y se espera la confirmación del usuario. */
+  /** true cuando se pidió eliminar y se espera la confirmación del usuario. */
   confirmandoEliminar: boolean = false;
 
-  /* true mientras se espera la respuesta del back. */
+  /** true mientras se espera la respuesta del back. */
   eliminando: boolean = false;
 
-  /* Mensaje si el back rechaza la eliminación (por ejemplo, 409). */
+  /** Mensaje si el back rechaza la eliminación (por ejemplo, 409). */
   errorEliminar: string = '';
+
+  // ---- Imagen (portada) del videojuego ----
+
+  /** true mientras se sube la imagen (el back la envía a Cloudinary y tarda un poco). */
+  subiendoImagen: boolean = false;
+
+  /** true cuando se pidió quitar la imagen y se espera la confirmación (solo administrador). */
+  confirmandoQuitarImagen: boolean = false;
+
+  /** true mientras se espera la respuesta del back al quitar la imagen. */
+  quitandoImagen: boolean = false;
+
+  /** Mensaje si el back rechaza subir o quitar la imagen. */
+  errorImagen: string = '';
 
   // ---- Formulario "Agregar estatus legal" (pestaña Estatus legal) ----
 
-  /* Opciones del selector de estatus. */
+  /** Opciones del selector de estatus. */
   opcionesEstatus: string[] = ESTATUS_OPCIONES;
 
-  /* true cuando el formulario está desplegado. */
+  /** true cuando el formulario está desplegado. */
   mostrarFormularioEstatus: boolean = false;
 
-  /* El formulario. Se arma en el constructor. */
+  /** El formulario. Se arma en el constructor. */
   formularioEstatus: FormGroup;
 
-  /* true después del primer intento de guardar; sirve para mostrar errores de campos sin tocar. */
+  /** true después del primer intento de guardar; sirve para mostrar errores de campos sin tocar. */
   estatusEnviado: boolean = false;
 
-  /* true mientras se espera la respuesta del back. */
+  /** true mientras se espera la respuesta del back. */
   guardandoEstatus: boolean = false;
 
-  /* Mensaje de error si el back rechaza el guardado. */
+  /** Mensaje de error si el back rechaza el guardado. */
   errorEstatus: string = '';
 
-  /* Registro que se está editando. Es undefined cuando el formulario agrega uno nuevo. */
+  /** Registro que se está editando. Es undefined cuando el formulario agrega uno nuevo. */
   editandoEstatus?: EstatusLegal;
 
-  /* Id del registro que está pidiendo confirmación para eliminarse (0 = ninguno). */
+  /** Id del registro que está pidiendo confirmación para eliminarse (0 = ninguno). */
   idConfirmandoEliminarEstatus: number = 0;
 
-  /* Fecha máxima del campo de fecha: hoy. No se puede determinar un estatus en el futuro. */
+  /** Fecha máxima del campo de fecha: hoy. No se puede determinar un estatus en el futuro. */
   hoy: string = this.fechaHoy();
 
-  /* Pestaña que se está viendo. Empieza en "Copias", como en el boceto. */
+  /** Pestaña que se está viendo. Empieza en "Copias", como en el boceto. */
   pestanaActiva: Pestana = 'copias';
 
 
-  /*
+  /**
    * ActivatedRoute lee datos de la URL actual.
    * ArchiveludoApiService habla con el back.
    * ChangeDetectorRef avisa a Angular que hay que redibujar la pantalla.
@@ -148,7 +222,7 @@ export class FichaVideojuegoComponent implements OnInit {
     });
   }
 
-  /*
+  /**
    * Pide al back: el videojuego, su estatus legal y sus eventos.
    * También sus copias y sus proyectos.
    * Si el juego no existe (404) se queda sin valor y el HTML muestra
@@ -181,6 +255,9 @@ export class FichaVideojuegoComponent implements OnInit {
       error: (error) => this.mostrarError(error)
     });
 
+    // GET /api/videojuegos/{id}/instituciones (columna derecha)
+    this.cargarInstitucionesDelJuego(id);
+
     // GET /api/videojuegos/{id}/proyectos
     // Si el servidor aún no tiene este servicio, la pestaña queda vacía; un
     // error aquí NO debe ocultar toda la ficha (por eso no usa mostrarError).
@@ -188,33 +265,426 @@ export class FichaVideojuegoComponent implements OnInit {
       next: (proyectos) => this.alRecibirProyectos(proyectos),
       error: (error) => console.error('No se pudieron cargar los proyectos del videojuego', error)
     });
+
+    // GET /api/expertos (para armar los nombres). Si falla, la tarjeta usa "Experto #id".
+    this.api.obtenerExpertos().subscribe({
+      next: (expertos) => this.alRecibirExpertos(expertos),
+      error: (error) => console.error('No se pudieron cargar los expertos', error)
+    });
   }
 
-  private alRecibirProyectos(proyectos: ProyectoConDetalle[]): void {
+  private alRecibirProyectos(proyectos: ProyectoDeRestauracion[]): void {
     this.proyectos = proyectos;
     this.numeroProyectos = proyectos.length;
     this.cambios.markForCheck();
   }
 
-  /*
-   * Llegan las copias. El back aún no manda la custodia, así que cada copia
-   * se guarda sin custodiaActual (la tarjeta dice "sin custodia registrada").
-   */
-  private alRecibirCopias(copias: Copia[]): void {
-    const lista: CopiaConCustodia[] = [];
+  private alRecibirExpertos(expertos: Experto[]): void {
+    this.expertos = expertos;
+    this.cambios.markForCheck();
+  }
 
-    for (const copia of copias) {
-      lista.push({ copia: copia });
+  /** El proyecto cuyos expertos se gestionan, buscado por id en la lista actual. */
+  get proyectoGestionando(): ProyectoDeRestauracion | undefined {
+    for (const proyecto of this.proyectos) {
+      if (proyecto.idProyecto === this.idProyectoGestionando) {
+        return proyecto;
+      }
+    }
+    return undefined;
+  }
+
+  /** Abre el formulario vacío para crear un proyecto. */
+  abrirNuevoProyecto(): void {
+    this.proyectoEditando = undefined;
+    this.idProyectoGestionando = 0;
+    this.idConfirmandoEliminarProyecto = 0;
+    this.errorProyecto = '';
+    this.mostrarFormularioProyecto = true;
+  }
+
+  /** Abre el formulario con los datos de un proyecto (editar). */
+  abrirEditarProyecto(proyecto: ProyectoDeRestauracion): void {
+    this.proyectoEditando = proyecto;
+    this.idProyectoGestionando = 0;
+    this.idConfirmandoEliminarProyecto = 0;
+    this.errorProyecto = '';
+    this.mostrarFormularioProyecto = true;
+  }
+
+  cerrarFormularioProyecto(): void {
+    this.mostrarFormularioProyecto = false;
+    this.proyectoEditando = undefined;
+  }
+
+  /** El formulario guardó: se cierra y se vuelve a pedir la lista. */
+  alGuardarProyecto(): void {
+    this.cerrarFormularioProyecto();
+    this.recargarProyectos();
+  }
+
+  /** Abre el panel de expertos de un proyecto (cierra el formulario si estaba abierto). */
+  gestionarExpertos(proyecto: ProyectoDeRestauracion): void {
+    this.mostrarFormularioProyecto = false;
+    this.proyectoEditando = undefined;
+    this.idConfirmandoEliminarProyecto = 0;
+    this.errorProyecto = '';
+    this.idProyectoGestionando = proyecto.idProyecto;
+  }
+
+  cerrarGestionExpertos(): void {
+    this.idProyectoGestionando = 0;
+  }
+
+  /** Vuelve a pedir los proyectos del juego (cambian los expertos, el estado, etc.). */
+  recargarProyectos(): void {
+    if (!this.videojuego) {
+      return;
     }
 
-    this.copias = lista;
-    this.numeroCopias = lista.length;
-    this.instituciones = this.agruparInstituciones(lista);
+    this.api.obtenerProyectos(this.videojuego.idVideojuego).subscribe({
+      next: (proyectos) => this.alRecibirProyectos(proyectos),
+      error: (error) => console.error('No se pudieron recargar los proyectos', error)
+    });
+  }
+
+  /** Primer paso de eliminar un proyecto: confirmación debajo de su tarjeta. */
+  pedirEliminarProyecto(proyecto: ProyectoDeRestauracion): void {
+    this.errorProyecto = '';
+    this.idConfirmandoEliminarProyecto = proyecto.idProyecto;
+  }
+
+  cancelarEliminarProyecto(): void {
+    this.idConfirmandoEliminarProyecto = 0;
+  }
+
+  /** Segundo paso: DELETE /api/proyectos/{id}; borra también sus participaciones. */
+  confirmarEliminarProyecto(proyecto: ProyectoDeRestauracion): void {
+    this.api.eliminarProyecto(proyecto.idProyecto).subscribe({
+      next: () => this.alEliminarProyecto(),
+      error: (error) => this.alFallarEliminarProyecto(error)
+    });
+  }
+
+  private alEliminarProyecto(): void {
+    this.idConfirmandoEliminarProyecto = 0;
+    this.recargarProyectos();
+  }
+
+  private alFallarEliminarProyecto(error: HttpErrorResponse): void {
+    console.error('No se pudo eliminar el proyecto', error);
+    this.idConfirmandoEliminarProyecto = 0;
+
+    if (error.status === 403) {
+      this.errorProyecto = 'Solo un administrador puede eliminar proyectos.';
+    } else if (error.status === 404) {
+      this.errorProyecto = 'Ese proyecto ya no existe.';
+    } else if (error.status === 502) {
+      // Cloudinary no pudo borrar el PDF del informe: el back no borró nada.
+      this.errorProyecto = 'No se pudo eliminar el informe del proyecto. Inténtalo de nuevo en unos minutos.';
+    } else {
+      this.errorProyecto = 'No se pudo eliminar el proyecto. Inténtalo de nuevo.';
+    }
 
     this.cambios.markForCheck();
   }
 
-  /* Llega el juego: se muestra y se piden su estudio y las editoras. */
+  /**
+   * Llegan las copias: si hay, se carga el historial de custodia de una
+   * y el catálogo de instituciones para el formulario de custodia.
+   */
+  private alRecibirCopias(copias: Copia[]): void {
+    this.copias = copias;
+    this.numeroCopias = copias.length;
+    this.cambios.markForCheck();
+
+    // Se conserva la copia elegida si sigue existiendo; si no, se usa la primera.
+    if (copias.length > 0) {
+      if (this.copiaExiste(this.idCopiaHistorial, copias)) {
+        this.verHistorialCustodia(this.idCopiaHistorial);
+      } else {
+        this.verHistorialCustodia(copias[0].idCopia);
+      }
+
+      // GET /api/instituciones (selector del formulario de custodia)
+      this.api.obtenerInstituciones().subscribe({
+        next: (lista) => this.alRecibirCatalogoInstituciones(lista),
+        error: (error) => console.error('No se pudieron cargar las instituciones', error)
+      });
+    } else {
+      this.idCopiaHistorial = 0;
+      this.custodiasHistorial = [];
+    }
+  }
+
+  /** true si una copia con ese id está en la lista. */
+  private copiaExiste(idCopia: number, copias: Copia[]): boolean {
+    for (const copia of copias) {
+      if (copia.idCopia === idCopia) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /** Abre el formulario vacío para agregar un evento. */
+  abrirNuevoEvento(): void {
+    this.eventoEditando = undefined;
+    this.idConfirmandoEliminarEvento = 0;
+    this.errorEvento = '';
+    this.mostrarFormularioEvento = true;
+  }
+
+  /** Abre el formulario con los datos de un evento (editar). */
+  abrirEditarEvento(evento: EventoRiesgo): void {
+    this.eventoEditando = evento;
+    this.idConfirmandoEliminarEvento = 0;
+    this.errorEvento = '';
+    this.mostrarFormularioEvento = true;
+  }
+
+  cerrarFormularioEvento(): void {
+    this.mostrarFormularioEvento = false;
+    this.eventoEditando = undefined;
+  }
+
+  /** El formulario guardó: se cierra y se vuelve a pedir la bitácora. */
+  alGuardarEvento(): void {
+    this.cerrarFormularioEvento();
+    this.recargarEventos();
+  }
+
+  /** Vuelve a pedir los eventos del juego. */
+  recargarEventos(): void {
+    if (!this.videojuego) {
+      return;
+    }
+
+    this.api.obtenerEventosRiesgo(this.videojuego.idVideojuego).subscribe({
+      next: (eventos) => this.alRecibirEventos(eventos),
+      error: (error) => console.error('No se pudieron recargar los eventos', error)
+    });
+  }
+
+  /** Primer paso de eliminar un evento: confirmación en la misma tarjeta. */
+  pedirEliminarEvento(evento: EventoRiesgo): void {
+    this.errorEvento = '';
+    this.idConfirmandoEliminarEvento = evento.idEvento;
+  }
+
+  cancelarEliminarEvento(): void {
+    this.idConfirmandoEliminarEvento = 0;
+  }
+
+  /** Segundo paso: DELETE /api/eventos-riesgo/{id}. */
+  confirmarEliminarEvento(evento: EventoRiesgo): void {
+    this.api.eliminarEventoRiesgo(evento.idEvento).subscribe({
+      next: () => this.alEliminarEvento(),
+      error: (error) => this.alFallarEliminarEvento(error)
+    });
+  }
+
+  private alEliminarEvento(): void {
+    this.idConfirmandoEliminarEvento = 0;
+    this.recargarEventos();
+  }
+
+  private alFallarEliminarEvento(error: HttpErrorResponse): void {
+    console.error('No se pudo eliminar el evento', error);
+    this.idConfirmandoEliminarEvento = 0;
+
+    if (error.status === 403) {
+      this.errorEvento = 'Solo un administrador puede eliminar eventos de riesgo.';
+    } else if (error.status === 404) {
+      this.errorEvento = 'Ese evento ya no existe.';
+    } else {
+      this.errorEvento = 'No se pudo eliminar el evento. Inténtalo de nuevo.';
+    }
+
+    this.cambios.markForCheck();
+  }
+
+  /** Editar una copia: lleva a /copias/:id/editar. */
+  editarCopia(idCopia: number): void {
+    this.router.navigate(['/copias', idCopia, 'editar']);
+  }
+
+  /** Primer paso de eliminar una copia: confirmación sobre la lista. */
+  pedirEliminarCopia(idCopia: number): void {
+    this.errorCopia = '';
+    this.idConfirmandoEliminarCopia = idCopia;
+  }
+
+  cancelarEliminarCopia(): void {
+    this.idConfirmandoEliminarCopia = 0;
+  }
+
+  /** Segundo paso: DELETE /api/copias/{id}. 409 si la copia tiene custodias. */
+  confirmarEliminarCopia(): void {
+    this.api.eliminarCopia(this.idConfirmandoEliminarCopia).subscribe({
+      next: () => this.alEliminarCopia(),
+      error: (error) => this.alFallarEliminarCopia(error)
+    });
+  }
+
+  private alEliminarCopia(): void {
+    this.idConfirmandoEliminarCopia = 0;
+    this.recargarCopias();
+  }
+
+  private alFallarEliminarCopia(error: HttpErrorResponse): void {
+    console.error('No se pudo eliminar la copia', error);
+    this.idConfirmandoEliminarCopia = 0;
+
+    if (error.error && error.error.mensaje) {
+      this.errorCopia = error.error.mensaje;
+    } else if (error.status === 403) {
+      this.errorCopia = 'Solo un administrador puede eliminar copias.';
+    } else {
+      this.errorCopia = 'No se pudo eliminar la copia. Inténtalo de nuevo.';
+    }
+
+    this.cambios.markForCheck();
+  }
+
+  /** Vuelve a pedir las copias (cambian sus custodias vigentes y el historial). */
+  recargarCopias(): void {
+    if (!this.videojuego) {
+      return;
+    }
+
+    this.api.obtenerCopias(this.videojuego.idVideojuego).subscribe({
+      next: (copias) => this.alRecibirCopias(copias),
+      error: (error) => this.mostrarError(error)
+    });
+
+    // Al cambiar una custodia, cambia también quién custodia el juego hoy.
+    this.cargarInstitucionesDelJuego(this.videojuego.idVideojuego);
+  }
+
+  /** Abre el formulario vacío para registrar (trasladar) una custodia. */
+  abrirNuevaCustodia(): void {
+    this.custodiaEditando = undefined;
+    this.idConfirmandoEliminarCustodia = 0;
+    this.errorCustodia = '';
+    this.mostrarFormularioCustodia = true;
+  }
+
+  /** Abre el formulario con los datos de una custodia (editar). El id llega desde el historial. */
+  abrirEditarCustodia(idCustodia: number): void {
+    for (const custodia of this.custodiasHistorial) {
+      if (custodia.idCustodia === idCustodia) {
+        this.custodiaEditando = custodia;
+        this.idConfirmandoEliminarCustodia = 0;
+        this.errorCustodia = '';
+        this.mostrarFormularioCustodia = true;
+      }
+    }
+  }
+
+  cerrarFormularioCustodia(): void {
+    this.mostrarFormularioCustodia = false;
+    this.custodiaEditando = undefined;
+  }
+
+  /** El formulario guardó: se cierra y se refrescan copias e historial. */
+  alGuardarCustodia(): void {
+    this.cerrarFormularioCustodia();
+    this.recargarCopias();
+  }
+
+  /** Primer paso de eliminar una custodia: confirmación sobre el historial. */
+  pedirEliminarCustodia(idCustodia: number): void {
+    this.mostrarFormularioCustodia = false;
+    this.custodiaEditando = undefined;
+    this.errorCustodia = '';
+    this.idConfirmandoEliminarCustodia = idCustodia;
+  }
+
+  cancelarEliminarCustodia(): void {
+    this.idConfirmandoEliminarCustodia = 0;
+  }
+
+  /** Segundo paso: DELETE /api/custodias/{id}. Si era la vigente, la copia queda sin custodia. */
+  confirmarEliminarCustodia(): void {
+    this.api.eliminarCustodia(this.idConfirmandoEliminarCustodia).subscribe({
+      next: () => this.alEliminarCustodia(),
+      error: (error) => this.alFallarEliminarCustodia(error)
+    });
+  }
+
+  private alEliminarCustodia(): void {
+    this.idConfirmandoEliminarCustodia = 0;
+    this.recargarCopias();
+  }
+
+  private alFallarEliminarCustodia(error: HttpErrorResponse): void {
+    console.error('No se pudo eliminar la custodia', error);
+    this.idConfirmandoEliminarCustodia = 0;
+
+    if (error.status === 403) {
+      this.errorCustodia = 'Solo un administrador puede eliminar custodias.';
+    } else if (error.status === 404) {
+      this.errorCustodia = 'Esa custodia ya no existe.';
+    } else {
+      this.errorCustodia = 'No se pudo eliminar la custodia. Inténtalo de nuevo.';
+    }
+
+    this.cambios.markForCheck();
+  }
+
+  /** true si al menos una copia tiene institución actual. */
+  private hayCustodiaVigente(copias: Copia[]): boolean {
+    for (const copia of copias) {
+      if (copia.idInstitucionActual !== undefined) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /** Pide las instituciones que custodian hoy copias de este juego. */
+  private cargarInstitucionesDelJuego(idVideojuego: number): void {
+    this.api.obtenerInstitucionesDelVideojuego(idVideojuego).subscribe({
+      next: (lista) => this.alRecibirInstitucionesDelJuego(lista),
+      error: (error) => console.error('No se pudieron cargar las instituciones del juego', error)
+    });
+  }
+
+  private alRecibirInstitucionesDelJuego(lista: Institucion[]): void {
+    this.instituciones = lista;
+    this.cambios.markForCheck();
+  }
+
+  /** Llega el catálogo de instituciones: se guarda para el selector del formulario de custodia. */
+  private alRecibirCatalogoInstituciones(catalogo: Institucion[]): void {
+    this.catalogoInstituciones = catalogo;
+    this.cambios.markForCheck();
+  }
+
+  /**
+   * Muestra el historial de custodia de una copia (botón de la tarjeta).
+   * GET /api/copias/{id}/custodias. Si falla, el historial queda vacío.
+   */
+  verHistorialCustodia(idCopia: number): void {
+    this.idCopiaHistorial = idCopia;
+    this.custodiasHistorial = [];
+
+    this.api.obtenerCustodias(idCopia).subscribe({
+      next: (custodias) => this.alRecibirCustodias(idCopia, custodias),
+      error: (error) => console.error('No se pudo cargar el historial de custodia', error)
+    });
+  }
+
+  /** Solo se acepta la respuesta de la copia que sigue seleccionada. */
+  private alRecibirCustodias(idCopia: number, custodias: Custodia[]): void {
+    if (idCopia === this.idCopiaHistorial) {
+      this.custodiasHistorial = custodias;
+      this.cambios.markForCheck();
+    }
+  }
+
+  /** Llega el juego: se muestra y se piden su estudio y las editoras. */
   private alRecibirVideojuego(juego: Videojuego): void {
     this.videojuego = juego;
     this.cambios.markForCheck();
@@ -237,7 +707,7 @@ export class FichaVideojuegoComponent implements OnInit {
     }
   }
 
-  /* Guarda el estudio dentro del juego, para que textoEstudio lo muestre. */
+  /** Guarda el estudio dentro del juego, para que textoEstudio lo muestre. */
   private alRecibirEstudio(estudio: Estudio): void {
     if (this.videojuego) {
       this.videojuego.estudio = estudio;
@@ -245,7 +715,7 @@ export class FichaVideojuegoComponent implements OnInit {
     this.cambios.markForCheck();
   }
 
-  /* Se queda solo con los nombres de las editoras cuyo id está en idsEditoras. */
+  /** Se queda solo con los nombres de las editoras cuyo id está en idsEditoras. */
   private alRecibirEditoras(editoras: CompaniaEditora[], ids: number[]): void {
     const nombres: string[] = [];
 
@@ -269,7 +739,7 @@ export class FichaVideojuegoComponent implements OnInit {
     this.cambios.markForCheck();
   }
 
-  /* El detalle del error queda en la consola (F12). */
+  /** El detalle del error queda en la consola (F12). */
   private mostrarError(error: unknown): void {
     console.error('No se pudo cargar la ficha del videojuego', error);
     this.hayError = true;
@@ -277,7 +747,7 @@ export class FichaVideojuegoComponent implements OnInit {
   }
 
 
-  /*
+  /**
    * ngOnInit se ejecuta una vez, cuando el componente ya está listo.
    * paramMap avisa cada vez que cambian los parámetros de la URL, así que la
    * ficha se actualiza aunque el usuario pase de /videojuegos/1 a /videojuegos/8
@@ -289,7 +759,7 @@ export class FichaVideojuegoComponent implements OnInit {
     });
   }
 
-  /* Lee el :id de la URL y pide ese juego. */
+  /** Lee el :id de la URL y pide ese juego. */
   private alCambiarParametros(parametros: ParamMap): void {
     // En /videojuegos/8 el parámetro "id" vale '8', pero como TEXTO.
     // Number() lo convierte a número para poder compararlo con idVideojuego.
@@ -298,7 +768,7 @@ export class FichaVideojuegoComponent implements OnInit {
     this.cargarJuego(id);
   }
 
-  /* Borra el juego anterior, para no mostrar datos mezclados al cambiar de id. */
+  /** Borra el juego anterior, para no mostrar datos mezclados al cambiar de id. */
   private limpiarJuego(): void {
     this.confirmandoEliminar = false;
     this.errorEliminar = '';
@@ -312,58 +782,39 @@ export class FichaVideojuegoComponent implements OnInit {
     this.idCopiaHistorial = 0;
     this.custodiasHistorial = [];
     this.proyectos = [];
+    this.catalogoInstituciones = [];
+    this.mostrarFormularioEvento = false;
+    this.eventoEditando = undefined;
+    this.idConfirmandoEliminarEvento = 0;
+    this.errorEvento = '';
+    this.idConfirmandoEliminarCopia = 0;
+    this.errorCopia = '';
+    this.mostrarFormularioCustodia = false;
+    this.custodiaEditando = undefined;
+    this.idConfirmandoEliminarCustodia = 0;
+    this.errorCustodia = '';
+    this.mostrarFormularioProyecto = false;
+    this.proyectoEditando = undefined;
+    this.idProyectoGestionando = 0;
+    this.idConfirmandoEliminarProyecto = 0;
+    this.errorProyecto = '';
+    this.expertos = [];
     this.historialLegal = [];
     this.eventos = [];
   }
 
-  /*
-   * Arma la lista de instituciones custodias a partir de las custodias vigentes.
-   * Recorre las copias, y por cada una:
-   *   - si no tiene custodia vigente, la salta
-   *   - si su institución ya está en la lista, suma 1 a su contador
-   *   - si no está, la agrega con contador 1
-   * Ejemplo: copias del Museo, la Universidad y el Museo ->
-   *   [ Museo (2 copias), Universidad (1 copia) ]
-   */
-  private agruparInstituciones(copias: CopiaConCustodia[]): InstitucionConCopias[] {
-    const lista: InstitucionConCopias[] = [];
-
-    for (const item of copias) {
-      if (!item.custodiaActual) {
-        continue;
-      }
-
-      const institucion = item.custodiaActual.institucion;
-      let existente: InstitucionConCopias | undefined = undefined;
-
-      for (const entrada of lista) {
-        if (entrada.institucion.idInstitucion === institucion.idInstitucion) {
-          existente = entrada;
-        }
-      }
-
-      if (existente) {
-        existente.numeroCopias++;
-      } else {
-        lista.push({ institucion: institucion, numeroCopias: 1 });
-      }
-    }
-
-    return lista;
-  }
-
-  /* Primer paso: pide confirmación antes de eliminar. */
+  /** Primer paso: pide confirmación antes de eliminar. */
   pedirConfirmacionEliminar(): void {
     this.errorEliminar = '';
     this.confirmandoEliminar = true;
   }
 
-  /* El usuario se arrepintió. */
+  /** El usuario se arrepintió. */
   cancelarEliminar(): void {
     this.confirmandoEliminar = false;
   }
 
-  /* Segundo paso: DELETE /api/videojuegos/{id}. Si sale bien, vuelve al catálogo. */
+  /** Segundo paso: DELETE /api/videojuegos/{id}. Si sale bien, vuelve al catálogo. */
   confirmarEliminar(): void {
     if (!this.videojuego) {
       return;
@@ -383,7 +834,7 @@ export class FichaVideojuegoComponent implements OnInit {
     this.router.navigate(['/catalogo']);
   }
 
-  /*
+  /**
    * 409: el back explica que el juego tiene datos asociados (copias, estatus
    * o eventos). 403: el rol no puede. Otro: mensaje general.
    */
@@ -403,7 +854,126 @@ export class FichaVideojuegoComponent implements OnInit {
     this.cambios.markForCheck();
   }
 
-  /* Despliega el formulario de estatus legal, limpio. */
+  // ---- Imagen (portada) del videojuego ----
+
+  /**
+   * El usuario eligió un archivo: POST /api/videojuegos/{id}/imagen (multipart).
+   * No se valida nada aquí: el formato (JPG, PNG, WEBP) y el tamaño (5 MB) los
+   * revisa el back y la pantalla solo muestra su respuesta.
+   */
+  alElegirImagen(evento: Event): void {
+    const entrada = evento.target as HTMLInputElement;
+
+    if (!this.videojuego || !entrada.files || entrada.files.length === 0) {
+      return;
+    }
+
+    const archivo = entrada.files[0];
+    // Se limpia el input para poder volver a elegir el mismo archivo si falla.
+    entrada.value = '';
+
+    this.subiendoImagen = true;
+    this.errorImagen = '';
+    this.confirmandoQuitarImagen = false;
+
+    this.api.subirImagenVideojuego(this.videojuego.idVideojuego, archivo).subscribe({
+      next: (juego) => this.alSubirImagen(juego),
+      error: (error) => this.alFallarSubirImagen(error)
+    });
+  }
+
+  /** El back devolvió el juego con su urlImagen nueva (el enlace cambia al reemplazar la imagen). */
+  private alSubirImagen(juego: Videojuego): void {
+    this.subiendoImagen = false;
+    if (this.videojuego) {
+      this.videojuego.urlImagen = juego.urlImagen;
+    }
+    this.cambios.markForCheck();
+  }
+
+  /**
+   * 400: el back explica qué pasó (formato, vacío). 413 o 500: Spring rechaza el
+   * archivo grande antes de llegar al controller y no manda { estado, mensaje }.
+   * 0: el back cortó la conexión (archivo muy grande) o no responde.
+   * 502: Cloudinary falló. 403: el rol no puede.
+   */
+  private alFallarSubirImagen(error: HttpErrorResponse): void {
+    console.error('No se pudo subir la imagen', error);
+    this.subiendoImagen = false;
+
+    if (error.status === 400 && error.error && error.error.mensaje) {
+      this.errorImagen = error.error.mensaje;
+    } else if (error.status === 413 || error.status === 500) {
+      this.errorImagen = 'La imagen supera el tamaño permitido (5 MB).';
+    } else if (error.status === 0) {
+      // Con un archivo muy grande el back corta la conexión y el navegador no recibe código.
+      // Tampoco se distingue de un back apagado, por eso el mensaje cubre las dos causas.
+      this.errorImagen = 'No se pudo subir la imagen. Revisa que pese menos de 5 MB y que el servidor esté disponible.';
+    } else if (error.status === 502) {
+      this.errorImagen = 'No se pudo guardar la imagen. Inténtalo de nuevo en unos minutos.';
+    } else if (error.status === 403) {
+      this.errorImagen = 'Tu rol no puede cambiar la imagen.';
+    } else {
+      this.errorImagen = 'No se pudo subir la imagen. Inténtalo de nuevo.';
+    }
+
+    this.cambios.markForCheck();
+  }
+
+  /** Primer paso: pide confirmación antes de quitar la imagen. */
+  pedirConfirmacionQuitarImagen(): void {
+    this.errorImagen = '';
+    this.confirmandoQuitarImagen = true;
+  }
+
+  /** El usuario se arrepintió. */
+  cancelarQuitarImagen(): void {
+    this.confirmandoQuitarImagen = false;
+  }
+
+  /** Segundo paso: DELETE /api/videojuegos/{id}/imagen (204 sin cuerpo). */
+  confirmarQuitarImagen(): void {
+    if (!this.videojuego) {
+      return;
+    }
+
+    this.quitandoImagen = true;
+    this.errorImagen = '';
+
+    this.api.eliminarImagenVideojuego(this.videojuego.idVideojuego).subscribe({
+      next: () => this.alQuitarImagen(),
+      error: (error) => this.alFallarQuitarImagen(error)
+    });
+  }
+
+  /** La imagen se borró: el juego vuelve a mostrar la portada de relleno. */
+  private alQuitarImagen(): void {
+    this.quitandoImagen = false;
+    this.confirmandoQuitarImagen = false;
+    if (this.videojuego) {
+      this.videojuego.urlImagen = undefined;
+    }
+    this.cambios.markForCheck();
+  }
+
+  /** 502: Cloudinary falló y la imagen sigue ahí. 403: solo un administrador puede quitarla. */
+  private alFallarQuitarImagen(error: HttpErrorResponse): void {
+    console.error('No se pudo quitar la imagen', error);
+    this.quitandoImagen = false;
+    this.confirmandoQuitarImagen = false;
+
+    if (error.status === 403) {
+      this.errorImagen = 'Solo un administrador puede quitar la imagen.';
+    } else if (error.status === 502) {
+      this.errorImagen = 'No se pudo quitar la imagen. Inténtalo de nuevo en unos minutos.';
+    } else {
+      this.errorImagen = 'No se pudo quitar la imagen. Inténtalo de nuevo.';
+    }
+
+    this.cambios.markForCheck();
+  }
+
+  /** Despliega el formulario de estatus legal, limpio. */
   abrirFormularioEstatus(): void {
     this.editandoEstatus = undefined;
     this.idConfirmandoEliminarEstatus = 0;
@@ -413,7 +983,7 @@ export class FichaVideojuegoComponent implements OnInit {
     this.mostrarFormularioEstatus = true;
   }
 
-  /* Abre el formulario con los datos de un registro existente (editar). */
+  /** Abre el formulario con los datos de un registro existente (editar). */
   abrirEditarEstatus(registro: EstatusLegal): void {
     this.editandoEstatus = registro;
     this.idConfirmandoEliminarEstatus = 0;
@@ -427,18 +997,18 @@ export class FichaVideojuegoComponent implements OnInit {
     this.mostrarFormularioEstatus = true;
   }
 
-  /* Cierra el formulario sin guardar. */
+  /** Cierra el formulario sin guardar. */
   cancelarFormularioEstatus(): void {
     this.mostrarFormularioEstatus = false;
   }
 
-  /* Dice si hay que mostrar el error de un campo del formulario de estatus. */
+  /** Dice si hay que mostrar el error de un campo del formulario de estatus. */
   mostrarErrorEstatus(nombre: string): boolean {
     const control = this.formularioEstatus.controls[nombre];
     return control.invalid && (control.touched || this.estatusEnviado);
   }
 
-  /* Texto del error de un campo del formulario de estatus. */
+  /** Texto del error de un campo del formulario de estatus. */
   textoErrorEstatus(nombre: string): string {
     const control = this.formularioEstatus.controls[nombre];
 
@@ -451,8 +1021,8 @@ export class FichaVideojuegoComponent implements OnInit {
     return '';
   }
 
-  /*
-   * Guarda el estatus: valida, valida que la fecha no sea futura y envía
+  /**
+   * Guarda el estatus: valida lo básico y envía
    * POST /api/videojuegos/{id}/estatus-legal.
    */
   guardarEstatus(): void {
@@ -464,12 +1034,8 @@ export class FichaVideojuegoComponent implements OnInit {
       return;
     }
 
+    // La regla de la fecha (no futura) la valida el back y responde 400 con el motivo.
     const datos = this.formularioEstatus.getRawValue();
-
-    if (datos.fechaDeterminacion > this.hoy) {
-      this.errorEstatus = 'La fecha no puede ser futura.';
-      return;
-    }
 
     const nuevo: EstatusLegalNuevo = {
       estatus: datos.estatus,
@@ -501,7 +1067,7 @@ export class FichaVideojuegoComponent implements OnInit {
     }
   }
 
-  /* Primer paso de eliminar un registro del historial: confirmación en la misma fila. */
+  /** Primer paso de eliminar un registro del historial: confirmación en la misma fila. */
   pedirEliminarEstatus(registro: EstatusLegal): void {
     this.errorEstatus = '';
     this.idConfirmandoEliminarEstatus = registro.idEstatus;
@@ -511,7 +1077,7 @@ export class FichaVideojuegoComponent implements OnInit {
     this.idConfirmandoEliminarEstatus = 0;
   }
 
-  /* Segundo paso: DELETE /api/estatus-legal/{id}; luego se vuelve a pedir la lista. */
+  /** Segundo paso: DELETE /api/estatus-legal/{id}; luego se vuelve a pedir la lista. */
   confirmarEliminarEstatus(registro: EstatusLegal): void {
     this.api.eliminarEstatusLegal(registro.idEstatus).subscribe({
       next: () => this.alEliminarEstatus(),
@@ -519,7 +1085,7 @@ export class FichaVideojuegoComponent implements OnInit {
     });
   }
 
-  /* Se eliminó: el vigente puede haber cambiado, así que se pide la lista completa. */
+  /** Se eliminó: el vigente puede haber cambiado, así que se pide la lista completa. */
   private alEliminarEstatus(): void {
     this.idConfirmandoEliminarEstatus = 0;
 
@@ -548,7 +1114,7 @@ export class FichaVideojuegoComponent implements OnInit {
     this.cambios.markForCheck();
   }
 
-  /*
+  /**
    * Se guardó. Se vuelve a pedir la lista completa porque el registro nuevo
    * puede haber cambiado cuál es el vigente.
    */
@@ -566,7 +1132,7 @@ export class FichaVideojuegoComponent implements OnInit {
     this.cambios.markForCheck();
   }
 
-  /* 400: el back explica qué está mal. 403: el rol no puede. Otro: mensaje general. */
+  /** 400: el back explica qué está mal. 403: el rol no puede. Otro: mensaje general. */
   private alFallarEstatus(error: HttpErrorResponse): void {
     console.error('No se pudo guardar el estatus legal', error);
     this.guardandoEstatus = false;
@@ -582,7 +1148,7 @@ export class FichaVideojuegoComponent implements OnInit {
     this.cambios.markForCheck();
   }
 
-  /* Fecha de hoy 'yyyy-MM-dd' en hora local (toISOString daría la fecha en UTC). */
+  /** Fecha de hoy 'yyyy-MM-dd' en hora local (toISOString daría la fecha en UTC). */
   private fechaHoy(): string {
     const ahora = new Date();
     const mes = String(ahora.getMonth() + 1).padStart(2, '0');
@@ -591,12 +1157,12 @@ export class FichaVideojuegoComponent implements OnInit {
     return ahora.getFullYear() + '-' + mes + '-' + dia;
   }
 
-  /* Cambia la pestaña activa cuando el usuario hace clic en una. */
+  /** Cambia la pestaña activa cuando el usuario hace clic en una. */
   seleccionarPestana(pestana: Pestana): void {
     this.pestanaActiva = pestana;
   }
 
-  /*
+  /**
    * Convierte '2022-01-20' en '20/01/2022'.
    * split('-') parte el texto en tres pedazos: año, mes y día.
    */
@@ -608,13 +1174,13 @@ export class FichaVideojuegoComponent implements OnInit {
     return partes[2] + '/' + partes[1] + '/' + partes[0];
   }
 
-  /*
+  /**
    * Cuántos colores de relleno hay definidos en styles.css
    * (--portada-1 hasta --portada-6).
    */
   private totalColoresPortada: number = 6;
 
-  /*
+  /**
    * Color de la portada según el id del juego, así cada juego conserva
    * siempre el mismo color. Los colores NO están aquí: viven en styles.css
    * como variables. Este código solo elige el número y devuelve el nombre
@@ -629,7 +1195,7 @@ export class FichaVideojuegoComponent implements OnInit {
     return 'var(--portada-' + numero + ')';
   }
 
-  /* Iniciales del título: "Furia Quark" -> "FQ" */
+  /** Iniciales del título: "Furia Quark" -> "FQ" */
   get iniciales(): string {
     if (!this.videojuego) {
       return '';
@@ -647,7 +1213,7 @@ export class FichaVideojuegoComponent implements OnInit {
     return resultado;
   }
 
-  /* Línea de plataforma y año: "Arcade · 1994" */
+  /** Línea de plataforma y año: "Arcade · 1994" */
   get plataformaYAnio(): string {
     if (!this.videojuego) {
       return '';
@@ -655,7 +1221,7 @@ export class FichaVideojuegoComponent implements OnInit {
     return this.videojuego.plataformaOriginal + ' · ' + this.videojuego.anioLanzamiento;
   }
 
-  /*
+  /**
    * Estatus legal vigente: el registro del historial con vigente === true.
    * Si no hay ninguno (lista vacía), el juego está "Sin determinar".
    */
@@ -668,7 +1234,7 @@ export class FichaVideojuegoComponent implements OnInit {
     return 'Sin determinar';
   }
 
-  /* Línea de editoras: "Editoras: A, B" o "Sin editora registrada". */
+  /** Línea de editoras: "Editoras: A, B" o "Sin editora registrada". */
   get textoEditoras(): string {
     if (this.nombresEditoras.length === 0) {
       return 'Sin editora registrada';
@@ -676,12 +1242,12 @@ export class FichaVideojuegoComponent implements OnInit {
     return 'Editoras: ' + this.nombresEditoras.join(', ');
   }
 
-  /* Una fuente que empieza por "http" se muestra como enlace. */
+  /** Una fuente que empieza por "http" se muestra como enlace. */
   esEnlace(fuente: string): boolean {
     return fuente.startsWith('http');
   }
 
-  /* Línea del estudio: "Estudio: Quark Interactive (desaparecido)" */
+  /** Línea del estudio: "Estudio: Quark Interactive (desaparecido)" */
   get textoEstudio(): string {
     if (!this.videojuego || !this.videojuego.estudio) {
       return '';

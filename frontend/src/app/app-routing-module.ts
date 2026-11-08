@@ -8,7 +8,7 @@ import { FichaVideojuegoComponent } from './features/videojuego/ficha-videojuego
 import { RegistrarCopiaComponent } from './features/videojuego/registrar-copia/registrar-copia-component';
 import { FormularioVideojuegoComponent } from './features/videojuego/formulario-videojuego/formulario-videojuego-component';
 
-/*
+/**
  * Rutas principales de la app. Catálogo, Instituciones y Login declaran las
  * suyas dentro de sus propios módulos.
  *
@@ -21,6 +21,7 @@ import { FormularioVideojuegoComponent } from './features/videojuego/formulario-
  *  - /videojuegos/nuevo             -> formulario para crear un videojuego (curador y administrador)
  *  - /videojuegos/:id/editar        -> formulario para editar un videojuego (curador y administrador)
  *  - /videojuegos/:id/copias/nueva  -> formulario para registrar una copia
+ *  - /copias/:idCopia/editar        -> el mismo formulario, para editar una copia
  *                                      (solo curador y administrador)
  */
 const routes: Routes = [
@@ -50,6 +51,13 @@ const routes: Routes = [
   },
   {
     path: 'videojuegos/:id/copias/nueva',
+    component: RegistrarCopiaComponent,
+    canActivate: [authGuard, roleGuard],
+    data: { roles: ['curador', 'administrador'] }
+  },
+  {
+    // Editar una copia existente. Usa el mismo formulario que registrar.
+    path: 'copias/:idCopia/editar',
     component: RegistrarCopiaComponent,
     canActivate: [authGuard, roleGuard],
     data: { roles: ['curador', 'administrador'] }

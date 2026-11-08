@@ -11,10 +11,10 @@ import {
 import { ArchiveludoApiService } from '../../../core/archiveludo-api-service';
 import { Institucion, InstitucionNueva } from '../../../shared/models/custodia-model';
 
-/* Mayor número que guarda hoy el back en un teléfono (es un Integer de Java). */
+/** Mayor número que guarda hoy el back en un teléfono (es un Integer de Java). */
 const TELEFONO_MAXIMO: number = 2147483647;
 
-/*
+/**
  * Pantalla de administración de instituciones (/administracion/instituciones).
  * Lista de instituciones y un formulario (crear o editar) que se despliega
  * en la misma pantalla. Tiene dos listas dinámicas: teléfonos y correos, con
@@ -31,7 +31,7 @@ const TELEFONO_MAXIMO: number = 2147483647;
 })
 export class AdminInstitucionesComponent implements OnInit {
 
-  /* Tipos de institución (texto legible, como lo acepta y lo devuelve el back). */
+  /** Tipos de institución (texto legible, como lo acepta y lo devuelve el back). */
   tipos: string[] = ['Museo', 'Universidad', 'Archivo', 'Colección privada'];
 
   instituciones: Institucion[] = [];
@@ -41,20 +41,20 @@ export class AdminInstitucionesComponent implements OnInit {
 
   mostrarFormulario: boolean = false;
 
-  /* Institución que se edita. Es undefined cuando se está creando una nueva. */
+  /** Institución que se edita. Es undefined cuando se está creando una nueva. */
   editando?: Institucion;
 
   formulario: FormGroup;
 
-  /* true después del primer intento de guardar. */
+  /** true después del primer intento de guardar. */
   enviado: boolean = false;
 
   guardando: boolean = false;
 
-  /* Mensaje de error del guardado o de la eliminación. */
+  /** Mensaje de error del guardado o de la eliminación. */
   errorMensaje: string = '';
 
-  /* Id de la institución que está pidiendo confirmación para eliminarse (0 = ninguna). */
+  /** Id de la institución que está pidiendo confirmación para eliminarse (0 = ninguna). */
   idConfirmandoEliminar: number = 0;
 
   constructor(
@@ -75,7 +75,7 @@ export class AdminInstitucionesComponent implements OnInit {
     this.cargarInstituciones();
   }
 
-  /* GET /api/instituciones */
+  /** GET /api/instituciones */
   private cargarInstituciones(): void {
     this.api.obtenerInstituciones().subscribe({
       next: (lista) => this.alRecibirLista(lista),
@@ -83,7 +83,7 @@ export class AdminInstitucionesComponent implements OnInit {
     });
   }
 
-  /* Guarda la lista ordenada alfabéticamente por nombre. */
+  /** Guarda la lista ordenada alfabéticamente por nombre. */
   private alRecibirLista(lista: Institucion[]): void {
     const ordenada = lista.slice();
     ordenada.sort((a, b) => a.nombre.localeCompare(b.nombre));
@@ -104,17 +104,17 @@ export class AdminInstitucionesComponent implements OnInit {
   // Listas dinámicas (FormArray): una casilla por teléfono / correo
   // ------------------------------------------------------------------
 
-  /* Crea la casilla de un teléfono: obligatoria, solo dígitos y hasta 10 cifras. */
+  /** Crea la casilla de un teléfono: obligatoria, solo dígitos y hasta 10 cifras. */
   private nuevoTelefono(valor: string): FormControl {
     return new FormControl(valor, [Validators.required, Validators.pattern(/^[0-9]{1,10}$/)]);
   }
 
-  /* Crea la casilla de un correo: obligatoria y con formato de correo. */
+  /** Crea la casilla de un correo: obligatoria y con formato de correo. */
   private nuevoCorreo(valor: string): FormControl {
     return new FormControl(valor, [Validators.required, Validators.email]);
   }
 
-  /* Las dos listas, tal como las lee el HTML. */
+  /** Las dos listas, tal como las lee el HTML. */
   get telefonos(): FormArray {
     return this.formulario.controls['telefonos'] as FormArray;
   }
@@ -131,7 +131,7 @@ export class AdminInstitucionesComponent implements OnInit {
     this.correos.push(this.nuevoCorreo(''));
   }
 
-  /* No se puede quitar la última casilla: la institución necesita al menos una. */
+  /** No se puede quitar la última casilla: la institución necesita al menos una. */
   quitarTelefono(posicion: number): void {
     if (this.telefonos.length > 1) {
       this.telefonos.removeAt(posicion);
@@ -148,14 +148,14 @@ export class AdminInstitucionesComponent implements OnInit {
   // Abrir y cerrar el formulario
   // ------------------------------------------------------------------
 
-  /* Abre el formulario vacío para crear una institución. */
+  /** Abre el formulario vacío para crear una institución. */
   abrirNueva(): void {
     this.editando = undefined;
     this.llenarFormulario('', 'Museo', '', [''], ['']);
     this.abrirFormulario();
   }
 
-  /* Abre el formulario con los datos de la institución que se va a editar. */
+  /** Abre el formulario con los datos de la institución que se va a editar. */
   abrirEditar(institucion: Institucion): void {
     const telefonos = (institucion.telefonos || []).map((numero) => String(numero));
     const correos = (institucion.correos || []).slice();
@@ -171,7 +171,7 @@ export class AdminInstitucionesComponent implements OnInit {
     this.abrirFormulario();
   }
 
-  /* Pone los valores en el formulario y rehace las dos listas con la cantidad justa de casillas. */
+  /** Pone los valores en el formulario y rehace las dos listas con la cantidad justa de casillas. */
   private llenarFormulario(
     nombre: string,
     tipo: string,
@@ -209,12 +209,12 @@ export class AdminInstitucionesComponent implements OnInit {
   // Errores de los campos
   // ------------------------------------------------------------------
 
-  /* Dice si hay que mostrar el error de un campo (de cualquier tipo de control). */
+  /** Dice si hay que mostrar el error de un campo (de cualquier tipo de control). */
   mostrarError(control: AbstractControl): boolean {
     return control.invalid && (control.touched || this.enviado);
   }
 
-  /* Texto del error de un campo, según qué validación falló. */
+  /** Texto del error de un campo, según qué validación falló. */
   textoError(control: AbstractControl): string {
     if (control.hasError('required')) {
       return 'Este campo es obligatorio.';
@@ -235,7 +235,7 @@ export class AdminInstitucionesComponent implements OnInit {
   // Guardar
   // ------------------------------------------------------------------
 
-  /* Valida y envía POST (crear) o PUT (editar). */
+  /** Valida y envía POST (crear) o PUT (editar). */
   guardar(): void {
     this.enviado = true;
     this.errorMensaje = '';
@@ -247,7 +247,7 @@ export class AdminInstitucionesComponent implements OnInit {
 
     const cuerpo = this.armarCuerpo();
 
-    /* El back usa un Integer para los teléfonos: avisamos antes de que falle. */
+    /** El back usa un Integer para los teléfonos: avisamos antes de que falle. */
     for (const telefono of cuerpo.telefonos) {
       if (telefono > TELEFONO_MAXIMO) {
         this.errorMensaje =
@@ -271,7 +271,7 @@ export class AdminInstitucionesComponent implements OnInit {
     }
   }
 
-  /* Arma el cuerpo: teléfonos como números y correos limpios, sin repetidos. */
+  /** Arma el cuerpo: teléfonos como números y correos limpios, sin repetidos. */
   private armarCuerpo(): InstitucionNueva {
     const datos = this.formulario.getRawValue();
     const telefonos: number[] = [];
@@ -300,7 +300,7 @@ export class AdminInstitucionesComponent implements OnInit {
     };
   }
 
-  /* Se guardó: se cierra el formulario y se vuelve a pedir la lista. */
+  /** Se guardó: se cierra el formulario y se vuelve a pedir la lista. */
   private alGuardar(): void {
     this.guardando = false;
     this.mostrarFormulario = false;
@@ -311,7 +311,7 @@ export class AdminInstitucionesComponent implements OnInit {
   // Eliminar
   // ------------------------------------------------------------------
 
-  /* Primer paso de eliminar: pide confirmación en la misma fila. */
+  /** Primer paso de eliminar: pide confirmación en la misma fila. */
   pedirEliminar(institucion: Institucion): void {
     this.errorMensaje = '';
     this.idConfirmandoEliminar = institucion.idInstitucion;
@@ -321,7 +321,7 @@ export class AdminInstitucionesComponent implements OnInit {
     this.idConfirmandoEliminar = 0;
   }
 
-  /* Segundo paso: DELETE /api/instituciones/{id}. */
+  /** Segundo paso: DELETE /api/instituciones/{id}. */
   confirmarEliminar(institucion: Institucion): void {
     this.api.eliminarInstitucion(institucion.idInstitucion).subscribe({
       next: () => this.alEliminar(),
@@ -334,7 +334,7 @@ export class AdminInstitucionesComponent implements OnInit {
     this.cargarInstituciones();
   }
 
-  /*
+  /**
    * Muestra el error según el código:
    *  - 400 / 404 / 409: el back explica qué pasó (error.error.mensaje)
    *  - 403: el rol no puede

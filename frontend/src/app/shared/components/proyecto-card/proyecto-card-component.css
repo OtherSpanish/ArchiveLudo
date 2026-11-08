@@ -28,6 +28,16 @@
   color: var(--text-strong);
 }
 
+/* Etiqueta pequeña: el proyecto ya tiene su informe final (PDF) */
+.etiqueta-informe {
+  padding: 2px 10px;
+  color: var(--text-soft);
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
 .detalle {
   margin: 0;
   font-size: 14px;
@@ -69,4 +79,13 @@
 .rol {
   font-size: 13px;
   color: var(--text-muted);
+}
+
+/* Nombre del proyecto, debajo del código */
+.nombre-proyecto {
+  margin: 0;
+  font-family: var(--font-title);
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text-strong);
 }

@@ -2,7 +2,7 @@ import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
 import { AuthService } from './auth-service';
 
-/*
+/**
  * Guard de autenticación: deja pasar solo a quien tiene sesión iniciada.
  * Si no la tiene, lo manda a /login y guarda en "volverA" la dirección a la
  * que quería entrar, para llevarlo allí después de iniciar sesión.

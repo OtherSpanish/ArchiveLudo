@@ -120,3 +120,34 @@
     padding: 20px;
   }
 }
+
+/* Botones discretos de editar y eliminar bajo cada hito */
+.acciones-hito {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.boton-hito {
+  min-height: 32px;
+  padding: 0 12px;
+  background: transparent;
+  color: var(--text-soft);
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.boton-hito:hover {
+  color: var(--text-strong);
+  border-color: var(--border-hover);
+}
+
+.boton-hito-peligro {
+  color: var(--state-bad-label);
+  border-color: var(--state-bad);
+}

@@ -3,6 +3,7 @@ package co.edu.unbosque.archiveludo.repository;
 import java.sql.Date;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -22,18 +23,36 @@ public class CustodiaRepository {
 			+ "fecha_fin, condicion_almacenamiento FROM CUSTODIA ";
 
 	/** De la mas reciente a la mas antigua; si dos empiezan el mismo dia, primero la de mayor id. */
-	private static final String SQL_BUSCAR_POR_COPIA = SQL_SELECCIONAR + "WHERE id_copia = ? "
-			+ "ORDER BY fecha_inicio DESC, id_custodia DESC";
+	private static final String ORDEN = "ORDER BY fecha_inicio DESC, id_custodia DESC";
+
+	private static final String SQL_BUSCAR_POR_COPIA = SQL_SELECCIONAR + "WHERE id_copia = ? " + ORDEN;
 
 	private static final String SQL_BUSCAR_POR_ID = SQL_SELECCIONAR + "WHERE id_custodia = ?";
 
 	/** La vigente es la que no tiene fecha_fin. Si por datos viejos hubiera varias, se toma la mas reciente. */
 	private static final String SQL_BUSCAR_VIGENTE = SQL_SELECCIONAR + "WHERE id_copia = ? AND fecha_fin IS NULL "
-			+ "ORDER BY fecha_inicio DESC, id_custodia DESC LIMIT 1";
+			+ ORDEN + " LIMIT 1";
+
+	/** Custodias vigentes de una institucion: una por cada copia que custodia hoy. */
+	private static final String SQL_BUSCAR_VIGENTES_POR_INSTITUCION = SQL_SELECCIONAR
+			+ "WHERE id_institucion = ? AND fecha_fin IS NULL " + ORDEN;
 
 	/** Copias que la institucion custodia hoy (una custodia vigente = una copia). */
 	private static final String SQL_CONTAR_VIGENTES_POR_INSTITUCION = "SELECT COUNT(*) FROM CUSTODIA "
 			+ "WHERE id_institucion = ? AND fecha_fin IS NULL";
+
+	/**
+	 * Por cada institucion, cuantas copias de UN videojuego custodia hoy.
+	 * Solo salen las instituciones con al menos una; ordenadas por nombre.
+	 */
+	private static final String SQL_CONTAR_VIGENTES_POR_INSTITUCION_DE_VIDEOJUEGO = "SELECT cu.id_institucion, "
+			+ "COUNT(*) AS cantidad "
+			+ "FROM CUSTODIA cu "
+			+ "JOIN COPIA c ON c.id_copia = cu.id_copia "
+			+ "JOIN INSTITUCION i ON i.id_institucion = cu.id_institucion "
+			+ "WHERE c.id_videojuego = ? AND cu.fecha_fin IS NULL "
+			+ "GROUP BY cu.id_institucion, i.nombre "
+			+ "ORDER BY i.nombre ASC, cu.id_institucion ASC";
 
 	private static final String SQL_INSERTAR = "INSERT INTO CUSTODIA (id_copia, id_institucion, fecha_inicio, "
 			+ "fecha_fin, condicion_almacenamiento) VALUES (?, ?, ?, ?, ?)";
@@ -64,12 +83,7 @@ public class CustodiaRepository {
 	 */
 	public List<Custodia> buscarPorIdCopia(long idCopia) {
 		List<Map<String, Object>> filas = jdbcTemplate.queryForList(SQL_BUSCAR_POR_COPIA, idCopia);
-
-		List<Custodia> custodias = new ArrayList<Custodia>();
-		for (Map<String, Object> fila : filas) {
-			custodias.add(convertirFilaACustodia(fila));
-		}
-		return custodias;
+		return convertirFilas(filas);
 	}
 
 	/**
@@ -99,6 +113,16 @@ public class CustodiaRepository {
 	}
 
 	/**
+	 * @param idInstitucion id de la institucion
+	 * @return las custodias vigentes de la institucion, de la mas reciente a la mas antigua (vacia si no tiene)
+	 */
+	public List<Custodia> buscarVigentesPorIdInstitucion(long idInstitucion) {
+		List<Map<String, Object>> filas = jdbcTemplate.queryForList(SQL_BUSCAR_VIGENTES_POR_INSTITUCION,
+				idInstitucion);
+		return convertirFilas(filas);
+	}
+
+	/**
 	 * Cuenta cuantas copias custodia hoy una institucion (sus custodias sin fecha de fin).
 	 * Como cada copia tiene como maximo una custodia vigente, el resultado es la cantidad de copias.
 	 *
@@ -111,6 +135,27 @@ public class CustodiaRepository {
 			return 0;
 		}
 		return cantidad;
+	}
+
+	/**
+	 * Para un videojuego, cuenta cuantas de sus copias custodia hoy cada institucion.
+	 *
+	 * @param idVideojuego id del videojuego
+	 * @return mapa idInstitucion -> cantidad de copias, en orden alfabetico por nombre de institucion
+	 *         (vacio si ninguna copia del juego tiene custodia vigente)
+	 */
+	public Map<Long, Long> contarVigentesPorInstitucionDeVideojuego(long idVideojuego) {
+		List<Map<String, Object>> filas = jdbcTemplate
+				.queryForList(SQL_CONTAR_VIGENTES_POR_INSTITUCION_DE_VIDEOJUEGO, idVideojuego);
+
+		// LinkedHashMap conserva el orden en que llegan las filas (por nombre de institucion)
+		Map<Long, Long> cantidades = new LinkedHashMap<Long, Long>();
+		for (Map<String, Object> fila : filas) {
+			Number idInstitucion = (Number) fila.get("id_institucion");
+			Number cantidad = (Number) fila.get("cantidad");
+			cantidades.put(idInstitucion.longValue(), cantidad.longValue());
+		}
+		return cantidades;
 	}
 
 
@@ -163,6 +208,14 @@ public class CustodiaRepository {
 		jdbcTemplate.update(SQL_ELIMINAR, idCustodia);
 	}
 
+
+	private List<Custodia> convertirFilas(List<Map<String, Object>> filas) {
+		List<Custodia> custodias = new ArrayList<Custodia>();
+		for (Map<String, Object> fila : filas) {
+			custodias.add(convertirFilaACustodia(fila));
+		}
+		return custodias;
+	}
 
 	/**
 	 * Convierte una fila de la tabla CUSTODIA (columna -> valor) en la entity Custodia.

@@ -1,7 +1,7 @@
 <!--
   Historial de custodia de una copia, como línea de tiempo vertical.
   Es una lista ordenada (<ol>) porque el orden de los hitos importa:
-  del más antiguo al más reciente.
+  del más reciente al más antiguo, tal como lo entrega el back.
 -->
 <section class="historial" aria-labelledby="titulo-historial">
 
@@ -35,6 +35,22 @@
           <p class="periodo">{{ hito.periodo }}</p>
           <p class="institucion">{{ hito.institucion }}</p>
           <p class="condiciones">{{ hito.condiciones }}</p>
+
+          <!-- Curador y administrador editan; solo el administrador elimina -->
+          <div class="acciones-hito">
+            <button type="button"
+                    class="boton-hito"
+                    *appHasRole="['curador', 'administrador']"
+                    (click)="pedirEditar(hito.id)">
+              Editar
+            </button>
+            <button type="button"
+                    class="boton-hito boton-hito-peligro"
+                    *appHasRole="['administrador']"
+                    (click)="pedirEliminar(hito.id)">
+              Eliminar
+            </button>
+          </div>
         </div>
 
       </li>

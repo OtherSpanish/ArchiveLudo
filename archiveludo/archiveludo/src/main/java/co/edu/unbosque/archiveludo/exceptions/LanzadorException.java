@@ -2,6 +2,7 @@ package co.edu.unbosque.archiveludo.exceptions;
 
 import java.time.LocalDate;
 
+import co.edu.unbosque.archiveludo.model.ResultadoInforme;
 import co.edu.unbosque.archiveludo.entity.CompaniaEditora;
 import co.edu.unbosque.archiveludo.entity.EstatusLegal;
 import co.edu.unbosque.archiveludo.entity.Estudio;
@@ -23,6 +24,10 @@ import co.edu.unbosque.archiveludo.model.TipoInstitucion;
 import co.edu.unbosque.archiveludo.entity.Copia;
 import co.edu.unbosque.archiveludo.entity.Custodia;
 import co.edu.unbosque.archiveludo.model.TipoCopia;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
+
+import co.edu.unbosque.archiveludo.model.TipoReporte;
 
 /**
  * Lanzador de las excepciones propias de ArchiveLudo.
@@ -33,9 +38,13 @@ public class LanzadorException {
 	/** Anio minimo aceptado como anio de lanzamiento de un videojuego. */
 	private static final int ANIO_MINIMO_LANZAMIENTO = 1950;
 
+	public static final int LONGITUD_MAXIMA_RESUMEN_INFORME = 2000;
 	/** Anio minimo aceptado como anio de fundacion de un estudio. */
 	private static final int ANIO_MINIMO_FUNDACION = 1800;
 
+	/** Tamanio maximo de una imagen de videojuego: 5 MB. */
+	private static final long TAMANIO_MAXIMO_IMAGEN = 5L * 1024 * 1024;
+	
 	/** Cantidad de elementos por pagina cuando no se envia el parametro limite. */
 	private static final int LIMITE_POR_DEFECTO = 10;
 
@@ -1064,20 +1073,17 @@ public class LanzadorException {
 	}
 
 	/**
-	 * Verifica que un experto no aparezca dos veces en el mismo proyecto
-	 * (la tabla PARTICIPACION tiene UNIQUE (id_proyecto, id_experto)).
+	 * Verifica que el experto no este ya en el proyecto.
 	 *
-	 * @param estaRepetido true si el experto ya esta en el proyecto
-	 * @param idExperto    id del experto (para el mensaje)
-	 * @throws DatosProyectoInvalidosException si esta repetido
+	 * @param yaParticipa true si el experto ya esta en el proyecto (o ya vino antes en la misma lista)
+	 * @param idExperto   id del experto para el mensaje
+	 * @throws ExpertoRepetidoException si el experto ya participa
 	 */
-	public static void verificarExpertoNoRepetido(boolean estaRepetido, long idExperto) {
-		if (estaRepetido) {
-			throw new DatoProyectoInvalidoException(
-					"El experto " + idExperto + " ya participa en este proyecto");
+	public static void verificarExpertoNoRepetido(boolean yaParticipa, long idExperto) {
+		if (yaParticipa) {
+			throw new ExpertoRepetidoException(idExperto);
 		}
 	}
-
 	/**
 	 * Verifica las fechas de una participacion:
 	 * - la incorporacion es obligatoria, no puede ser futura ni anterior al inicio del proyecto;
@@ -1140,5 +1146,196 @@ public class LanzadorException {
 			throw new UltimaParticipacionException(idProyecto);
 		}
 	}
+
+	/**
+	 * Verifica la imagen de un videojuego antes de subirla a Cloudinary:
+	 * que venga con contenido, que sea jpg, png o webp, y que no pase de 5 MB.
+	 *
+	 * @param estaVacia true si no llego archivo o llego sin bytes
+	 * @param tipo      tipo del archivo que informa el navegador (por ejemplo "image/png")
+	 * @param tamanio   tamanio del archivo en bytes
+	 * @throws ArchivoInvalidoException si se incumple alguna regla
+	 */
+	public static void verificarImagenValida(boolean estaVacia, String tipo, long tamanio) {
+		if (estaVacia) {
+			throw new ArchivoInvalidoException("Debe enviar una imagen en el campo 'imagen'");
+		}
+
+		boolean esTipoPermitido = "image/jpeg".equals(tipo) || "image/png".equals(tipo)
+				|| "image/webp".equals(tipo);
+		if (!esTipoPermitido) {
+			throw new ArchivoInvalidoException("La imagen debe ser jpg, png o webp");
+		}
+
+		if (tamanio > TAMANIO_MAXIMO_IMAGEN) {
+			throw new ArchivoInvalidoException("La imagen no puede pesar mas de 5 MB");
+		}
+	}
 	
+	/**
+	 * Verifica que el proyecto este finalizado antes de generar su informe.
+	 *
+	 * @param estaFinalizado true si el estado del proyecto es finalizado
+	 * @param idProyecto     id del proyecto para el mensaje
+	 * @throws DatosInformeInvalidosException si el proyecto no esta finalizado
+	 */
+	public static void verificarProyectoFinalizado(boolean estaFinalizado, long idProyecto) {
+		if (!estaFinalizado) {
+			throw new DatosInformeInvalidosException("El proyecto con id " + idProyecto
+					+ " no esta finalizado: solo un proyecto finalizado puede tener informe final");
+		}
+	}
+
+	/**
+	 * Verifica que el proyecto todavia no tenga informe final.
+	 *
+	 * @param urlInforme enlace guardado en el proyecto (null si no tiene)
+	 * @param idProyecto id del proyecto para el mensaje
+	 * @throws InformeYaExisteException si el proyecto ya tiene informe
+	 */
+	public static void verificarInformeNoExiste(String urlInforme, long idProyecto) {
+		if (urlInforme != null && !urlInforme.trim().isEmpty()) {
+			throw new InformeYaExisteException(idProyecto);
+		}
+	}
+
+	/**
+	 * Verifica que el proyecto si tenga informe final.
+	 *
+	 * @param urlInforme enlace guardado en el proyecto (null si no tiene)
+	 * @param idProyecto id del proyecto para el mensaje
+	 * @throws InformeNoEncontradoException si el proyecto no tiene informe
+	 */
+	public static void verificarInformeExiste(String urlInforme, long idProyecto) {
+		if (urlInforme == null || urlInforme.trim().isEmpty()) {
+			throw new InformeNoEncontradoException(idProyecto);
+		}
+	}
+
+	/**
+	 * Convierte el texto del resultado ("exitoso", "parcial" o "fracaso") al enum.
+	 *
+	 * @param texto resultado recibido en el JSON
+	 * @return el resultado convertido
+	 * @throws DatosInformeInvalidosException si viene vacio o no es un resultado valido
+	 */
+	public static ResultadoInforme convertirResultadoInforme(String texto) {
+		if (texto == null || texto.trim().isEmpty()) {
+			throw new DatosInformeInvalidosException("El resultado del informe es obligatorio");
+		}
+		ResultadoInforme resultado = ResultadoInforme.buscarPorValor(texto.trim().toLowerCase());
+		if (resultado == null) {
+			throw new DatosInformeInvalidosException("El resultado del informe debe ser exitoso, parcial o fracaso");
+		}
+		return resultado;
+	}
+
+	/**
+	 * Verifica el resumen de resultados del informe.
+	 *
+	 * @param resumen texto recibido
+	 * @throws DatosInformeInvalidosException si viene vacio o supera el maximo
+	 */
+	public static void verificarResumenInforme(String resumen) {
+		if (resumen == null || resumen.trim().isEmpty()) {
+			throw new DatosInformeInvalidosException("El resumen de resultados es obligatorio");
+		}
+		if (resumen.trim().length() > LONGITUD_MAXIMA_RESUMEN_INFORME) {
+			throw new DatosInformeInvalidosException("El resumen de resultados no puede superar "
+					+ LONGITUD_MAXIMA_RESUMEN_INFORME + " caracteres");
+		}
+	}
+
+	/**
+	 * Verifica la fecha de publicacion del informe: obligatoria, no futura
+	 * y no anterior a la fecha de fin del proyecto.
+	 *
+	 * @param fechaPublicacion fecha recibida
+	 * @param fechaFin         fecha de fin del proyecto
+	 * @throws DatosInformeInvalidosException si la fecha no cumple las reglas
+	 */
+	public static void verificarFechaPublicacion(LocalDate fechaPublicacion, LocalDate fechaFin) {
+		if (fechaPublicacion == null) {
+			throw new DatosInformeInvalidosException("La fecha de publicacion del informe es obligatoria");
+		}
+		if (fechaPublicacion.isAfter(LocalDate.now())) {
+			throw new DatosInformeInvalidosException("La fecha de publicacion del informe no puede ser futura");
+		}
+		if (fechaFin != null && fechaPublicacion.isBefore(fechaFin)) {
+			throw new DatosInformeInvalidosException(
+					"La fecha de publicacion no puede ser anterior a la fecha de fin del proyecto (" + fechaFin + ")");
+		}
+	}
+
+	/**
+	 * Un proyecto con informe final debe seguir finalizado: no puede volver a activo ni a pausado.
+	 *
+	 * @param tieneInforme true si el proyecto ya tiene informe
+	 * @param estadoNuevo  estado que llega en el PUT
+	 * @param idProyecto   id del proyecto para el mensaje
+	 * @throws DatoProyectoInvalidoException si se intenta sacar de finalizado un proyecto con informe
+	 */
+	public static void verificarCambioDeEstadoConInforme(boolean tieneInforme, EstadoProyecto estadoNuevo,
+			long idProyecto) {
+		if (tieneInforme && estadoNuevo != EstadoProyecto.FINALIZADO) {
+			throw new DatoProyectoInvalidoException("El proyecto con id " + idProyecto
+					+ " ya tiene informe final: no puede pasar a activo o pausado. Elimina primero el informe");
+		}
+	}
+	
+	/**
+	 * Convierte el tipo de reporte de la URL al enum.
+	 *
+	 * @param texto tipo recibido (por ejemplo "eventos")
+	 * @return el tipo convertido
+	 * @throws DatosReporteInvalidosException si viene vacio o no es un tipo valido
+	 */
+	public static TipoReporte convertirTipoReporte(String texto) {
+		if (texto == null || texto.trim().isEmpty()) {
+			throw new DatosReporteInvalidosException("El tipo de reporte es obligatorio");
+		}
+		TipoReporte tipo = TipoReporte.buscarPorValor(texto.trim().toLowerCase());
+		if (tipo == null) {
+			StringBuilder validos = new StringBuilder();
+			for (TipoReporte tipoValido : TipoReporte.values()) {
+				if (validos.length() > 0) {
+					validos.append(", ");
+				}
+				validos.append(tipoValido.getValor());
+			}
+			throw new DatosReporteInvalidosException("El tipo de reporte debe ser uno de: " + validos);
+		}
+		return tipo;
+	}
+
+	/**
+	 * Convierte una fecha opcional de los filtros de reporte (formato AAAA-MM-DD).
+	 *
+	 * @param texto           fecha recibida, o null/vacio si no se filtra
+	 * @param nombreParametro "desde" o "hasta", para el mensaje
+	 * @return la fecha, o null si no llego
+	 * @throws DatosReporteInvalidosException si la fecha esta mal escrita
+	 */
+	public static LocalDate convertirFechaReporte(String texto, String nombreParametro) {
+		if (texto == null || texto.trim().isEmpty()) {
+			return null;
+		}
+		try {
+			return LocalDate.parse(texto.trim());
+		} catch (DateTimeParseException e) {
+			throw new DatosReporteInvalidosException(
+					"El parametro " + nombreParametro + " debe ser una fecha con formato AAAA-MM-DD");
+		}
+	}
+
+	/**
+	 * @param desde fecha minima, o null
+	 * @param hasta fecha maxima, o null
+	 * @throws DatosReporteInvalidosException si las dos llegan y desde es posterior a hasta
+	 */
+	public static void verificarRangoFechasReporte(LocalDate desde, LocalDate hasta) {
+		if (desde != null && hasta != null && desde.isAfter(hasta)) {
+			throw new DatosReporteInvalidosException("La fecha desde no puede ser posterior a la fecha hasta");
+		}
+	}
 }

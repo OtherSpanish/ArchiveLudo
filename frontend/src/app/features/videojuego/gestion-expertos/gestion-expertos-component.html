@@ -1,0 +1,134 @@
+<!--
+  Panel para gestionar los expertos de un proyecto: lista con editar y quitar,
+  y un formulario para agregar o editar. Curador y administrador agregan y
+  editan; solo el administrador quita.
+-->
+<section class="panel" aria-label="Expertos del proyecto">
+
+  <div class="cabecera-panel">
+    <h3 class="titulo-formulario">Expertos de «{{ proyecto.nombre }}»</h3>
+    <button type="button" class="boton-secundario" (click)="cerrar()">Cerrar</button>
+  </div>
+
+  <ul class="lista-participaciones">
+    @for (participacion of proyecto.participaciones; track participacion.idParticipacion) {
+      <li class="participacion">
+
+        <div class="datos">
+          <span class="nombre">{{ nombreExperto(participacion.idExperto) }}</span>
+          <span class="rol">
+            {{ participacion.rolExperto }} · desde {{ formatearFecha(participacion.fechaIncorporacion) }}
+            @if (participacion.fechaSalida) {
+              · salió el {{ formatearFecha(participacion.fechaSalida) }}
+            }
+          </span>
+        </div>
+
+        <div class="acciones">
+          <button type="button" class="boton-chico" (click)="abrirEditar(participacion)">Editar</button>
+
+          <!-- Solo el administrador quita; se desactiva si es el último experto -->
+          <button type="button"
+                  class="boton-chico boton-peligro-chico"
+                  *appHasRole="['administrador']"
+                  [disabled]="!sePuedeQuitar"
+                  [attr.title]="sePuedeQuitar ? null : 'Todo proyecto debe tener al menos un experto'"
+                  (click)="pedirQuitar(participacion)">
+            Quitar
+          </button>
+        </div>
+
+        @if (idConfirmandoQuitar === participacion.idParticipacion) {
+          <div class="confirmacion">
+            <p class="texto-confirmacion">¿Quitar a este experto del proyecto?</p>
+            <div class="botones-confirmacion">
+              <button type="button" class="boton-secundario" (click)="cancelarQuitar()">Cancelar</button>
+              <button type="button" class="boton-peligro" (click)="confirmarQuitar(participacion)">Sí, quitar</button>
+            </div>
+          </div>
+        }
+
+      </li>
+    }
+  </ul>
+
+  @if (errorGeneral && !mostrarFormulario) {
+    <p class="error-general" role="alert">{{ errorGeneral }}</p>
+  }
+
+  @if (!mostrarFormulario) {
+    <button type="button" class="boton-principal" (click)="abrirAgregar()">Agregar experto</button>
+  }
+
+  @if (mostrarFormulario) {
+    <form class="formulario" [formGroup]="formulario" (ngSubmit)="guardar()" novalidate>
+
+      <h3 class="titulo-formulario">{{ editando ? 'Editar participación' : 'Agregar experto' }}</h3>
+
+      <!-- El experto solo se elige al agregar; al editar no se puede cambiar -->
+      @if (!editando) {
+        <div class="grupo">
+          <label class="etiqueta" for="campo-experto-nuevo">Experto</label>
+          <select id="campo-experto-nuevo"
+                  class="campo"
+                  formControlName="idExperto"
+                  [class.invalido]="hayError('idExperto')">
+            <option [ngValue]="null">Selecciona un experto</option>
+            @for (opcion of opcionesDisponibles; track opcion.id) {
+              <option [ngValue]="opcion.id">{{ opcion.nombre }}</option>
+            }
+          </select>
+          @if (hayError('idExperto')) {
+            <p class="error">Este campo es obligatorio.</p>
+          }
+        </div>
+      }
+
+      <div class="grupo">
+        <label class="etiqueta" for="campo-rol-experto">Rol en el proyecto</label>
+        <input id="campo-rol-experto"
+               class="campo"
+               type="text"
+               formControlName="rolExperto"
+               [class.invalido]="hayError('rolExperto')">
+        @if (hayError('rolExperto')) {
+          <p class="error">Este campo es obligatorio (máximo 80 caracteres).</p>
+        }
+      </div>
+
+      <div class="grupo">
+        <label class="etiqueta" for="campo-incorporacion">Incorporación</label>
+        <input id="campo-incorporacion"
+               class="campo"
+               type="date"
+               formControlName="fechaIncorporacion"
+               [class.invalido]="hayError('fechaIncorporacion')">
+      </div>
+
+      <div class="grupo">
+        <label class="etiqueta" for="campo-salida">Salida <span class="opcional">(opcional)</span></label>
+        <input id="campo-salida"
+               class="campo"
+               type="date"
+               formControlName="fechaSalida">
+      </div>
+
+      @if (errorGeneral) {
+        <p class="error-general" role="alert">{{ errorGeneral }}</p>
+      }
+
+      <div class="botones">
+        <button type="button" class="boton-secundario" (click)="cancelarFormulario()">Cancelar</button>
+        <button type="submit" class="boton-principal" [disabled]="guardando">
+          @if (guardando) {
+            Guardando…
+          } @else {
+            Guardar
+          }
+        </button>
+      </div>
+
+    </form>
+  }
+
+</section>

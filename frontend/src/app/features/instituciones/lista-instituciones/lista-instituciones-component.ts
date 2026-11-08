@@ -2,7 +2,7 @@ import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { ArchiveludoApiService } from '../../../core/archiveludo-api-service';
 import { Institucion } from '../../../shared/models/custodia-model';
 
-/*
+/**
  * Pantalla de la lista de instituciones (/instituciones).
  * Muestra una tarjeta por institución, con su tipo, país y contacto.
  * (El número de copias en custodia llegará cuando el back tenga custodias.)
@@ -15,19 +15,19 @@ import { Institucion } from '../../../shared/models/custodia-model';
 })
 export class ListaInstitucionesComponent implements OnInit {
 
-  /* Instituciones que se muestran. Empieza vacío y se llena al cargar. */
+  /** Instituciones que se muestran. Empieza vacío y se llena al cargar. */
   instituciones: Institucion[] = [];
 
-  /*
+  /**
    * true mientras se espera la respuesta. Evita mostrar "No hay instituciones"
    * durante el instante en que todavía no llegan los datos.
    */
   cargando: boolean = true;
 
-  /* true si el back respondió con error. */
+  /** true si el back respondió con error. */
   hayError: boolean = false;
 
-  /*
+  /**
    * ArchiveludoApiService habla con el back.
    * ChangeDetectorRef avisa a Angular que hay que redibujar la pantalla.
    */
@@ -36,12 +36,12 @@ export class ListaInstitucionesComponent implements OnInit {
     private cambios: ChangeDetectorRef
   ) { }
 
-  /* ngOnInit se ejecuta una vez, cuando el componente ya está listo. */
+  /** ngOnInit se ejecuta una vez, cuando el componente ya está listo. */
   ngOnInit(): void {
     this.cargarInstituciones();
   }
 
-  /* Pide la lista: GET /api/instituciones */
+  /** Pide la lista: GET /api/instituciones */
   private cargarInstituciones(): void {
     this.api.obtenerInstituciones().subscribe({
       next: (lista) => this.alRecibirInstituciones(lista),
@@ -49,7 +49,7 @@ export class ListaInstitucionesComponent implements OnInit {
     });
   }
 
-  /* Guarda la lista, ordenada alfabéticamente por nombre (localeCompare respeta las tildes). */
+  /** Guarda la lista, ordenada alfabéticamente por nombre (localeCompare respeta las tildes). */
   private alRecibirInstituciones(lista: Institucion[]): void {
     const ordenadas = lista.slice();
     ordenadas.sort((a, b) => a.nombre.localeCompare(b.nombre));
@@ -60,7 +60,7 @@ export class ListaInstitucionesComponent implements OnInit {
     this.cambios.markForCheck();
   }
 
-  /* El detalle del error queda en la consola (F12). */
+  /** El detalle del error queda en la consola (F12). */
   private mostrarError(error: unknown): void {
     console.error('No se pudo cargar la lista de instituciones', error);
     this.cargando = false;
@@ -69,7 +69,7 @@ export class ListaInstitucionesComponent implements OnInit {
     this.cambios.markForCheck();
   }
 
-  /* Texto bajo el título, en singular o plural: "1 institución" / "4 instituciones" */
+  /** Texto bajo el título, en singular o plural: "1 institución" / "4 instituciones" */
   get textoTotal(): string {
     if (this.instituciones.length === 1) {
       return '1 institución';

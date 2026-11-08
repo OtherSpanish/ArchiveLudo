@@ -5,7 +5,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../../../core/auth-service';
 import { CredencialesLogin } from '../../../shared/models/sesion-model';
 
-/*
+/**
  * Pantalla de inicio de sesión (/login). Es la única ruta pública.
  * El login lo hace AuthService, que llama a POST /api/auth/login.
  * Se entra con el CORREO y la contraseña.
@@ -18,28 +18,28 @@ import { CredencialesLogin } from '../../../shared/models/sesion-model';
 })
 export class LoginComponent implements OnInit {
 
-  /* El formulario con correo y contraseña. Se arma en ngOnInit. */
+  /** El formulario con correo y contraseña. Se arma en ngOnInit. */
   formulario!: FormGroup;
 
-  /*
+  /**
    * true después del primer intento de enviar. Sirve para mostrar los errores
    * de los campos que el usuario nunca tocó.
    */
   enviado: boolean = false;
 
-  /* true mientras se espera la respuesta; deshabilita el botón de entrar. */
+  /** true mientras se espera la respuesta; deshabilita el botón de entrar. */
   iniciando: boolean = false;
 
-  /* Mensaje si las credenciales no son válidas. Vacío si no hay error. */
+  /** Mensaje si las credenciales no son válidas. Vacío si no hay error. */
   errorLogin: string = '';
 
-  /*
+  /**
    * Dirección a la que se vuelve después de entrar. Es la que el guard guardó
    * en el parámetro "volverA" de la URL; si no hay ninguna, el Inicio.
    */
   private destino: string = '/';
 
-  /*
+  /**
    * Angular entrega estas cuatro herramientas solas (inyección de dependencias):
    * FormBuilder arma el formulario, AuthService hace el login, ActivatedRoute
    * lee la URL, Router cambia de pantalla y ChangeDetectorRef avisa que hay
@@ -53,7 +53,7 @@ export class LoginComponent implements OnInit {
     private cambios: ChangeDetectorRef
   ) { }
 
-  /*
+  /**
    * ngOnInit se ejecuta una vez, cuando el componente ya está listo.
    * Si ya hay sesión, no tiene sentido ver el login: va directo al destino.
    */
@@ -70,7 +70,7 @@ export class LoginComponent implements OnInit {
     }
   }
 
-  /*
+  /**
    * Solo acepta destinos internos de la app: deben empezar con "/" y no con
    * "//" (que el navegador entendería como otro sitio web). Si la URL trae
    * cualquier otra cosa, se ignora y se va al Inicio.
@@ -82,13 +82,13 @@ export class LoginComponent implements OnInit {
     return '/';
   }
 
-  /* Dice si hay que mostrar el error de un campo: tiene error Y (lo tocaron O ya se intentó enviar). */
+  /** Dice si hay que mostrar el error de un campo: tiene error Y (lo tocaron O ya se intentó enviar). */
   mostrarError(nombre: string): boolean {
     const control = this.formulario.controls[nombre];
     return control.invalid && (control.touched || this.enviado);
   }
 
-  /*
+  /**
    * Se ejecuta al pulsar "Entrar". Si faltan datos, muestra los errores. Si
    * están completos, pide el login y espera la respuesta.
    */
@@ -111,13 +111,13 @@ export class LoginComponent implements OnInit {
     });
   }
 
-  /* Login correcto: la sesión ya quedó guardada en AuthService; se va al destino. */
+  /** Login correcto: la sesión ya quedó guardada en AuthService; se va al destino. */
   private alEntrar(): void {
     this.iniciando = false;
     this.router.navigateByUrl(this.destino);
   }
 
-  /* Login fallido: se muestra el mensaje y se vacía la contraseña. */
+  /** Login fallido: se muestra el mensaje y se vacía la contraseña. */
   private alFallar(error: unknown): void {
     console.error('No se pudo iniciar sesión', error);
 
@@ -128,7 +128,7 @@ export class LoginComponent implements OnInit {
     this.cambios.markForCheck();
   }
 
-  /*
+  /**
    * Elige el mensaje según lo que respondió el back:
    *  - estado 0: la petición ni llegó (back apagado, o la app abierta en
    *    127.0.0.1 en vez de localhost y el navegador la bloqueó por CORS)

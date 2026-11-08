@@ -4,7 +4,7 @@ import { RouterModule, Routes } from '@angular/router';
 
 import { NoEncontradoComponent } from './no-encontrado/no-encontrado-component';
 
-/*
+/**
  * La ruta "**" coincide con cualquier URL que ninguna otra ruta reconoció.
  * Sin authGuard a propósito: el 404 se puede ver sin sesión.
  *

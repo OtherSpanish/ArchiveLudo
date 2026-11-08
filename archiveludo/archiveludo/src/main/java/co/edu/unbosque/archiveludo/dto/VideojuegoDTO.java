@@ -14,6 +14,7 @@ public class VideojuegoDTO {
 	private String estadoConservacion;
 	private long idEstudio;
 	private long idUsuario;
+	private String urlImagen;
 	private List<Long> idsEditoras;
 
 	public VideojuegoDTO() {
@@ -22,7 +23,7 @@ public class VideojuegoDTO {
 
 	public VideojuegoDTO(long idVideojuego, String titulo, String genero, String plataformaOriginal,
 			String descripcion, int anioLanzamiento, String estadoConservacion, long idEstudio, long idUsuario,
-			List<Long> idsEditoras) {
+			String urlImagen, List<Long> idsEditoras) {
 		super();
 		this.idVideojuego = idVideojuego;
 		this.titulo = titulo;
@@ -33,6 +34,7 @@ public class VideojuegoDTO {
 		this.estadoConservacion = estadoConservacion;
 		this.idEstudio = idEstudio;
 		this.idUsuario = idUsuario;
+		this.urlImagen = urlImagen;
 		this.idsEditoras = idsEditoras;
 	}
 
@@ -41,7 +43,8 @@ public class VideojuegoDTO {
 		return "VideojuegoDTO [idVideojuego=" + idVideojuego + ", titulo=" + titulo + ", genero=" + genero
 				+ ", plataformaOriginal=" + plataformaOriginal + ", descripcion=" + descripcion
 				+ ", anioLanzamiento=" + anioLanzamiento + ", estadoConservacion=" + estadoConservacion
-				+ ", idEstudio=" + idEstudio + ", idUsuario=" + idUsuario + ", idsEditoras=" + idsEditoras + "]";
+				+ ", idEstudio=" + idEstudio + ", idUsuario=" + idUsuario + ", urlImagen=" + urlImagen
+				+ ", idsEditoras=" + idsEditoras + "]";
 	}
 
 	public long getIdVideojuego() {
@@ -114,6 +117,14 @@ public class VideojuegoDTO {
 
 	public void setIdUsuario(long idUsuario) {
 		this.idUsuario = idUsuario;
+	}
+
+	public String getUrlImagen() {
+		return urlImagen;
+	}
+
+	public void setUrlImagen(String urlImagen) {
+		this.urlImagen = urlImagen;
 	}
 
 	public List<Long> getIdsEditoras() {

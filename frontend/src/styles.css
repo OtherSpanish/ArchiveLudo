@@ -74,3 +74,15 @@ a {
 button {
   font-family: var(--font-body);
 }
+
+/* Al imprimir se oculta la barra superior y se deja la página en blanco. */
+@media print {
+  app-barra-superior {
+    display: none;
+  }
+
+  body {
+    background: #fff;
+    color: #000;
+  }
+}

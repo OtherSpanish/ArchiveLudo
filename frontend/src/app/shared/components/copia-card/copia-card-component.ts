@@ -1,8 +1,7 @@
-import { Component, Input } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { Copia } from '../../models/copia-model';
-import { Custodia } from '../../models/custodia-model';
 
-/*
+/**
  * Un campo de la tarjeta: etiqueta en mayúsculas arriba y valor debajo.
  * Ejemplo: { etiqueta: 'Número de serie', valor: 'QX-94-0127' }
  */
@@ -11,16 +10,19 @@ interface CampoCopia {
   valor: string;
 }
 
-/*
+/**
  * Tarjeta de una copia, para la pestaña "Copias" de la ficha.
  *
  * Uso:
- *   <app-copia-card [copia]="copia" [custodiaActual]="custodia"></app-copia-card>
+ *   <app-copia-card [copia]="copia" (verHistorial)="abrirHistorial($event)"></app-copia-card>
  *
- * Recibe dos datos del componente padre:
- *   - copia: la copia (física o digital) con sus campos
- *   - custodiaActual: la custodia vigente de esa copia (la que no tiene
- *     fechaFin). Es opcional: una copia puede no tener custodia registrada.
+ * Recibe un dato del componente padre:
+ *   - copia: la copia (física o digital) con sus campos. Si tiene custodia
+ *     vigente, trae idInstitucionActual y nombreInstitucionActual (los
+ *     calcula el back).
+ * Avisa al padre con (verHistorial), (editar) y (eliminar), que emiten el
+ * idCopia. Editar es para curador y administrador; eliminar, solo para el
+ * administrador.
  *
  * Según el tipo de copia, la tarjeta muestra campos distintos
  * (generalización de COPIA en COPIA_FISICA y COPIA_DIGITAL del MER):
@@ -34,13 +36,32 @@ interface CampoCopia {
   standalone: false,
 })
 export class CopiaCardComponent {
-  /* El "!" le dice a TypeScript: "el padre siempre me va a pasar este valor". */
+  /** El "!" le dice a TypeScript: "el padre siempre me va a pasar este valor". */
   @Input() copia!: Copia;
 
-  /* El "?" indica que puede no venir. */
-  @Input() custodiaActual?: Custodia;
+  /** Se emite el idCopia cuando el usuario pulsa "Ver historial de custodia". */
+  @Output() verHistorial = new EventEmitter<number>();
 
-  /*
+  /** Se emite el idCopia cuando se pulsa "Editar". */
+  @Output() editar = new EventEmitter<number>();
+
+  /** Se emite el idCopia cuando se pulsa "Eliminar". */
+  @Output() eliminar = new EventEmitter<number>();
+
+  /** Lo llama el botón de la tarjeta. */
+  pedirHistorial(): void {
+    this.verHistorial.emit(this.copia.idCopia);
+  }
+
+  pedirEditar(): void {
+    this.editar.emit(this.copia.idCopia);
+  }
+
+  pedirEliminar(): void {
+    this.eliminar.emit(this.copia.idCopia);
+  }
+
+  /**
    * ID en el formato de la guía: la copia 1 se muestra como "C-001".
    * padStart(3, '0') rellena con ceros a la izquierda hasta tener 3 cifras.
    */
@@ -49,7 +70,7 @@ export class CopiaCardComponent {
     return 'C-' + numero;
   }
 
-  /* Texto de la etiqueta de tipo: "FÍSICA" o "DIGITAL" */
+  /** Texto de la etiqueta de tipo: "FÍSICA" o "DIGITAL" */
   get textoTipo(): string {
     if (this.copia.tipoCopia === 'fisica') {
       return 'FÍSICA';
@@ -57,7 +78,7 @@ export class CopiaCardComponent {
     return 'DIGITAL';
   }
 
-  /*
+  /**
    * Nombre de la clase CSS de la etiqueta: 'fisica' o 'digital'.
    * Cada una tiene su color de borde y de texto en el CSS.
    */
@@ -65,7 +86,7 @@ export class CopiaCardComponent {
     return this.copia.tipoCopia;
   }
 
-  /*
+  /**
    * Lista de campos que se muestran, según el tipo de copia.
    * Se arma con un if normal. Los valores opcionales (con "?") pueden venir
    * vacíos, así que si falta alguno mostramos un guion largo.
@@ -95,26 +116,22 @@ export class CopiaCardComponent {
     return lista;
   }
 
-  /*
+  /**
    * Pie de la tarjeta, por ejemplo:
-   * "Custodia actual: Museo de Cultura Invernadero · Registrada el 12/03/2019"
+   * "Custodiada por: Museo de Cultura Invernadero · Registrada el 12/03/2019"
+   * o, sin custodia vigente, "Sin custodia vigente · Registrada el 12/03/2019".
    */
   get textoPie(): string {
-    let nombreInstitucion = 'sin custodia registrada';
+    let custodia = 'Sin custodia vigente';
 
-    if (this.custodiaActual) {
-      nombreInstitucion = this.custodiaActual.institucion.nombre;
+    if (this.copia.nombreInstitucionActual) {
+      custodia = 'Custodiada por: ' + this.copia.nombreInstitucionActual;
     }
 
-    return (
-      'Custodia actual: ' +
-      nombreInstitucion +
-      ' · Registrada el ' +
-      this.formatearFecha(this.copia.fechaRegistro)
-    );
+    return custodia + ' · Registrada el ' + this.formatearFecha(this.copia.fechaRegistro);
   }
 
-  /*
+  /**
    * El back manda el tamaño en BYTES (por ejemplo 734003200).
    * Lo convierte a un texto legible: "700 MB". Divide entre 1024 mientras
    * el número sea grande, y avanza por las unidades B, KB, MB, GB.
@@ -139,7 +156,7 @@ export class CopiaCardComponent {
     return texto + ' ' + unidades[posicion];
   }
 
-  /* Si el valor viene vacío, devuelve un guion largo en su lugar. */
+  /** Si el valor viene vacío, devuelve un guion largo en su lugar. */
   private valorOGuion(valor?: string): string {
     if (valor) {
       return valor;
@@ -147,7 +164,7 @@ export class CopiaCardComponent {
     return '—';
   }
 
-  /*
+  /**
    * Convierte '2019-03-12' en '12/03/2019'.
    * split('-') parte el texto en tres pedazos: año, mes y día.
    */

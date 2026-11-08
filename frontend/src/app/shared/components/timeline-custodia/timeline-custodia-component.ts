@@ -1,7 +1,7 @@
-import { Component, Input } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { Custodia } from '../../models/custodia-model';
 
-/*
+/**
  * Un hito de la línea de tiempo, ya con los textos listos para mostrar.
  *  - id: identifica el hito (es el idCustodia)
  *  - vigente: true si es la custodia actual (no tiene fechaFin).
@@ -15,7 +15,7 @@ interface Hito {
   vigente: boolean;
 }
 
-/*
+/**
  * Historial de custodia de UNA copia, como línea de tiempo vertical.
  * Cada vez que la copia cambia de institución se registra un periodo nuevo.
  *
@@ -37,7 +37,23 @@ export class TimelineCustodiaComponent {
 
   @Input() custodias: Custodia[] = [];
 
-  /* Nombres de los meses, para convertir '2019-03-12' en 'Marzo 2019'. */
+  /** Se emite el idCustodia cuando se pulsa "Editar" en un hito. */
+  @Output() editar = new EventEmitter<number>();
+
+  /** Se emite el idCustodia cuando se pulsa "Eliminar" en un hito. */
+  @Output() eliminar = new EventEmitter<number>();
+
+  /** Lo llama el botón "Editar" de cada hito. */
+  pedirEditar(idCustodia: number): void {
+    this.editar.emit(idCustodia);
+  }
+
+  /** Lo llama el botón "Eliminar" de cada hito. */
+  pedirEliminar(idCustodia: number): void {
+    this.eliminar.emit(idCustodia);
+  }
+
+  /** Nombres de los meses, para convertir '2019-03-12' en 'Marzo 2019'. */
   private meses: string[] = [
     'enero',
     'febrero',
@@ -53,7 +69,7 @@ export class TimelineCustodiaComponent {
     'diciembre',
   ];
 
-  /*
+  /**
    * Código de la copia en el mismo formato que usa copia-card:
    * la copia 1 se muestra como "C-001".
    */
@@ -62,28 +78,25 @@ export class TimelineCustodiaComponent {
     return 'C-' + numero;
   }
 
-  /* Título de la sección: "Historial de custodia de la copia C-001" */
+  /** Título de la sección: "Historial de custodia de la copia C-001" */
   get titulo(): string {
     return 'Historial de custodia de la copia ' + this.codigo;
   }
 
-  /*
+  /**
    * Convierte la lista de custodias en la lista de hitos que se dibuja.
-   * Primero ordena las custodias de la más antigua a la más reciente,
-   * así la línea de tiempo siempre queda en orden cronológico.
+   * No ordena nada: el back ya entrega las custodias de la más reciente a la
+   * más antigua (la vigente queda arriba).
    */
   get hitos(): Hito[] {
-    const ordenadas = this.custodias.slice();
-    ordenadas.sort(this.compararPorFechaInicio);
-
     const lista: Hito[] = [];
 
-    for (const custodia of ordenadas) {
+    for (const custodia of this.custodias) {
       const vigente = !custodia.fechaFin;
 
       lista.push({
         id: custodia.idCustodia,
-        institucion: custodia.institucion.nombre,
+        institucion: custodia.nombreInstitucion || 'Institución ' + custodia.idInstitucion,
         periodo: this.armarPeriodo(custodia),
         condiciones: this.armarCondiciones(custodia),
         vigente: vigente,
@@ -93,17 +106,7 @@ export class TimelineCustodiaComponent {
     return lista;
   }
 
-  /*
-   * Función de comparación para sort(): devuelve un número negativo si "a"
-   * va antes que "b", cero si empatan y positivo si va después.
-   * Las fechas son texto 'AAAA-MM-DD', y comparadas como texto ya quedan
-   * en orden cronológico.
-   */
-  private compararPorFechaInicio(a: Custodia, b: Custodia): number {
-    return a.fechaInicio.localeCompare(b.fechaInicio);
-  }
-
-  /*
+  /**
    * Texto del periodo:
    *   - custodia pasada: "Marzo 2019 – Agosto 2019"
    *   - custodia vigente: "Agosto 2019 – hoy (vigente)"
@@ -118,7 +121,7 @@ export class TimelineCustodiaComponent {
     return inicio + ' – hoy (vigente)';
   }
 
-  /* Texto de las condiciones de almacenamiento; si faltan, lo dice. */
+  /** Texto de las condiciones de almacenamiento; si faltan, lo dice. */
   private armarCondiciones(custodia: Custodia): string {
     if (custodia.condicionAlmacenamiento) {
       return 'Condiciones: ' + custodia.condicionAlmacenamiento;
@@ -126,7 +129,7 @@ export class TimelineCustodiaComponent {
     return 'Condiciones: sin registrar';
   }
 
-  /*
+  /**
    * Convierte '2019-03-12' en 'Marzo 2019'.
    * split('-') parte el texto en tres pedazos: año, mes y día.
    * El mes llega como '03', así que se convierte a número y se le resta 1
